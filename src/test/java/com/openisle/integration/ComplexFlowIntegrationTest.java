@@ -33,12 +33,12 @@ class ComplexFlowIntegrationTest {
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
         rest.postForEntity("/api/auth/register", new HttpEntity<>(
-                Map.of("username", username, "email", email, "password", "pass"), h), Map.class);
+                Map.of("username", username, "email", email, "password", "password"), h), Map.class);
         User u = users.findByUsername(username).orElseThrow();
         rest.postForEntity("/api/auth/verify", new HttpEntity<>(
                 Map.of("username", username, "code", u.getVerificationCode()), h), Map.class);
         ResponseEntity<Map> resp = rest.postForEntity("/api/auth/login", new HttpEntity<>(
-                Map.of("username", username, "password", "pass"), h), Map.class);
+                Map.of("username", username, "password", "password"), h), Map.class);
         return (String) resp.getBody().get("token");
     }
 
