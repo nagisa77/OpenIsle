@@ -73,7 +73,7 @@
             <CommentItem
               :key="item.id"
               :comment="item"
-              :level="level + 1"
+              :level="0"
               :default-show-replies="item.openReplies"
               ref="postItems"
             />
@@ -266,6 +266,7 @@ export default {
       const id = hash.startsWith('#comment-') ? hash.substring('#comment-'.length) : null
       await fetchPost()
       if (id) expandCommentPath(id)
+      await nextTick()
       updateCurrentIndex()
       await jumpToHashComment()
     })
