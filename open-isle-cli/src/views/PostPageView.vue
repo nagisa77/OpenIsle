@@ -75,6 +75,7 @@
               :comment="item"
               :level="level + 1"
               :default-show-replies="item.openReplies"
+              ref="postItems"
             />
           </template>
         </BaseTimeline>
