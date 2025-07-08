@@ -52,9 +52,9 @@ class SearchControllerTest {
         c.setId(3L);
         c.setContent("nice");
         Mockito.when(searchService.globalSearch("n")).thenReturn(List.of(
-                new SearchService.SearchResult("user", 1L, "bob"),
-                new SearchService.SearchResult("post", 2L, "hello"),
-                new SearchService.SearchResult("comment", 3L, "nice")
+                new SearchService.SearchResult("user", 1L, "bob", "intro"),
+                new SearchService.SearchResult("post", 2L, "hello", "snip"),
+                new SearchService.SearchResult("comment", 3L, "nice", "user - post")
         ));
 
         mockMvc.perform(get("/api/search/global").param("keyword", "n"))
