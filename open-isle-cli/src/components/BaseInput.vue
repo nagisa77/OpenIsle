@@ -21,7 +21,7 @@ export default {
     type: { type: String, default: 'text' },
     textarea: { type: Boolean, default: false }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'input'],
   computed: {
     innerValue: {
       get() {
@@ -29,6 +29,7 @@ export default {
       },
       set(val) {
         this.$emit('update:modelValue', val)
+        this.$emit('input', val)
       }
     }
   }
