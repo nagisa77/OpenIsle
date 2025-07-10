@@ -11,8 +11,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TagService {
     private final TagRepository tagRepository;
+    private final TagValidator tagValidator;
 
     public Tag createTag(String name, String description, String icon, String smallIcon) {
+        tagValidator.validate(name);
         Tag tag = new Tag();
         tag.setName(name);
         tag.setDescription(description);
@@ -25,6 +27,7 @@ public class TagService {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
         if (name != null) {
+            tagValidator.validate(name);
             tag.setName(name);
         }
         if (description != null) {

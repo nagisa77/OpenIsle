@@ -90,7 +90,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/categories/**").hasAuthority("ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/tags/**").hasAuthority("ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/tags/**").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasAuthority("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/tags/**").hasAuthority("ADMIN")
                     .requestMatchers("/api/admin/**").hasAuthority("ADMIN")

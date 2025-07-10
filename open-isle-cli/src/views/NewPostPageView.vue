@@ -8,7 +8,7 @@
       <div class="post-options">
         <div class="post-options-left">
           <CategorySelect v-model="selectedCategory" />
-          <TagSelect v-model="selectedTags" />
+          <TagSelect v-model="selectedTags" creatable />
         </div>
         <div class="post-options-right">
           <div class="post-clear" @click="clearPost">
@@ -120,6 +120,29 @@ export default {
         toast.error('保存失败')
       }
     }
+    const ensureTags = async (token) => {
+      for (let i = 0; i < selectedTags.value.length; i++) {
+        const t = selectedTags.value[i]
+        if (typeof t === 'string' && t.startsWith('__new__:')) {
+          const name = t.slice(8)
+          const res = await fetch(`${API_BASE_URL}/api/tags`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ name, description: '' })
+          })
+          if (res.ok) {
+            const data = await res.json()
+            selectedTags.value[i] = data.id
+            // update local TagSelect options handled by component
+          } else {
+            throw new Error('create tag failed')
+          }
+        }
+      }
+    }
     const submitPost = async () => {
       if (!title.value.trim()) {
         toast.error('标题不能为空')
@@ -139,6 +162,7 @@ export default {
       }
       try {
         const token = getToken()
+        await ensureTags(token)
         const res = await fetch(`${API_BASE_URL}/api/posts`, {
           method: 'POST',
           headers: {
