@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { API_BASE_URL, toast } from '../main'
 import Dropdown from './Dropdown.vue'
 
@@ -24,8 +24,8 @@ export default {
   setup(props, { emit }) {
     const tags = ref([])
 
-    const loadTags = async () => {
-      if (tags.value.length) return
+    const loadTags = async (force = false) => {
+      if (!force && tags.value.length) return
       const res = await fetch(`${API_BASE_URL}/api/tags`)
       if (!res.ok) return
       const data = await res.json()
@@ -77,6 +77,20 @@ export default {
         emit('update:modelValue', v)
       }
     })
+
+    watch(
+      () => props.modelValue,
+      async val => {
+        if (!Array.isArray(val)) return
+        const numericIds = val.filter(
+          id => typeof id !== 'string' || !id.startsWith('__')
+        )
+        const missing = numericIds.some(id => !tags.value.some(t => t.id === id))
+        if (missing) {
+          await loadTags(true)
+        }
+      }
+    )
 
     return { fetchTags, selected }
   }
