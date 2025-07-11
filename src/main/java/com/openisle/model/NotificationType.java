@@ -10,6 +10,8 @@ public enum NotificationType {
     COMMENT_REPLY,
     /** Someone reacted to your post or comment */
     REACTION,
+    /** A new post requires admin review */
+    POST_REVIEW,
     /** Your post under review was approved or rejected */
     POST_REVIEWED,
     /** A subscribed post received a new comment */

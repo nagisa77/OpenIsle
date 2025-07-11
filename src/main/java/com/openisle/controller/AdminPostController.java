@@ -44,6 +44,7 @@ public class AdminPostController {
         dto.setCreatedAt(post.getCreatedAt());
         dto.setAuthor(post.getAuthor().getUsername());
         dto.setCategory(toCategoryDto(post.getCategory()));
+        dto.setStatus(post.getStatus());
         dto.setViews(post.getViews());
         return dto;
     }
@@ -66,6 +67,7 @@ public class AdminPostController {
         private LocalDateTime createdAt;
         private String author;
         private CategoryDto category;
+        private com.openisle.model.PostStatus status;
         private long views;
     }
 

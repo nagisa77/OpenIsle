@@ -6,6 +6,7 @@ import com.openisle.model.PublishMode;
 import com.openisle.model.User;
 import com.openisle.model.Category;
 import com.openisle.model.NotificationType;
+import com.openisle.model.Role;
 import com.openisle.repository.PostRepository;
 import com.openisle.repository.UserRepository;
 import com.openisle.repository.CategoryRepository;
@@ -80,6 +81,18 @@ public class PostService {
         post.setTags(new java.util.HashSet<>(tags));
         post.setStatus(publishMode == PublishMode.REVIEW ? PostStatus.PENDING : PostStatus.PUBLISHED);
         post = postRepository.save(post);
+        if (post.getStatus() == PostStatus.PENDING) {
+            for (User admin : userRepository.findByRole(Role.ADMIN)) {
+                notificationService.createNotification(
+                        admin,
+                        NotificationType.POST_REVIEW,
+                        post,
+                        null,
+                        null,
+                        author,
+                        null);
+            }
+        }
         // notify followers of author
         for (User u : subscriptionService.getSubscribers(author.getUsername())) {
             if (!u.getId().equals(author.getId())) {
@@ -100,7 +113,16 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
         if (post.getStatus() != PostStatus.PUBLISHED) {
-            throw new IllegalArgumentException("Post not found");
+            if (viewer == null) {
+                throw new IllegalArgumentException("Post not found");
+            }
+            User v = userRepository.findByUsername(viewer)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            boolean isAuthor = v.getId().equals(post.getAuthor().getId());
+            boolean isAdmin = v.getRole() == Role.ADMIN;
+            if (!isAuthor && !isAdmin) {
+                throw new IllegalArgumentException("Post not found");
+            }
         }
         post.setViews(post.getViews() + 1);
         post = postRepository.save(post);
