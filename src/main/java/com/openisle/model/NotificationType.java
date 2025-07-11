@@ -12,6 +12,8 @@ public enum NotificationType {
     REACTION,
     /** Your post under review was approved or rejected */
     POST_REVIEWED,
+    /** A new post requires review by administrators */
+    POST_REVIEW_REQUIRED,
     /** A subscribed post received a new comment */
     POST_UPDATED,
     /** Someone subscribed to your post */
