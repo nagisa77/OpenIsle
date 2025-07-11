@@ -32,7 +32,7 @@
         <i class="fas fa-caret-down dropdown-caret"></i>
       </slot>
     </div>
-    <div v-if="open && (loading || filteredOptions.length > 0 || showSearch)" :class="['dropdown-menu', menuClass]">
+    <div v-if="open && (loading || filteredOptions.length > 0 || showSearch)" :class="['dropdown-menu', menuClass]" :style="menuStyle">
       <div v-if="showSearch" class="dropdown-search">
         <i class="fas fa-search search-icon"></i>
         <input type="text" v-model="search" placeholder="搜索" />
@@ -72,7 +72,8 @@ export default {
     menuClass: { type: String, default: '' },
     optionClass: { type: String, default: '' },
     showSearch: { type: Boolean, default: true },
-    initialOptions: { type: Array, default: () => [] }
+    initialOptions: { type: Array, default: () => [] },
+    menuMinWidth: { type: [String, Number], default: '350px' }
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -190,6 +191,14 @@ export default {
       return /^https?:\/\//.test(icon) || icon.startsWith('/')
     }
 
+    const menuStyle = computed(() => {
+      if (props.menuMinWidth === null || props.menuMinWidth === '' || props.menuMinWidth === 'auto') {
+        return {}
+      }
+      const val = typeof props.menuMinWidth === 'number' ? `${props.menuMinWidth}px` : props.menuMinWidth
+      return { minWidth: val }
+    })
+
     return {
       open,
       toggle,
@@ -201,7 +210,8 @@ export default {
       isSelected,
       loading,
       isImageIcon,
-      setSearch
+      setSearch,
+      menuStyle
     }
   }
 }
@@ -236,7 +246,6 @@ export default {
   border: 1px solid #ccc;
   z-index: 10;
   max-height: 200px;
-  min-width: 350px;
   overflow-y: auto;
 }
 

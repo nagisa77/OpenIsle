@@ -13,15 +13,17 @@
       </div>
 
       <div v-if="isLogin" class="header-content-right">
-        <div class="avatar-container" @click="toggleDropdown">
-          <img class="avatar-img" :src="avatar" alt="avatar">
-          <i class="fas fa-caret-down dropdown-icon"></i>
-          <div v-if="dropdownVisible" class="dropdown-menu">
-            <div class="dropdown-item" @click="goToSettings">设置</div>
-            <div class="dropdown-item" @click="goToProfile">个人主页</div>
-            <div class="dropdown-item" @click="goToLogout">退出</div>
-          </div>
-        </div>
+        <Dropdown v-model="selectedAction" :fetch-options="fetchOptions" :show-search="false" menu-min-width="auto" menu-class="avatar-dropdown-menu">
+          <template #display="{ toggle }">
+            <div class="avatar-container" @click="toggle">
+              <img class="avatar-img" :src="avatar" alt="avatar">
+              <i class="fas fa-caret-down dropdown-icon"></i>
+            </div>
+          </template>
+          <template #option="{ option }">
+            <div class="dropdown-item">{{ option.name }}</div>
+          </template>
+        </Dropdown>
       </div>
 
       <div v-else class="header-content-right">
@@ -35,9 +37,11 @@
 <script>
 import { authState, clearToken, loadCurrentUser } from '../utils/auth'
 import { watch } from 'vue'
+import Dropdown from './Dropdown.vue'
 
 export default {
   name: 'HeaderComponent',
+  components: { Dropdown },
   props: {
     showMenuBtn: {
       type: Boolean,
@@ -46,8 +50,8 @@ export default {
   },
   data() {
     return {
-      dropdownVisible: false,
-      avatar: ''
+      avatar: '',
+      selectedAction: null
     }
   },
   computed: {
@@ -72,34 +76,36 @@ export default {
     })
 
     watch(() => this.$route.fullPath, () => {
-      this.dropdownVisible = false
+      this.selectedAction = null
     })
 
-    this.onClickOutside = (e) => {
-      if (!this.$el.contains(e.target)) {
-        this.dropdownVisible = false
-      }
-    }
-    document.addEventListener('click', this.onClickOutside)
+    watch(() => this.selectedAction, val => {
+      if (!val) return
+      if (val === 'settings') this.goToSettings()
+      else if (val === 'profile') this.goToProfile()
+      else if (val === 'logout') this.goToLogout()
+      this.selectedAction = null
+    })
   },
 
-  beforeUnmount() {
-    document.removeEventListener('click', this.onClickOutside)
-  },
+  beforeUnmount() {},
 
   methods: {
-    toggleDropdown() {
-      this.dropdownVisible = !this.dropdownVisible
-    },
     goToHome() {
       this.$router.push('/')
     },
     goToLogin() {
       this.$router.push('/login')
     },
+    fetchOptions() {
+      return Promise.resolve([
+        { id: 'settings', name: '设置' },
+        { id: 'profile', name: '个人主页' },
+        { id: 'logout', name: '退出' }
+      ])
+    },
     goToSettings() {
       this.$router.push('/settings')
-      this.dropdownVisible = false
     },
     async goToProfile() {
       if (!authState.loggedIn) {
@@ -116,14 +122,12 @@ export default {
       if (id) {
         this.$router.push(`/users/${id}`)
       }
-      this.dropdownVisible = false
     },
     goToSignup() {
       this.$router.push('/signup')
     },
     goToLogout() {
       clearToken()
-      this.dropdownVisible = false
       this.$router.push('/login')
     }
   }
@@ -223,7 +227,7 @@ export default {
   margin-left: 5px;
 }
 
-.dropdown-menu {
+.avatar-dropdown-menu {
   position: absolute;
   top: 40px;
   right: 0;

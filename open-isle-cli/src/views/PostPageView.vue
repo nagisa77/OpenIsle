@@ -27,14 +27,16 @@
             <i class="fas fa-user-minus"></i>
             取消订阅
           </div>
-          <div class="article-arrow-button">
-            <i class="fas fa-arrow-right"></i>
-            通过审核
-          </div>
-          <div class="article-reject-button">
-            <i class="fas fa-times"></i>
-            驳回
-          </div>
+          <Dropdown v-model="postAction" :fetch-options="fetchPostActions" :show-search="false" menu-min-width="auto" menu-class="post-action-menu">
+            <template #display="{ toggle }">
+              <div class="post-action-icon" @click="toggle">
+                <i class="fas fa-ellipsis-v"></i>
+              </div>
+            </template>
+            <template #option="{ option }">
+              <div class="post-action-item">{{ option.name }}</div>
+            </template>
+          </Dropdown>
         </div>
       </div>
 
@@ -106,6 +108,7 @@ import BaseTimeline from '../components/BaseTimeline.vue'
 import ArticleTags from '../components/ArticleTags.vue'
 import ArticleCategory from '../components/ArticleCategory.vue'
 import ReactionsGroup from '../components/ReactionsGroup.vue'
+import Dropdown from '../components/Dropdown.vue'
 import { renderMarkdown } from '../utils/markdown'
 import { API_BASE_URL, toast } from '../main'
 import { getToken } from '../utils/auth'
@@ -116,7 +119,7 @@ hatch.register()
 
 export default {
   name: 'PostPageView',
-  components: { CommentItem, CommentEditor, BaseTimeline, ArticleTags, ArticleCategory, ReactionsGroup },
+  components: { CommentItem, CommentEditor, BaseTimeline, ArticleTags, ArticleCategory, ReactionsGroup, Dropdown },
   setup() {
     const route = useRoute()
     const postId = route.params.id
@@ -135,6 +138,7 @@ export default {
     const postItems = ref([])
     const mainContainer = ref(null)
     const currentIndex = ref(1)
+    const postAction = ref(null)
 
     const gatherPostItems = () => {
       const items = []
@@ -257,6 +261,20 @@ export default {
       }
     }
 
+    const fetchPostActions = () => {
+      return [
+        { id: 'approve', name: '通过审核' },
+        { id: 'reject', name: '驳回' }
+      ]
+    }
+
+    watch(postAction, val => {
+      if (!val) return
+      if (val === 'approve') toast.success('已通过')
+      else if (val === 'reject') toast.error('已驳回')
+      postAction.value = null
+    })
+
     const postComment = async (text) => {
       if (!text.trim()) return
       isWaitingPostingComment.value = true
@@ -336,6 +354,8 @@ export default {
       currentIndex,
       totalPosts,
       postReactions,
+      postAction,
+      fetchPostActions,
       postId,
       postComment,
       onSliderInput,
@@ -512,24 +532,18 @@ export default {
   font-weight: bold;
 }
 
-.article-arrow-button {
-  background-color: green;
-  color: white;
-  border: 1px solid green;
-  padding: 5px 10px;
-  border-radius: 8px;
-  font-size: 14px;
+.post-action-icon {
   cursor: pointer;
+  padding: 5px;
 }
 
-.article-reject-button { 
-  background-color: red;
-  color: white;
-  border: 1px solid red;
-  padding: 5px 10px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
+.post-action-menu {
+  right: 0;
+  left: auto;
+}
+
+.post-action-item {
+  padding: 8px 16px;
 }
 
 .article-info-container {
