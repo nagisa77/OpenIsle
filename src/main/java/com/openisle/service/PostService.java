@@ -6,6 +6,7 @@ import com.openisle.model.PublishMode;
 import com.openisle.model.User;
 import com.openisle.model.Category;
 import com.openisle.model.NotificationType;
+import com.openisle.model.Role;
 import com.openisle.repository.PostRepository;
 import com.openisle.repository.UserRepository;
 import com.openisle.repository.CategoryRepository;
@@ -80,6 +81,18 @@ public class PostService {
         post.setTags(new java.util.HashSet<>(tags));
         post.setStatus(publishMode == PublishMode.REVIEW ? PostStatus.PENDING : PostStatus.PUBLISHED);
         post = postRepository.save(post);
+        if (post.getStatus() == PostStatus.PENDING) {
+            for (User admin : userRepository.findByRole(Role.ADMIN)) {
+                notificationService.createNotification(
+                        admin,
+                        NotificationType.POST_REVIEW_REQUIRED,
+                        post,
+                        null,
+                        null,
+                        author,
+                        null);
+            }
+        }
         // notify followers of author
         for (User u : subscriptionService.getSubscribers(author.getUsername())) {
             if (!u.getId().equals(author.getId())) {
@@ -100,7 +113,20 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
         if (post.getStatus() != PostStatus.PUBLISHED) {
-            throw new IllegalArgumentException("Post not found");
+            boolean allowed = false;
+            if (viewer != null) {
+                if (viewer.equals(post.getAuthor().getUsername())) {
+                    allowed = true;
+                } else {
+                    User viewerUser = userRepository.findByUsername(viewer).orElse(null);
+                    if (viewerUser != null && viewerUser.getRole() == Role.ADMIN) {
+                        allowed = true;
+                    }
+                }
+            }
+            if (!allowed) {
+                throw new IllegalArgumentException("Post not found");
+            }
         }
         post.setViews(post.getViews() + 1);
         post = postRepository.save(post);

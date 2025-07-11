@@ -84,6 +84,14 @@ class PublishModeIntegrationTest {
                         "tagIds", List.of(tagId)), userToken);
         Long postId = ((Number)postResp.getBody().get("id")).longValue();
 
+        // author can view pending post
+        ResponseEntity<Map> authorView = get("/api/posts/" + postId, Map.class, userToken);
+        assertEquals(HttpStatus.OK, authorView.getStatusCode());
+
+        // anonymous cannot view pending post
+        ResponseEntity<Map> anonView = get("/api/posts/" + postId, Map.class, null);
+        assertEquals(HttpStatus.BAD_REQUEST, anonView.getStatusCode());
+
         List<?> list = rest.getForObject("/api/posts", List.class);
         assertTrue(list.isEmpty(), "Post should not be listed before approval");
 
@@ -95,5 +103,8 @@ class PublishModeIntegrationTest {
 
         List<?> listAfter = rest.getForObject("/api/posts", List.class);
         assertEquals(1, listAfter.size(), "Post should appear after approval");
+
+        ResponseEntity<Map> viewAfter = get("/api/posts/" + postId, Map.class, null);
+        assertEquals(HttpStatus.OK, viewAfter.getStatusCode());
     }
 }
