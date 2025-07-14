@@ -64,6 +64,7 @@ public class NotificationController {
             dto.setReactionType(n.getReactionType());
         }
         dto.setApproved(n.getApproved());
+        dto.setContent(n.getContent());
         dto.setRead(n.isRead());
         dto.setCreatedAt(n.getCreatedAt());
         return dto;
@@ -107,6 +108,7 @@ public class NotificationController {
         private CommentDto parentComment;
         private AuthorDto fromUser;
         private ReactionType reactionType;
+        private String content;
         private Boolean approved;
         private boolean read;
         private LocalDateTime createdAt;

@@ -6,6 +6,7 @@ import SiteStatsPageView from '../views/SiteStatsPageView.vue'
 import PostPageView from '../views/PostPageView.vue'
 import LoginPageView from '../views/LoginPageView.vue'
 import SignupPageView from '../views/SignupPageView.vue'
+import SignupReasonPageView from '../views/SignupReasonPageView.vue'
 import NewPostPageView from '../views/NewPostPageView.vue'
 import SettingsPageView from '../views/SettingsPageView.vue'
 import ProfileView from '../views/ProfileView.vue'
@@ -51,6 +52,11 @@ const routes = [
     path: '/signup',
     name: 'signup',
     component: SignupPageView
+  },
+  {
+    path: '/signup-reason',
+    name: 'signup-reason',
+    component: SignupReasonPageView
   },
   {
     path: '/settings',

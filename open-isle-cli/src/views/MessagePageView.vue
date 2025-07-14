@@ -181,6 +181,15 @@
                   已提交审核
                 </NotificationContainer>
               </template>
+              <template v-else-if="item.type === 'REGISTER_REQUEST'">
+                <NotificationContainer :item="item" :markRead="markRead">
+                  {{ item.fromUser.username }} 希望注册为会员，理由是：{{ item.content }}
+                  <template #actions v-if="authState.role === 'ADMIN'">
+                    <button class="mark-read-button-item" @click="approve(item.fromUser.id, item.id)">同意</button>
+                    <button class="mark-read-button-item" @click="reject(item.fromUser.id, item.id)">拒绝</button>
+                  </template>
+                </NotificationContainer>
+              </template>
               <template v-else-if="item.type === 'POST_REVIEWED' && item.approved">
                 <NotificationContainer :item="item" :markRead="markRead">
                   您发布的帖子
@@ -226,7 +235,7 @@ import { API_BASE_URL } from '../main'
 import BaseTimeline from '../components/BaseTimeline.vue'
 import BasePlaceholder from '../components/BasePlaceholder.vue'
 import NotificationContainer from '../components/NotificationContainer.vue'
-import { getToken } from '../utils/auth'
+import { getToken, authState } from '../utils/auth'
 import { markNotificationsRead } from '../utils/notification'
 import { toast } from '../main'
 import { stripMarkdown } from '../utils/markdown'
@@ -276,7 +285,8 @@ export default {
       USER_FOLLOWED: 'fas fa-user-plus',
       USER_UNFOLLOWED: 'fas fa-user-minus',
       POST_SUBSCRIBED: 'fas fa-bookmark',
-      POST_UNSUBSCRIBED: 'fas fa-bookmark'
+      POST_UNSUBSCRIBED: 'fas fa-bookmark',
+      REGISTER_REQUEST: 'fas fa-user-clock'
     }
 
     const reactionEmojiMap = {
@@ -393,7 +403,7 @@ export default {
                 }
               }
             })
-          } else if (n.type === 'POST_REVIEW_REQUEST') {
+         } else if (n.type === 'POST_REVIEW_REQUEST') {
             notifications.value.push({
               ...n,
               src: n.fromUser ? n.fromUser.avatar : null,
@@ -405,6 +415,12 @@ export default {
                 }
               }
             })
+          } else if (n.type === 'REGISTER_REQUEST') {
+            notifications.value.push({
+              ...n,
+              icon: iconMap[n.type],
+              iconClick: () => {}
+            })
           } else {
             notifications.value.push({
               ...n,
@@ -414,6 +430,36 @@ export default {
         }
       } catch (e) {
         console.error(e)
+      }
+    }
+
+    const approve = async (id, nid) => {
+      const token = getToken()
+      if (!token) return
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${id}/approve`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        markRead(nid)
+        toast.success('已同意')
+      } else {
+        toast.error('操作失败')
+      }
+    }
+
+    const reject = async (id, nid) => {
+      const token = getToken()
+      if (!token) return
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${id}/reject`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        markRead(nid)
+        toast.success('已拒绝')
+      } else {
+        toast.error('操作失败')
       }
     }
 
@@ -456,10 +502,13 @@ export default {
       sanitizeDescription,
       isLoadingMessage,
       markRead,
+      approve,
+      reject,
       TimeManager,
       selectedTab,
       filteredNotifications,
-      markAllRead
+      markAllRead,
+      authState
     }
   }
 }

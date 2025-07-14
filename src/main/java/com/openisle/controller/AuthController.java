@@ -7,7 +7,10 @@ import com.openisle.service.UserService;
 import com.openisle.service.CaptchaService;
 import com.openisle.service.GoogleAuthService;
 import com.openisle.service.RegisterModeService;
+import com.openisle.service.NotificationService;
 import com.openisle.model.RegisterMode;
+import com.openisle.model.NotificationType;
+import com.openisle.repository.UserRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +29,8 @@ public class AuthController {
     private final CaptchaService captchaService;
     private final GoogleAuthService googleAuthService;
     private final RegisterModeService registerModeService;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     @Value("${app.captcha.enabled:false}")
     private boolean captchaEnabled;
@@ -44,6 +49,12 @@ public class AuthController {
         User user = userService.register(
                 req.getUsername(), req.getEmail(), req.getPassword(), req.getReason(), registerModeService.getRegisterMode());
         emailService.sendEmail(user.getEmail(), "Verification Code", "Your verification code is " + user.getVerificationCode());
+        if (!user.isApproved()) {
+            for (User admin : userRepository.findByRole(com.openisle.model.Role.ADMIN)) {
+                notificationService.createNotification(admin, NotificationType.REGISTER_REQUEST, null, null,
+                        null, user, null, user.getRegisterReason());
+            }
+        }
         return ResponseEntity.ok(Map.of("message", "Verification code sent"));
     }
 
