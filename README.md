@@ -35,6 +35,7 @@ OpenIsle 基于 Spring Boot 构建，提供社区后台常见的注册、登录�
 - Java 17+
 - Maven 3+
 - MySQL 数据库
+- Docker（可选，便于本地开发）
 
 ### 运行
 
@@ -57,6 +58,12 @@ OpenIsle 基于 Spring Boot 构建，提供社区后台常见的注册、登录�
    - `CAPTCHA_COMMENT_ENABLED`：评论是否需要验证码
    - `OPENAI_API_KEY`：OpenAI 接口密钥
    - `OPENAI_MODEL`：调用的模型名称，默认为 `gpt-4o`
+
+在本地没有 MySQL 环境时，可先执行
+```bash
+docker-compose up -d
+```
+来启动随附的数据库容器。
 2. 启动项目：
 
 ```bash
