@@ -40,6 +40,10 @@
           <div class="setting-title">AI 优化次数</div>
           <Dropdown v-model="aiFormatLimit" :fetch-options="fetchAiLimits" />
         </div>
+        <div class="form-row dropdown-row">
+          <div class="setting-title">注册模式</div>
+          <Dropdown v-model="registerMode" :fetch-options="fetchRegisterModes" />
+        </div>
       </div>
       <div class="buttons">
         <div v-if="isSaving" class="save-button disabled">保存中...</div>
@@ -70,6 +74,7 @@ export default {
       publishMode: 'DIRECT',
       passwordStrength: 'LOW',
       aiFormatLimit: 3,
+      registerMode: 'DIRECT',
       isLoadingPage: false,
       isSaving: false
     }
@@ -122,6 +127,12 @@ export default {
         { id: -1, name: '无限' }
       ])
     },
+    fetchRegisterModes() {
+      return Promise.resolve([
+        { id: 'DIRECT', name: '直接注册', icon: 'fas fa-user-check' },
+        { id: 'WHITELIST', name: '白名单邀请制', icon: 'fas fa-envelope' }
+      ])
+    },
     async loadAdminConfig() {
       try {
         const token = getToken()
@@ -133,6 +144,7 @@ export default {
           this.publishMode = data.publishMode
           this.passwordStrength = data.passwordStrength
           this.aiFormatLimit = data.aiFormatLimit
+          this.registerMode = data.registerMode
         }
       } catch (e) {
         // ignore
@@ -183,7 +195,7 @@ export default {
           await fetch(`${API_BASE_URL}/api/admin/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ publishMode: this.publishMode, passwordStrength: this.passwordStrength, aiFormatLimit: this.aiFormatLimit })
+            body: JSON.stringify({ publishMode: this.publishMode, passwordStrength: this.passwordStrength, aiFormatLimit: this.aiFormatLimit, registerMode: this.registerMode })
           })
         }
         toast.success('保存成功')

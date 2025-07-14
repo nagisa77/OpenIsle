@@ -94,6 +94,7 @@ export default {
       email: '',
       username: '',
       password: '',
+      registerMode: 'DIRECT',
       emailError: '',
       usernameError: '',
       passwordError: '',
@@ -101,6 +102,19 @@ export default {
       code: '',
       isWaitingForEmailSent: false,
       isWaitingForEmailVerified: false
+    }
+  },
+  async mounted() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/config`)
+      if (res.ok) {
+        const data = await res.json()
+        this.registerMode = data.registerMode
+      }
+    } catch {}
+    if (this.$route.query.verify) {
+      this.emailStep = 1
+      this.username = sessionStorage.getItem('signup_username') || ''
     }
   },
   methods: {
@@ -126,6 +140,13 @@ export default {
       if (this.emailError || this.passwordError || this.usernameError) {
         return
       }
+      if (this.registerMode === 'WHITELIST') {
+        sessionStorage.setItem('signup_username', this.username)
+        sessionStorage.setItem('signup_email', this.email)
+        sessionStorage.setItem('signup_password', this.password)
+        this.$router.push('/signup-reason')
+        return
+      }
       try {
         console.log('base url: ', API_BASE_URL)
         this.isWaitingForEmailSent = true
@@ -135,7 +156,7 @@ export default {
           body: JSON.stringify({
             username: this.username,
             email: this.email,
-            password: this.password,
+            password: this.password
           })
         })
         this.isWaitingForEmailSent = false
@@ -175,9 +196,13 @@ export default {
       }
     },
     signupWithGoogle() {
-      googleSignIn(() => {
-        this.$router.push('/')
-      })
+      if (this.registerMode === 'WHITELIST') {
+        this.$router.push('/signup-reason?google=1')
+      } else {
+        googleSignIn(() => {
+          this.$router.push('/')
+        })
+      }
     }
   }
 }
