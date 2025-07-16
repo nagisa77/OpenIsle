@@ -15,6 +15,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import java.util.*;
 
@@ -44,6 +46,12 @@ public class TwitterAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        if (!clientId.isEmpty() && !clientSecret.isEmpty()) {
+            String credentials = clientId + ":" + clientSecret;
+            String authHeader = "Basic " + Base64.getEncoder()
+                    .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+            headers.set(HttpHeaders.AUTHORIZATION, authHeader);
+        }
 
         // Twitter PKCE 要求的五个参数
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
