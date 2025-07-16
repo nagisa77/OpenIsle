@@ -77,6 +77,26 @@ mvn spring-boot:run
 - 需要认证的接口示例：`GET /api/hello`（需 `Authorization` 头）
 - 管理员接口示例：`GET /api/admin/hello`
 
+## 🎵 音频处理
+
+为保证平台中音频文件的一致性，所有本地音乐或合成语音上传前都需转为如下规格：
+
+- **采样率**：44100 Hz
+- **声道数**：2（立体声）
+- **平均码率**：192 kbps
+
+项目根目录新增的 `scripts/convert_audio.sh` 脚本提供了批量转换与静音片段生成能力：
+
+```bash
+# 转换音频文件
+./scripts/convert_audio.sh input.mp3 output.mp3
+
+# 生成指定时长的静音 mp3（默认 1 秒）
+./scripts/convert_audio.sh --silent silence.mp3 1
+```
+
+除了 `tts` 与 `sounds_effect` 类型外，现新增 `silent` 类型，可通过 `direction` 属性指示静音位置或时长。播放流程要求在播报标题后先停顿 1 秒，再开始播报摘要内容，可利用上述脚本生成的静音文件进行拼接。
+
 ## 🏘️ 社区
 
 欢迎通过 [Issues](https://github.com/nagisa77/OpenIsle/issues) 交流反馈。
