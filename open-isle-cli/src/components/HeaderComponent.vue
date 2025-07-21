@@ -13,6 +13,7 @@
       </div>
 
       <div v-if="isLogin" class="header-content-right">
+        <i v-if="isMobile" class="fas fa-search mobile-search-icon" @click="showMobileSearch = true"></i>
         <DropdownMenu ref="userMenu" :items="headerMenuItems">
           <template #trigger>
             <div class="avatar-container">
@@ -24,21 +25,35 @@
       </div>
 
       <div v-else class="header-content-right">
+        <i v-if="isMobile" class="fas fa-search mobile-search-icon" @click="showMobileSearch = true"></i>
         <div class="header-content-item-main" @click="goToLogin">登录</div>
         <div class="header-content-item-secondary" @click="goToSignup">注册</div>
       </div>
     </div>
   </header>
+  <teleport to="body">
+    <div v-if="isMobile && showMobileSearch" class="mobile-search-page">
+      <div class="mobile-search-header">
+        <i class="fas fa-arrow-left back-icon" @click="showMobileSearch = false"></i>
+      </div>
+      <SearchDropdown @selected="showMobileSearch = false" />
+    </div>
+  </teleport>
 </template>
 
 <script>
 import { authState, clearToken, loadCurrentUser } from '../utils/auth'
 import { watch } from 'vue'
 import DropdownMenu from './DropdownMenu.vue'
+import SearchDropdown from './SearchDropdown.vue'
+import { isMobile } from '../utils/screen'
 
 export default {
   name: 'HeaderComponent',
-  components: { DropdownMenu },
+  components: { DropdownMenu, SearchDropdown },
+  setup() {
+    return { isMobile }
+  },
   props: {
     showMenuBtn: {
       type: Boolean,
@@ -47,7 +62,8 @@ export default {
   },
   data() {
     return {
-      avatar: ''
+      avatar: '',
+      showMobileSearch: false
     }
   },
   computed: {
@@ -80,6 +96,7 @@ export default {
 
     watch(() => this.$route.fullPath, () => {
       if (this.$refs.userMenu) this.$refs.userMenu.close()
+      this.showMobileSearch = false
     })
   },
 
@@ -225,6 +242,31 @@ export default {
 
 .dropdown-item:hover {
   background-color: var(--menu-selected-background-color);
+}
+
+.mobile-search-icon {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.mobile-search-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-color);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-search-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--normal-border-color);
 }
 
 @media (max-width: 1200px) {

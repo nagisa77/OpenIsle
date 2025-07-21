@@ -32,7 +32,8 @@ import { stripMarkdown } from '../utils/markdown'
 export default {
   name: 'SearchDropdown',
   components: { Dropdown },
-  setup() {
+  emits: ['selected'],
+  setup(props, { emit }) {
     const router = useRouter()
     const keyword = ref('')
     const selected = ref(null)
@@ -83,6 +84,7 @@ export default {
       }
       selected.value = null
       keyword.value = ''
+      emit('selected')
     })
 
     return { keyword, selected, fetchResults, highlight, iconMap }
@@ -151,5 +153,18 @@ export default {
 .result-extra {
   font-size: 12px;
   color: #666;
+}
+
+@media (max-width: 768px) {
+  .search-dropdown {
+    width: 100%;
+    margin-top: 0;
+    padding: 10px;
+  }
+
+  .search-menu {
+    max-width: none;
+    width: 100%;
+  }
 }
 </style>
