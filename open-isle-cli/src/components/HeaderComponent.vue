@@ -13,6 +13,7 @@
       </div>
 
       <div v-if="isLogin" class="header-content-right">
+        <SearchDropdown v-if="isMobile" />
         <DropdownMenu ref="userMenu" :items="headerMenuItems">
           <template #trigger>
             <div class="avatar-container">
@@ -24,6 +25,7 @@
       </div>
 
       <div v-else class="header-content-right">
+        <SearchDropdown v-if="isMobile" />
         <div class="header-content-item-main" @click="goToLogin">登录</div>
         <div class="header-content-item-secondary" @click="goToSignup">注册</div>
       </div>
@@ -35,10 +37,12 @@
 import { authState, clearToken, loadCurrentUser } from '../utils/auth'
 import { watch } from 'vue'
 import DropdownMenu from './DropdownMenu.vue'
+import SearchDropdown from './SearchDropdown.vue'
+import { isMobile } from '../utils/screen'
 
 export default {
   name: 'HeaderComponent',
-  components: { DropdownMenu },
+  components: { DropdownMenu, SearchDropdown },
   props: {
     showMenuBtn: {
       type: Boolean,
@@ -53,6 +57,9 @@ export default {
   computed: {
     isLogin() {
       return authState.loggedIn
+    },
+    isMobile() {
+      return isMobile.value
     },
     headerMenuItems() {
       return [

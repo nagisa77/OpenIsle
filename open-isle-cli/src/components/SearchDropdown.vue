@@ -1,12 +1,13 @@
 <template>
   <div class="search-dropdown">
     <Dropdown v-model="selected" :fetch-options="fetchResults" remote menu-class="search-menu"
-      option-class="search-option" :show-search="false">
+      option-class="search-option" :show-search="isMobile">
       <template #display="{ toggle, setSearch }">
-        <div class="search-input" @click="toggle">
+        <div v-if="!isMobile" class="search-input" @click="toggle">
           <i class="search-input-icon fas fa-search"></i>
           <input class="text-input" v-model="keyword" placeholder="Search" @focus="toggle" @input="setSearch(keyword)" />
         </div>
+        <i v-else class="header-search-icon fas fa-search" @click="toggle"></i>
       </template>
       <template #option="{ option }">
         <div class="search-option-item">
@@ -24,6 +25,7 @@
 
 <script>
 import { ref, watch } from 'vue'
+import { isMobile } from '../utils/screen'
 import { useRouter } from 'vue-router'
 import Dropdown from './Dropdown.vue'
 import { API_BASE_URL } from '../main'
@@ -85,7 +87,7 @@ export default {
       keyword.value = ''
     })
 
-    return { keyword, selected, fetchResults, highlight, iconMap }
+    return { keyword, selected, fetchResults, highlight, iconMap, isMobile }
   }
 }
 </script>
@@ -151,5 +153,10 @@ export default {
 .result-extra {
   font-size: 12px;
   color: #666;
+}
+
+.header-search-icon {
+  font-size: 20px;
+  cursor: pointer;
 }
 </style>

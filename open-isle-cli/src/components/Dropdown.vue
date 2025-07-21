@@ -32,7 +32,8 @@
         <i class="fas fa-caret-down dropdown-caret"></i>
       </slot>
     </div>
-    <div v-if="open && (loading || filteredOptions.length > 0 || showSearch)" :class="['dropdown-menu', menuClass]">
+    <div v-if="open && !isMobile && (loading || filteredOptions.length > 0 || showSearch)"
+      :class="['dropdown-menu', menuClass]">
       <div v-if="showSearch" class="dropdown-search">
         <i class="fas fa-search search-icon"></i>
         <input type="text" v-model="search" placeholder="搜索" />
@@ -53,11 +54,42 @@
         </div>
       </template>
     </div>
+
+    <teleport to="body">
+      <div v-if="open && isMobile" class="mobile-dropdown-page">
+        <div class="mobile-dropdown-header">
+          <i class="fas fa-arrow-left back-icon" @click="close"></i>
+          <span class="mobile-dropdown-title">{{ placeholder }}</span>
+        </div>
+        <div class="mobile-dropdown-menu">
+          <div v-if="showSearch" class="dropdown-search">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" v-model="search" placeholder="搜索" />
+          </div>
+          <div v-if="loading" class="dropdown-loading">
+            <l-hatch size="20" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+          </div>
+          <template v-else>
+            <div v-for="o in filteredOptions" :key="o.id" @click="select(o.id)"
+              :class="['dropdown-option', optionClass, { 'selected': isSelected(o.id) }]">
+              <slot name="option" :option="o" :isSelected="isSelected(o.id)">
+                <template v-if="o.icon">
+                  <img v-if="isImageIcon(o.icon)" :src="o.icon" class="option-icon" />
+                  <i v-else :class="['option-icon', o.icon]"></i>
+                </template>
+                <span>{{ o.name }}</span>
+              </slot>
+            </div>
+          </template>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { isMobile } from '../utils/screen'
 import { hatch } from 'ldrs'
 hatch.register()
 
@@ -201,7 +233,8 @@ export default {
       isSelected,
       loading,
       isImageIcon,
-      setSearch
+      setSearch,
+      isMobile
     }
   }
 }
@@ -291,5 +324,40 @@ export default {
   display: flex;
   justify-content: center;
   padding: 10px 0;
+}
+
+.mobile-dropdown-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-color);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-dropdown-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--normal-border-color);
+}
+
+.mobile-dropdown-menu {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.back-icon {
+  font-size: 18px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.mobile-dropdown-title {
+  font-weight: bold;
 }
 </style>
