@@ -43,8 +43,8 @@
 </template>
 
 <script>
-import ProgressBar from '../components/ProgressBar.vue'
-import LevelProgress from '../components/LevelProgress.vue'
+import ProgressBar from './ProgressBar.vue'
+import LevelProgress from './LevelProgress.vue'
 import BaseInput from './BaseInput.vue'
 import BasePopup from './BasePopup.vue'
 import { API_BASE_URL, toast } from '../main'
