@@ -10,7 +10,12 @@
     <div class="info-content">
       <div class="common-info-content-header">
         <div class="info-content-header-left">
-          <div class="user-name">{{ comment.userName }}</div>
+          <div class="user-name">
+            {{ comment.userName }}
+            <template v-if="comment.replyToName">
+              回复 {{ comment.replyToName }}
+            </template>
+          </div>
           <div class="post-time">{{ comment.time }}</div>
         </div>
         <div class="info-content-header-right">
@@ -41,18 +46,11 @@
         {{ replyCount }}条回复
       </div>
       <div v-if="showReplies" class="reply-list">
-        <BaseTimeline :items="comment.reply">
+        <BaseTimeline :items="displayReplies">
           <template #item="{ item }">
             <CommentItem :key="item.id" :comment="item" :level="level + 1" :default-show-replies="item.openReplies" />
           </template>
         </BaseTimeline>
-        <!-- <CommentItem
-          v-for="r in comment.reply"
-          :key="r.id"
-          :comment="r"
-          :level="level + 1"
-          :default-show-replies="r.openReplies"
-        /> -->
       </div>
       <vue-easy-lightbox
         :visible="lightboxVisible"
@@ -111,7 +109,12 @@ const CommentItem = {
     const lightboxImgs = ref([])
     const loggedIn = computed(() => authState.loggedIn)
     const countReplies = (list) => list.reduce((sum, r) => sum + 1 + countReplies(r.reply || []), 0)
-    const replyCount = computed(() => countReplies(props.comment.reply || []))
+    const replyCount = computed(() => props.level === 0 ? countReplies(props.comment.reply || []) : 0)
+    const flattenReplies = (list, parentName) =>
+      list.flatMap(r => [{ ...r, replyToName: parentName }, ...flattenReplies(r.reply || [], r.userName)])
+    const displayReplies = computed(() =>
+      props.level === 0 ? flattenReplies(props.comment.reply || [], props.comment.userName) : []
+    )
     const toggleReplies = () => {
       showReplies.value = !showReplies.value
     }
@@ -179,7 +182,8 @@ const CommentItem = {
             })),
             openReplies: false,
             src: data.author.avatar,
-            iconClick: () => router.push(`/users/${data.author.id}`)
+            iconClick: () => router.push(`/users/${data.author.id}`),
+            replyToName: props.comment.userName
           })
           showEditor.value = false
           toast.success('回复成功')
@@ -208,7 +212,7 @@ const CommentItem = {
         lightboxVisible.value = true
       }
     }
-    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount }
+    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, displayReplies }
   }
 }
 
