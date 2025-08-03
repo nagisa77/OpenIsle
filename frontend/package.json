@@ -17,7 +17,8 @@
     "vue-easy-lightbox": "^1.19.0",
     "vue-echarts": "^7.0.3",
     "vue-router": "^4.5.1",
-    "vue-toastification": "^2.0.0-rc.5"
+    "vue-toastification": "^2.0.0-rc.5",
+    "firebase": "^10.12.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

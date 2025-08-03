@@ -1,6 +1,8 @@
 import { API_BASE_URL, GOOGLE_CLIENT_ID, toast } from '../main'
 import { setToken, loadCurrentUser } from './auth'
 import { registerPush } from './push'
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { auth } from './firebase'
 
 export async function googleGetIdToken() {
   return new Promise((resolve, reject) => {
@@ -64,4 +66,24 @@ export function loginWithGoogle() {
       router.push('/signup-reason?token=' + token)
     }
   )
+}
+
+export async function loginWithGoogleWithPop() {
+  try {
+    const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({ prompt: 'select_account' })
+    const result = await signInWithPopup(auth, provider)
+    const idToken = await result.user.getIdToken()
+    await googleAuthWithToken(
+      idToken,
+      () => {
+        router.push('/')
+      },
+      token => {
+        router.push('/signup-reason?token=' + token)
+      }
+    )
+  } catch (e) {
+    toast.error('登录失败')
+  }
 }
