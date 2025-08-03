@@ -12,6 +12,7 @@
         <div class="info-content-header-left">
           <div class="user-name">{{ comment.userName }}</div>
           <div class="post-time">{{ comment.time }}</div>
+          <div v-if="parentUserName" class="reply-to">回复 {{ parentUserName }}</div>
         </div>
         <div class="info-content-header-right">
           <DropdownMenu v-if="commentMenuItems.length > 0" :items="commentMenuItems">
@@ -41,18 +42,29 @@
         {{ replyCount }}条回复
       </div>
       <div v-if="showReplies" class="reply-list">
-        <BaseTimeline :items="comment.reply">
-          <template #item="{ item }">
-            <CommentItem :key="item.id" :comment="item" :level="level + 1" :default-show-replies="item.openReplies" />
-          </template>
-        </BaseTimeline>
-        <!-- <CommentItem
-          v-for="r in comment.reply"
-          :key="r.id"
-          :comment="r"
-          :level="level + 1"
-          :default-show-replies="r.openReplies"
-        /> -->
+        <template v-if="level < 2">
+          <BaseTimeline :items="comment.reply">
+            <template #item="{ item }">
+              <CommentItem
+                :key="item.id"
+                :comment="item"
+                :level="Math.min(level + 1, 2)"
+                :default-show-replies="item.openReplies"
+                :parent-user-name="comment.userName"
+              />
+            </template>
+          </BaseTimeline>
+        </template>
+        <template v-else>
+          <div v-for="item in comment.reply" :key="item.id" class="flat-reply-item">
+            <CommentItem
+              :comment="item"
+              :level="2"
+              :default-show-replies="item.openReplies"
+              :parent-user-name="comment.userName"
+            />
+          </div>
+        </template>
       </div>
       <vue-easy-lightbox
         :visible="lightboxVisible"
@@ -93,6 +105,10 @@ const CommentItem = {
     defaultShowReplies: {
       type: Boolean,
       default: false
+    },
+    parentUserName: {
+      type: String,
+      default: ''
     }
   },
   setup(props, { emit }) {
@@ -208,7 +224,7 @@ const CommentItem = {
         lightboxVisible.value = true
       }
     }
-    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount }
+    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, parentUserName: props.parentUserName }
   }
 }
 
@@ -247,6 +263,15 @@ export default CommentItem
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+}
+
+.reply-to {
+  margin-left: 10px;
+  color: var(--text-color-light);
+}
+
+.flat-reply-item {
+  margin-top: 10px;
 }
 
 
