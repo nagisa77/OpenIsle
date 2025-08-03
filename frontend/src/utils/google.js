@@ -53,10 +53,47 @@ export async function googleSignIn(redirect_success, redirect_not_approved) {
   }
 }
 
+export async function googleGetIdTokenWithNewWindow() {
+  return new Promise((resolve, reject) => {
+    if (!window.google || !GOOGLE_CLIENT_ID) {
+      toast.error('Google 登录不可用, 请检查网络设置与VPN')
+      reject()
+      return
+    }
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: ({ credential }) => resolve(credential),
+      ux_mode: 'popup',
+      use_fedcm: false
+    })
+    window.google.accounts.id.prompt()
+  })
+}
+
+export async function googleSignInWithNewWindow(redirect_success, redirect_not_approved) {
+  try {
+    const token = await googleGetIdTokenWithNewWindow()
+    await googleAuthWithToken(token, redirect_success, redirect_not_approved)
+  } catch {
+    /* ignore */
+  }
+}
+
 import router from '../router'
 
 export function loginWithGoogle() {
   googleSignIn(
+    () => {
+      router.push('/')
+    },
+    token => {
+      router.push('/signup-reason?token=' + token)
+    }
+  )
+}
+
+export function loginWithGoogleWithNewWindow() {
+  googleSignInWithNewWindow(
     () => {
       router.push('/')
     },

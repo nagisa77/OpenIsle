@@ -31,7 +31,7 @@
     </div>
 
     <div class="other-login-page-content">
-      <div class="login-page-button" @click="loginWithGoogle">
+      <div class="login-page-button" @click="loginWithGoogleWithNewWindow">
         <img class="login-page-button-icon" src="../assets/icons/google.svg" alt="Google Logo" />
         <div class="login-page-button-text">Google 登录</div>
       </div>
@@ -54,7 +54,7 @@
 <script>
 import { API_BASE_URL, toast } from '../main'
 import { setToken, loadCurrentUser } from '../utils/auth'
-import { loginWithGoogle } from '../utils/google'
+import { loginWithGoogleWithNewWindow } from '../utils/google'
 import { githubAuthorize } from '../utils/github'
 import { discordAuthorize } from '../utils/discord'
 import { twitterAuthorize } from '../utils/twitter'
@@ -64,8 +64,8 @@ export default {
   name: 'LoginPageView',
   components: { BaseInput },
   setup() {
-    return { loginWithGoogle }
-  }, 
+    return { loginWithGoogleWithNewWindow }
+  },
   data() {
     return {
       username: '',
