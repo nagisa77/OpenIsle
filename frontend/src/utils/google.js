@@ -2,7 +2,7 @@ import { API_BASE_URL, GOOGLE_CLIENT_ID, toast } from '../main'
 import { setToken, loadCurrentUser } from './auth'
 import { registerPush } from './push'
 
-export async function googleGetIdToken() {
+export async function googleGetIdToken(useFedcm = true) {
   return new Promise((resolve, reject) => {
     if (!window.google || !GOOGLE_CLIENT_ID) {
       toast.error('Google 登录不可用, 请检查网络设置与VPN')
@@ -12,7 +12,7 @@ export async function googleGetIdToken() {
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: ({ credential }) => resolve(credential),
-      use_fedcm: true 
+      ...(useFedcm ? { use_fedcm: true } : { ux_mode: 'popup' })
     })
     window.google.accounts.id.prompt()
   })
@@ -46,7 +46,16 @@ export async function googleAuthWithToken(idToken, redirect_success, redirect_no
 
 export async function googleSignIn(redirect_success, redirect_not_approved) {
   try {
-    const token = await googleGetIdToken()
+    const token = await googleGetIdToken(true)
+    await googleAuthWithToken(token, redirect_success, redirect_not_approved)
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function googleSignInWithNewWindow(redirect_success, redirect_not_approved) {
+  try {
+    const token = await googleGetIdToken(false)
     await googleAuthWithToken(token, redirect_success, redirect_not_approved)
   } catch {
     /* ignore */
@@ -57,6 +66,17 @@ import router from '../router'
 
 export function loginWithGoogle() {
   googleSignIn(
+    () => {
+      router.push('/')
+    },
+    token => {
+      router.push('/signup-reason?token=' + token)
+    }
+  )
+}
+
+export function loginWithGoogleWithNewWindow() {
+  googleSignInWithNewWindow(
     () => {
       router.push('/')
     },

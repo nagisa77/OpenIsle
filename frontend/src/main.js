@@ -10,7 +10,7 @@ import './assets/toast.css'
 import { useToast } from 'vue-toastification'
 import { checkToken, clearToken, isLogin } from './utils/auth'
 import { initTheme } from './utils/theme'
-import { loginWithGoogle } from './utils/google'
+import { loginWithGoogleWithNewWindow } from './utils/google'
 import { clearVditorStorage } from './utils/clearVditorStorage'
 
 // Configurable API domain and port
@@ -53,7 +53,7 @@ checkToken().then(valid => {
 
   if (!isLogin()) {
     setTimeout(() => {
-      loginWithGoogle()
+      loginWithGoogleWithNewWindow()
     }, 3000)
   }
 })
