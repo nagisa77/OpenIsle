@@ -79,8 +79,14 @@
       <div v-else class="comments-container">
         <BaseTimeline :items="comments"> 
           <template #item="{ item }">
-            <CommentItem :key="item.id" :comment="item" :level="0" :default-show-replies="item.openReplies"
-              @deleted="onCommentDeleted" />
+            <CommentItem
+              :key="item.id"
+              :comment="item"
+              :level="0"
+              :default-show-replies="item.openReplies"
+              :conversation-list="item.reply"
+              @deleted="onCommentDeleted"
+            />
           </template>
         </BaseTimeline>
       </div>
@@ -216,18 +222,48 @@ export default {
       }
     }
 
-    const mapComment = (c, level = 0) => ({
-      id: c.id,
-      userName: c.author.username,
-      time: TimeManager.format(c.createdAt),
-      avatar: c.author.avatar,
-      text: c.content,
-      reactions: c.reactions || [],
-      reply: (c.replies || []).map(r => mapComment(r, level + 1)),
-      openReplies: level === 0,
-      src: c.author.avatar,
-      iconClick: () => router.push(`/users/${c.author.id}`)
-    })
+    const mapComment = (c, level = 0, parentUserName = null) => {
+      const item = {
+        id: c.id,
+        userName: c.author.username,
+        parentUserName,
+        time: TimeManager.format(c.createdAt),
+        avatar: c.author.avatar,
+        text: c.content,
+        reactions: c.reactions || [],
+        reply: [],
+        openReplies: level === 0,
+        src: c.author.avatar,
+        iconClick: () => router.push(`/users/${c.author.id}`)
+      }
+      if (level < 2) {
+        item.reply = (c.replies || []).map(r => mapComment(r, level + 1, c.author.username))
+      } else {
+        const flattenComment = (comment, pName) => ({
+          id: comment.id,
+          userName: comment.author.username,
+          parentUserName: pName,
+          time: TimeManager.format(comment.createdAt),
+          avatar: comment.author.avatar,
+          text: comment.content,
+          reactions: comment.reactions || [],
+          reply: [],
+          openReplies: false,
+          src: comment.author.avatar,
+          iconClick: () => router.push(`/users/${comment.author.id}`)
+        })
+        const flatten = (list, pName) => {
+          let res = []
+          for (const child of list) {
+            res.push(flattenComment(child, pName))
+            res = res.concat(flatten(child.replies || [], child.author.username))
+          }
+          return res
+        }
+        item.reply = flatten(c.replies || [], c.author.username)
+      }
+      return item
+    }
 
     const getTopRelativeTo = (el, container) => {
       const elRect = el.getBoundingClientRect()

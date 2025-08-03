@@ -10,7 +10,12 @@
     <div class="info-content">
       <div class="common-info-content-header">
         <div class="info-content-header-left">
-          <div class="user-name">{{ comment.userName }}</div>
+          <div class="user-name">
+            {{ comment.userName }}
+            <template v-if="comment.parentUserName">
+              <span class="reply-to">回复 {{ comment.parentUserName }}</span>
+            </template>
+          </div>
           <div class="post-time">{{ comment.time }}</div>
         </div>
         <div class="info-content-header-right">
@@ -43,7 +48,14 @@
       <div v-if="showReplies" class="reply-list">
         <BaseTimeline :items="comment.reply">
           <template #item="{ item }">
-            <CommentItem :key="item.id" :comment="item" :level="level + 1" :default-show-replies="item.openReplies" />
+            <CommentItem
+              :key="item.id"
+              :comment="item"
+              :level="Math.min(level + 1, 2)"
+              :default-show-replies="item.openReplies"
+              :conversation-list="level < 2 ? item.reply : conversationList"
+              @deleted="onReplyDeleted"
+            />
           </template>
         </BaseTimeline>
         <!-- <CommentItem
@@ -93,6 +105,10 @@ const CommentItem = {
     defaultShowReplies: {
       type: Boolean,
       default: false
+    },
+    conversationList: {
+      type: Array,
+      default: null
     }
   },
   setup(props, { emit }) {
@@ -157,26 +173,16 @@ const CommentItem = {
         })
         if (res.ok) {
           const data = await res.json()
-          const replyList = props.comment.reply || (props.comment.reply = [])
+          const replyList = props.conversationList || (props.comment.reply || (props.comment.reply = []))
           replyList.push({
             id: data.id,
             userName: data.author.username,
+            parentUserName: props.comment.userName,
             time: TimeManager.format(data.createdAt),
             avatar: data.author.avatar,
             text: data.content,
             reactions: [],
-            reply: (data.replies || []).map(r => ({
-              id: r.id,
-              userName: r.author.username,
-              time: TimeManager.format(r.createdAt),
-              avatar: r.author.avatar,
-              text: r.content,
-              reactions: r.reactions || [],
-              reply: [],
-              openReplies: false,
-              src: r.author.avatar,
-              iconClick: () => router.push(`/users/${r.author.id}`)
-            })),
+            reply: [],
             openReplies: false,
             src: data.author.avatar,
             iconClick: () => router.push(`/users/${data.author.id}`)
@@ -190,6 +196,13 @@ const CommentItem = {
         toast.error('回复失败')
       } finally {
         isWaitingForReply.value = false
+      }
+    }
+    const onReplyDeleted = (id) => {
+      const list = props.conversationList || props.comment.reply || []
+      const idx = list.findIndex(r => r.id === id)
+      if (idx !== -1) {
+        list.splice(idx, 1)
       }
     }
     const copyCommentLink = () => {
@@ -208,7 +221,7 @@ const CommentItem = {
         lightboxVisible.value = true
       }
     }
-    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount }
+    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, onReplyDeleted }
   }
 }
 
@@ -247,6 +260,10 @@ export default CommentItem
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+}
+
+.reply-to {
+  margin-left: 4px;
 }
 
 
