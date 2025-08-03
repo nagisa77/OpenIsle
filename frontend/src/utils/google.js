@@ -65,3 +65,55 @@ export function loginWithGoogle() {
     }
   )
 }
+
+export function loginWithGoogleWithNewWindow() {
+  const popup = window.open('', 'google-login', 'width=500,height=600')
+  if (!popup) {
+    toast.error('弹出窗口被拦截, 请允许弹出窗口')
+    return
+  }
+
+  const handleMessage = async event => {
+    if (event.source !== popup) return
+    if (event.data && event.data.credential) {
+      window.removeEventListener('message', handleMessage)
+      await googleAuthWithToken(
+        event.data.credential,
+        () => {
+          router.push('/')
+        },
+        token => {
+          router.push('/signup-reason?token=' + token)
+        }
+      )
+      popup.close()
+    }
+  }
+
+  window.addEventListener('message', handleMessage)
+
+  popup.document.write(`
+    <html>
+      <head>
+        <title>Google Login</title>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+          function init() {
+            google.accounts.id.initialize({
+              client_id: '${GOOGLE_CLIENT_ID}',
+              callback: function(res) {
+                window.opener.postMessage({ credential: res.credential }, '*')
+              },
+              use_fedcm: true
+            })
+            google.accounts.id.prompt()
+          }
+          window.onload = init
+        </script>
+      </head>
+      <body>
+        <p>Loading...</p>
+      </body>
+    </html>
+  `)
+}
