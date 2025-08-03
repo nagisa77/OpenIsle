@@ -67,7 +67,7 @@
     </div>
 
     <div class="other-signup-page-content">
-      <div class="signup-page-button" @click="loginWithGoogle">
+      <div class="signup-page-button" @click="loginWithGoogleWithPop">
         <img class="signup-page-button-icon" src="../assets/icons/google.svg" alt="Google Logo" />
         <div class="signup-page-button-text">Google 注册</div>
       </div>
@@ -89,7 +89,7 @@
 
 <script>
 import { API_BASE_URL, toast } from '../main'
-import { loginWithGoogle } from '../utils/google'
+import { loginWithGoogleWithPop } from '../utils/google'
 import { githubAuthorize } from '../utils/github'
 import { discordAuthorize } from '../utils/discord'
 import { twitterAuthorize } from '../utils/twitter'
@@ -98,7 +98,7 @@ export default {
   name: 'SignupPageView',
   components: { BaseInput },
   setup() {
-    return { loginWithGoogle }
+    return { loginWithGoogleWithPop }
   },
   data() {
     return {
