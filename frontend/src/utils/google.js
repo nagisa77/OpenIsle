@@ -65,3 +65,16 @@ export function loginWithGoogle() {
     }
   )
 }
+
+export function loginWithGoogleWithNewWindow() {
+  const width = 500
+  const height = 600
+  const left = (window.screen.width - width) / 2
+  const top = (window.screen.height - height) / 2
+  const url = `${window.location.origin}/login?popup=1`
+  window.open(
+    url,
+    'GoogleLoginWindow',
+    `width=${width},height=${height},left=${left},top=${top}`
+  )
+}

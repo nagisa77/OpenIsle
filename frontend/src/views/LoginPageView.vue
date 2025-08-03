@@ -31,7 +31,7 @@
     </div>
 
     <div class="other-login-page-content">
-      <div class="login-page-button" @click="loginWithGoogle">
+      <div class="login-page-button" @click="loginWithGoogleWithNewWindow">
         <img class="login-page-button-icon" src="../assets/icons/google.svg" alt="Google Logo" />
         <div class="login-page-button-text">Google 登录</div>
       </div>
@@ -54,18 +54,39 @@
 <script>
 import { API_BASE_URL, toast } from '../main'
 import { setToken, loadCurrentUser } from '../utils/auth'
-import { loginWithGoogle } from '../utils/google'
+import { loginWithGoogleWithNewWindow, googleSignIn } from '../utils/google'
 import { githubAuthorize } from '../utils/github'
 import { discordAuthorize } from '../utils/discord'
 import { twitterAuthorize } from '../utils/twitter'
 import BaseInput from '../components/BaseInput.vue'
 import { registerPush } from '../utils/push'
+import { useRoute } from 'vue-router'
+import { onMounted } from 'vue'
 export default {
   name: 'LoginPageView',
   components: { BaseInput },
   setup() {
-    return { loginWithGoogle }
-  }, 
+    const route = useRoute()
+    onMounted(() => {
+      if (route.query.popup === '1') {
+        googleSignIn(
+          () => {
+            if (window.opener) {
+              window.opener.location.reload()
+            }
+            window.close()
+          },
+          token => {
+            if (window.opener) {
+              window.opener.location.href = '/signup-reason?token=' + token
+            }
+            window.close()
+          }
+        )
+      }
+    })
+    return { loginWithGoogleWithNewWindow }
+  },
   data() {
     return {
       username: '',
