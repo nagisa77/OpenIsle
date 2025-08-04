@@ -50,6 +50,15 @@
         <div v-else @click="save" class="save-button">保存</div>
       </div>
     </div>
+    <BasePopup :visible="cropperVisible" @close="closeCropper">
+      <div style="max-width: 90vw; max-height: 80vh;">
+        <img ref="cropperImage" :src="imgURL" alt="avatar source" style="max-width: 100%; display: block;" />
+      </div>
+      <div style="margin-top: 12px; display:flex; gap:8px; justify-content:flex-end">
+        <button @click="closeCropper">取消</button>
+        <button @click="confirmCrop">确定</button>
+      </div>
+    </BasePopup>
   </div>
 </template>
 
@@ -58,11 +67,14 @@ import { API_BASE_URL, toast } from '../main'
 import { getToken, fetchCurrentUser, setToken } from '../utils/auth'
 import BaseInput from '../components/BaseInput.vue'
 import Dropdown from '../components/Dropdown.vue'
+import BasePopup from '../components/BasePopup.vue'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 import { hatch } from 'ldrs'
 hatch.register()
 export default {
   name: 'SettingsPageView',
-  components: { BaseInput, Dropdown },
+  components: { BaseInput, Dropdown, BasePopup },
   data() {
     return {
       username: '',
@@ -70,6 +82,9 @@ export default {
       usernameError: '',
       avatar: '',
       avatarFile: null,
+      cropperVisible: false,
+      imgURL: '',
+      cropper: null,
       role: '',
       publishMode: 'DIRECT',
       passwordStrength: 'LOW',
@@ -97,16 +112,51 @@ export default {
     }
     this.isLoadingPage = false
   },
+  beforeUnmount() {
+    this.closeCropper()
+  },
   methods: {
     onAvatarChange(e) {
       const file = e.target.files[0]
-      this.avatarFile = file
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = () => {
-          this.avatar = reader.result
+      if (!file) return
+      if (this.imgURL) URL.revokeObjectURL(this.imgURL)
+      this.imgURL = URL.createObjectURL(file)
+      this.cropperVisible = true
+      this.$nextTick(() => {
+        const image = this.$refs.cropperImage
+        if (image) {
+          this.cropper?.destroy()
+          this.cropper = new Cropper(image, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            background: false,
+            responsive: true,
+            checkOrientation: true,
+            zoomOnTouch: true,
+            zoomOnWheel: true,
+            minContainerWidth: 320,
+            minContainerHeight: 320
+          })
         }
-        reader.readAsDataURL(file)
+      })
+    },
+    async confirmCrop() {
+      if (!this.cropper) return
+      const canvas = this.cropper.getCroppedCanvas({ width: 512, height: 512 })
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
+      if (!blob) return
+      this.avatarFile = new File([blob], 'avatar.jpg', { type: blob.type })
+      this.avatar = URL.createObjectURL(blob)
+      this.closeCropper()
+    },
+    closeCropper() {
+      this.cropperVisible = false
+      this.cropper?.destroy()
+      this.cropper = null
+      if (this.imgURL) {
+        URL.revokeObjectURL(this.imgURL)
+        this.imgURL = ''
       }
     },
     fetchPublishModes() {
