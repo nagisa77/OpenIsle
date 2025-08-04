@@ -50,6 +50,15 @@
         <div v-else @click="save" class="save-button">保存</div>
       </div>
     </div>
+    <BasePopup :visible="isCropping" @close="cancelCrop">
+      <div class="cropper-container">
+        <img ref="cropperImg" :src="cropperImgURL" alt="avatar source" class="cropper-image" />
+      </div>
+      <div class="cropper-actions">
+        <button @click="cancelCrop">取消</button>
+        <button @click="confirmCrop">确定</button>
+      </div>
+    </BasePopup>
   </div>
 </template>
 
@@ -58,11 +67,15 @@ import { API_BASE_URL, toast } from '../main'
 import { getToken, fetchCurrentUser, setToken } from '../utils/auth'
 import BaseInput from '../components/BaseInput.vue'
 import Dropdown from '../components/Dropdown.vue'
+import BasePopup from '../components/BasePopup.vue'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
+import { nextTick } from 'vue'
 import { hatch } from 'ldrs'
 hatch.register()
 export default {
   name: 'SettingsPageView',
-  components: { BaseInput, Dropdown },
+  components: { BaseInput, Dropdown, BasePopup },
   data() {
     return {
       username: '',
@@ -70,6 +83,9 @@ export default {
       usernameError: '',
       avatar: '',
       avatarFile: null,
+      isCropping: false,
+      cropper: null,
+      cropperImgURL: '',
       role: '',
       publishMode: 'DIRECT',
       passwordStrength: 'LOW',
@@ -97,16 +113,59 @@ export default {
     }
     this.isLoadingPage = false
   },
+  beforeUnmount () {
+    if (this.cropper) {
+      this.cropper.destroy()
+      this.cropper = null
+    }
+    if (this.cropperImgURL) URL.revokeObjectURL(this.cropperImgURL)
+  },
   methods: {
     onAvatarChange(e) {
       const file = e.target.files[0]
-      this.avatarFile = file
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = () => {
-          this.avatar = reader.result
+      if (!file) return
+      this.cropperImgURL = URL.createObjectURL(file)
+      this.isCropping = true
+      nextTick(() => {
+        if (this.$refs.cropperImg) {
+          if (this.cropper) this.cropper.destroy()
+          this.cropper = new Cropper(this.$refs.cropperImg, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            background: false,
+            responsive: true,
+            checkOrientation: true,
+            zoomOnTouch: true,
+            zoomOnWheel: true,
+            minContainerWidth: 320,
+            minContainerHeight: 320
+          })
         }
-        reader.readAsDataURL(file)
+      })
+    },
+    async confirmCrop () {
+      if (!this.cropper) return
+      const canvas = this.cropper.getCroppedCanvas({ width: 512, height: 512 })
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
+      if (!blob) return
+      this.avatarFile = new File([blob], 'avatar.jpg', { type: blob.type })
+      this.avatar = URL.createObjectURL(blob)
+      this.isCropping = false
+      this.cropper.destroy()
+      this.cropper = null
+      URL.revokeObjectURL(this.cropperImgURL)
+      this.cropperImgURL = ''
+    },
+    cancelCrop () {
+      this.isCropping = false
+      if (this.cropper) {
+        this.cropper.destroy()
+        this.cropper = null
+      }
+      if (this.cropperImgURL) {
+        URL.revokeObjectURL(this.cropperImgURL)
+        this.cropperImgURL = ''
       }
     },
     fetchPublishModes() {
@@ -359,5 +418,22 @@ export default {
 .save-button.disabled {
   background-color: var(--primary-color-disabled);
   cursor: not-allowed;
+}
+
+.cropper-container {
+  max-width: 90vw;
+  max-height: 80vh;
+}
+
+.cropper-image {
+  max-width: 100%;
+  display: block;
+}
+
+.cropper-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 </style>
