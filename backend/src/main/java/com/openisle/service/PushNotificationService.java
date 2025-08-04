@@ -23,14 +23,21 @@ public class PushNotificationService {
     private final PushService pushService;
 
     public PushNotificationService(PushSubscriptionRepository subscriptionRepository,
-                                   @Value("${app.webpush.public-key}") String publicKey,
-                                   @Value("${app.webpush.private-key}") String privateKey) throws GeneralSecurityException {
+                                   @Value("${app.webpush.public-key:}") String publicKey,
+                                   @Value("${app.webpush.private-key:}") String privateKey) throws GeneralSecurityException {
         this.subscriptionRepository = subscriptionRepository;
-        Security.addProvider(new BouncyCastleProvider());
-        this.pushService = new PushService(publicKey, privateKey);
+        if (!publicKey.isEmpty() && !privateKey.isEmpty()) {
+            Security.addProvider(new BouncyCastleProvider());
+            this.pushService = new PushService(publicKey, privateKey);
+        } else {
+            this.pushService = null;
+        }
     }
 
     public void sendNotification(User user, String payload) {
+        if (pushService == null) {
+            return;
+        }
         List<PushSubscription> subs = subscriptionRepository.findByUser(user);
         for (PushSubscription sub : subs) {
             try {
