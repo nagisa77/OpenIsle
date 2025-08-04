@@ -20,6 +20,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT MAX(c.createdAt) FROM Comment c WHERE c.post = :post")
     java.time.LocalDateTime findLastCommentTime(@org.springframework.data.repository.query.Param("post") Post post);
 
+    @org.springframework.data.jpa.repository.Query("SELECT MAX(c.createdAt) FROM Comment c WHERE c.author.id = :userId")
+    java.time.LocalDateTime findLastCommentTimeOfUserByUserId(@org.springframework.data.repository.query.Param("userId") Long userId);
+
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(c) FROM Comment c WHERE c.author.username = :username AND c.createdAt >= :start")
     long countByAuthorAfter(@org.springframework.data.repository.query.Param("username") String username,
                             @org.springframework.data.repository.query.Param("start") java.time.LocalDateTime start);

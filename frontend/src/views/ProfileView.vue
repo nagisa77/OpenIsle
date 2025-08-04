@@ -45,6 +45,10 @@
           <div class="profile-info-item-value">{{ formatDate(user.lastPostTime) }}</div>
         </div>
         <div class="profile-info-item">
+          <div class="profile-info-item-label">最后评论时间:</div>
+          <div class="profile-info-item-value">{{ user.lastCommentTime!=null?formatDate(user.lastCommentTime):"暂无评论" }}</div>
+        </div>
+        <div class="profile-info-item">
           <div class="profile-info-item-label">浏览量:</div>
           <div class="profile-info-item-value">{{ user.totalViews }}</div>
         </div>

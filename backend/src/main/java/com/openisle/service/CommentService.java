@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +57,6 @@ public class CommentService {
         comment.setPost(post);
         comment.setContent(content);
         comment = commentRepository.save(comment);
-        log.debug("Comment {} saved for post {}", comment.getId(), postId);
         imageUploader.addReferences(imageUploader.extractUrls(content));
         if (!author.getId().equals(post.getAuthor().getId())) {
             notificationService.createNotification(post.getAuthor(), NotificationType.COMMENT_REPLY, post, comment, null, null, null, null);
@@ -72,17 +72,14 @@ public class CommentService {
             }
         }
         notificationService.notifyMentions(content, author, post, comment);
-        log.debug("addComment finished for comment {}", comment.getId());
         return comment;
     }
 
     @Transactional
     public Comment addReply(String username, Long parentId, String content) {
-        log.debug("addReply called by user {} for parent comment {}", username, parentId);
         long recent = commentRepository.countByAuthorAfter(username,
                 java.time.LocalDateTime.now().minusMinutes(1));
         if (recent >= 3) {
-            log.debug("Rate limit exceeded for user {}", username);
             throw new RateLimitException("Too many comments");
         }
         User author = userRepository.findByUsername(username)
@@ -95,7 +92,6 @@ public class CommentService {
         comment.setParent(parent);
         comment.setContent(content);
         comment = commentRepository.save(comment);
-        log.debug("Reply {} saved for parent {}", comment.getId(), parentId);
         imageUploader.addReferences(imageUploader.extractUrls(content));
         if (!author.getId().equals(parent.getAuthor().getId())) {
             notificationService.createNotification(parent.getAuthor(), NotificationType.COMMENT_REPLY, parent.getPost(), comment, null, null, null, null);
@@ -116,12 +112,10 @@ public class CommentService {
             }
         }
         notificationService.notifyMentions(content, author, parent.getPost(), comment);
-        log.debug("addReply finished for comment {}", comment.getId());
         return comment;
     }
 
     public List<Comment> getCommentsForPost(Long postId, CommentSort sort) {
-        log.debug("getCommentsForPost called for post {} with sort {}", postId, sort);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("Post not found"));
         List<Comment> list = commentRepository.findByPostAndParentIsNullOrderByCreatedAtAsc(post);
@@ -130,76 +124,60 @@ public class CommentService {
         } else if (sort == CommentSort.MOST_INTERACTIONS) {
             list.sort((a, b) -> Integer.compare(interactionCount(b), interactionCount(a)));
         }
-        log.debug("getCommentsForPost returning {} comments", list.size());
         return list;
     }
 
     public List<Comment> getReplies(Long parentId) {
-        log.debug("getReplies called for parent {}", parentId);
         Comment parent = commentRepository.findById(parentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
-        List<Comment> replies = commentRepository.findByParentOrderByCreatedAtAsc(parent);
-        log.debug("getReplies returning {} replies for parent {}", replies.size(), parentId);
-        return replies;
+        return commentRepository.findByParentOrderByCreatedAtAsc(parent);
     }
 
     public List<Comment> getRecentCommentsByUser(String username, int limit) {
-        log.debug("getRecentCommentsByUser called for user {} with limit {}", username, limit);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
         Pageable pageable = PageRequest.of(0, limit);
-        List<Comment> comments = commentRepository.findByAuthorOrderByCreatedAtDesc(user, pageable);
-        log.debug("getRecentCommentsByUser returning {} comments for user {}", comments.size(), username);
-        return comments;
+        return commentRepository.findByAuthorOrderByCreatedAtDesc(user, pageable);
     }
 
     public java.util.List<User> getParticipants(Long postId, int limit) {
-        log.debug("getParticipants called for post {} with limit {}", postId, limit);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("Post not found"));
         java.util.LinkedHashSet<User> set = new java.util.LinkedHashSet<>();
         set.add(post.getAuthor());
         set.addAll(commentRepository.findDistinctAuthorsByPost(post));
         java.util.List<User> list = new java.util.ArrayList<>(set);
-        java.util.List<User> result = list.subList(0, Math.min(limit, list.size()));
-        log.debug("getParticipants returning {} users for post {}", result.size(), postId);
-        return result;
+        return list.subList(0, Math.min(limit, list.size()));
     }
 
     public java.util.List<Comment> getCommentsByIds(java.util.List<Long> ids) {
-        log.debug("getCommentsByIds called for ids {}", ids);
-        java.util.List<Comment> comments = commentRepository.findAllById(ids);
-        log.debug("getCommentsByIds returning {} comments", comments.size());
-        return comments;
+        return commentRepository.findAllById(ids);
     }
 
     public java.time.LocalDateTime getLastCommentTime(Long postId) {
-        log.debug("getLastCommentTime called for post {}", postId);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("Post not found"));
-        java.time.LocalDateTime time = commentRepository.findLastCommentTime(post);
-        log.debug("getLastCommentTime for post {} is {}", postId, time);
-        return time;
+        return commentRepository.findLastCommentTime(post);
+    }
+
+    public java.time.LocalDateTime getLastCommentTimeOfUserByUserId(Long userId) { // 根据用户id查询该用户最后回复时间
+        return commentRepository.findLastCommentTimeOfUserByUserId(userId);
     }
 
     @Transactional
     public void deleteComment(String username, Long id) {
-        log.debug("deleteComment called by user {} for comment {}", username, id);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
         if (!user.getId().equals(comment.getAuthor().getId()) && user.getRole() != Role.ADMIN) {
-            log.debug("User {} not authorized to delete comment {}", username, id);
             throw new IllegalArgumentException("Unauthorized");
         }
         deleteCommentCascade(comment);
-        log.debug("deleteComment completed for comment {}", id);
     }
 
     @Transactional
     public void deleteCommentCascade(Comment comment) {
-        log.debug("deleteCommentCascade called for comment {}", comment.getId());
         List<Comment> replies = commentRepository.findByParentOrderByCreatedAtAsc(comment);
         for (Comment c : replies) {
             deleteCommentCascade(c);
@@ -209,7 +187,6 @@ public class CommentService {
         notificationRepository.deleteAll(notificationRepository.findByComment(comment));
         imageUploader.removeReferences(imageUploader.extractUrls(comment.getContent()));
         commentRepository.delete(comment);
-        log.debug("deleteCommentCascade removed comment {}", comment.getId());
     }
 
     private int interactionCount(Comment comment) {
