@@ -1,5 +1,5 @@
 <template>
-  <div class="home-page" @scroll="handleScroll">
+  <div class="home-page" ref="homePage" @scroll="handleScroll">
     <div v-if="!isMobile" class="search-container">
       <div class="search-title">一切可能，从此刻启航</div>
       <div class="search-subtitle">愿你在此遇见灵感与共鸣。若有疑惑，欢迎发问，亦可在知识的海洋中搜寻答案。</div>
@@ -107,7 +107,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { stripMarkdown } from '../utils/markdown'
 import { API_BASE_URL } from '../main'
@@ -122,6 +122,16 @@ import { hatch } from 'ldrs'
 import { isMobile } from '../utils/screen'
 hatch.register()
 
+let cachedArticles = []
+let cachedSelectedTopic = '最新回复'
+let cachedSelectedCategory = ''
+let cachedSelectedTags = []
+let cachedTagOptions = []
+let cachedCategoryOptions = []
+let cachedPage = 0
+let cachedAllLoaded = false
+let cachedScrollTop = 0
+
 
 export default {
   name: 'HomePageView',
@@ -134,13 +144,13 @@ export default {
   },
   setup() {
     const route = useRoute()
-    const selectedCategory = ref('')
-    if (route.query.category) {
+    const selectedCategory = ref(cachedSelectedCategory || '')
+    if (!cachedSelectedCategory && route.query.category) {
       const c = decodeURIComponent(route.query.category)
       selectedCategory.value = isNaN(c) ? c : Number(c)
     }
-    const selectedTags = ref([])
-    if (route.query.tags) {
+    const selectedTags = ref(cachedSelectedTags.length ? [...cachedSelectedTags] : [])
+    if (!cachedSelectedTags.length && route.query.tags) {
       const t = Array.isArray(route.query.tags) ? route.query.tags.join(',') : route.query.tags
       selectedTags.value = t
         .split(',')
@@ -148,8 +158,8 @@ export default {
         .map(v => decodeURIComponent(v))
         .map(v => (isNaN(v) ? v : Number(v)))
     }
-    const tagOptions = ref([])
-    const categoryOptions = ref([])
+    const tagOptions = ref(cachedTagOptions)
+    const categoryOptions = ref(cachedCategoryOptions)
     const isLoadingPosts = ref(false)
     const topics = ref(['最新回复', '最新', '排行榜' /*, '热门', '类别'*/])
     const selectedTopic = ref(
@@ -157,13 +167,14 @@ export default {
         ? '排行榜'
         : route.query.view === 'latest'
           ? '最新'
-          : '最新回复'
+          : cachedSelectedTopic
     )
 
-    const articles = ref([])
-    const page = ref(0)
+    const articles = ref(cachedArticles)
+    const page = ref(cachedPage)
     const pageSize = 10
-    const allLoaded = ref(false)
+    const allLoaded = ref(cachedAllLoaded)
+    const homePage = ref(null)
 
     const countComments = (list) =>
       list.reduce((sum, c) => sum + 1 + countComments(c.replies || []), 0)
@@ -365,8 +376,33 @@ export default {
     }
 
     onMounted(async () => {
-      fetchContent()
-      await loadOptions()
+      if (!cachedArticles.length) {
+        fetchContent()
+        await loadOptions()
+      } else {
+        await loadOptions()
+        nextTick(() => {
+          if (homePage.value) homePage.value.scrollTop = cachedScrollTop
+        })
+      }
+    })
+
+    onActivated(() => {
+      nextTick(() => {
+        if (homePage.value) homePage.value.scrollTop = cachedScrollTop
+      })
+    })
+
+    onDeactivated(() => {
+      cachedArticles = articles.value
+      cachedSelectedTopic = selectedTopic.value
+      cachedSelectedCategory = selectedCategory.value
+      cachedSelectedTags = [...selectedTags.value]
+      cachedTagOptions = tagOptions.value
+      cachedCategoryOptions = categoryOptions.value
+      cachedPage = page.value
+      cachedAllLoaded = allLoaded.value
+      cachedScrollTop = homePage.value ? homePage.value.scrollTop : 0
     })
 
     watch([selectedCategory, selectedTags], () => {
@@ -379,7 +415,7 @@ export default {
 
     const sanitizeDescription = (text) => stripMarkdown(text)
 
-    return { topics, selectedTopic, articles, sanitizeDescription, isLoadingPosts, handleScroll, selectedCategory, selectedTags, tagOptions, categoryOptions, isMobile }
+    return { topics, selectedTopic, articles, sanitizeDescription, isLoadingPosts, handleScroll, selectedCategory, selectedTags, tagOptions, categoryOptions, isMobile, homePage }
   }
 }
 </script>
