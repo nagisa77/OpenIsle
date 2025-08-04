@@ -7,40 +7,34 @@ import com.openisle.exception.FieldException;
 import com.openisle.exception.NotFoundException;
 import com.openisle.exception.RateLimitException;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(FieldException.class)
     public ResponseEntity<?> handleFieldException(FieldException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", Objects.toString(ex.getMessage(), null));
-        body.put("field", ex.getField());
-        return ResponseEntity.badRequest().body(body);
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", ex.getMessage(), "field", ex.getField()));
     }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<?> handleNotFoundException(NotFoundException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", Objects.toString(ex.getMessage(), null));
-        return ResponseEntity.status(404).body(body);
+        return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RateLimitException.class)
     public ResponseEntity<?> handleRateLimitException(RateLimitException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", Objects.toString(ex.getMessage(), null));
-        return ResponseEntity.status(429).body(body);
+        return ResponseEntity.status(429).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", Objects.toString(ex.getMessage(), null));
-        return ResponseEntity.badRequest().body(body);
+        String message = ex.getMessage();
+        if (message == null) {
+            message = ex.getClass().getSimpleName();
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", message));
     }
 }
 
