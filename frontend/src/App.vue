@@ -9,7 +9,11 @@
         <MenuComponent :visible="!hideMenu && menuVisible" @item-click="menuVisible = false" />
       </div>
       <div class="content" :class="{ 'menu-open': menuVisible && !hideMenu }">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive include="HomePageView">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </div>
     </div>
     <GlobalPopups />
