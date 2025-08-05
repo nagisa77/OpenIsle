@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Map;
 
@@ -71,7 +73,7 @@ public class NotificationService {
         }
         n = notificationRepository.save(n);
 
-        notificationExecutor.execute(() -> {
+        Runnable asyncTask = () -> {
             if (type == NotificationType.COMMENT_REPLY && user.getEmail() != null && post != null && comment != null) {
                 String url = String.format("%s/posts/%d#comment-%d", websiteUrl, post.getId(), comment.getId());
                 emailSender.sendEmail(user.getEmail(), "有人回复了你", url);
@@ -95,7 +97,18 @@ public class NotificationService {
 //                    }
 //                }
             }
-        });
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationExecutor.execute(asyncTask);
+                }
+            });
+        } else {
+            notificationExecutor.execute(asyncTask);
+        }
 
         return n;
     }
