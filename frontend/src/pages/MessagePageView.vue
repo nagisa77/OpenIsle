@@ -303,9 +303,7 @@ import { markNotificationsRead, fetchUnreadCount, notificationState } from '../u
 import { toast } from '../config'
 import { stripMarkdownLength } from '../utils/markdown'
 import TimeManager from '../utils/time'
-import { hatch } from 'ldrs'
 import { reactionEmojiMap } from '../utils/reactions'
-hatch.register()
 
 export default {
   name: 'MessagePageView',

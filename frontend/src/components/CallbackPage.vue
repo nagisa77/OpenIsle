@@ -6,10 +6,6 @@
 </template>
 
 <script>
-import { hatch } from 'ldrs'
-
-hatch.register()
-
 export default {
   name: 'CallbackPage'
 }

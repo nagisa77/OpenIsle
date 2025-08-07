@@ -49,8 +49,6 @@ import BaseInput from './BaseInput.vue'
 import BasePopup from './BasePopup.vue'
 import { API_BASE_URL, toast } from '../config'
 import { getToken, fetchCurrentUser } from '../utils/auth'
-import { hatch } from 'ldrs'
-hatch.register()
 
 export default {
   name: 'MilkTeaActivityComponent',
