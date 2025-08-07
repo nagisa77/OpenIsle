@@ -88,14 +88,14 @@
 
     <div class="post-page-scroller-container">
       <div class="scroller">
-        <div v-if="isWaitingFetchingPost" class="scroller-time">loading..../../../div>
+        <div v-if="isWaitingFetchingPost" class="scroller-time">loading...</div>
         <div v-else class="scroller-time">{{ scrollerTopTime }}</div>
         <div class="scroller-middle">
           <input type="range" class="scroller-range" :max="totalPosts" :min="1" v-model.number="currentIndex"
             @input="onSliderInput" />
           <div class="scroller-index">{{ currentIndex }}/{{ totalPosts }}</div>
         </div>
-        <div v-if="isWaitingFetchingPost" class="scroller-time">loading..../../../div>
+        <div v-if="isWaitingFetchingPost" class="scroller-time">loading...</div>
         <div v-else class="scroller-time">{{ lastReplyTime }}</div>
       </div>
     </div>
@@ -103,7 +103,6 @@
       @hide="lightboxVisible = false" />
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import VueEasyLightbox from 'vue-easy-lightbox'

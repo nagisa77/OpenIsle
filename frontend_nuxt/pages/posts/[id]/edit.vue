@@ -28,7 +28,7 @@
             :class="{ disabled: !isLogin }"
             @click="submitPost"
           >更新</div>
-          <div v-else class="post-submit-loading"> <i class="fa-solid fa-spinner fa-spin"></i> 更新中..../../../div>
+          <div v-else class="post-submit-loading"> <i class="fa-solid fa-spinner fa-spin"></i> 更新中...</div>
         </div>
       </div>
     </div>
