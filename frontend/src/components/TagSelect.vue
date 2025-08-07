@@ -19,7 +19,7 @@
 
 <script>
 import { computed, ref, watch } from 'vue'
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '../config'
 import Dropdown from './Dropdown.vue'
 
 export default {

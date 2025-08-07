@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '../config'
 import { getToken, fetchCurrentUser, setToken } from '../utils/auth'
 import BaseInput from '../components/BaseInput.vue'
 import Dropdown from '../components/Dropdown.vue'

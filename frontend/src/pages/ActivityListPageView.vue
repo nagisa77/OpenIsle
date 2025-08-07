@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import TimeManager from '../utils/time'
 import MilkTeaActivityComponent from '../components/MilkTeaActivityComponent.vue'
 import { hatch } from 'ldrs'

@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { toast } from '../main'
+import { toast } from '../config'
 
 export const ThemeMode = {
   SYSTEM: 'system',

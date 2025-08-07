@@ -11,7 +11,7 @@
 
 <script>
 import ActivityPopup from './ActivityPopup.vue'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 
 export default {
   name: 'GlobalPopups',

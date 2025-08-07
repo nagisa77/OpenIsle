@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import { getToken } from './auth'
 
 function urlBase64ToUint8Array(base64String) {

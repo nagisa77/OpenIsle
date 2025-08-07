@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import { getToken } from './auth'
 import { reactive } from 'vue'
 

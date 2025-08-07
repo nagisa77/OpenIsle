@@ -57,10 +57,10 @@
 
         <div class="article-item" v-for="article in articles" :key="article.id">
           <div class="article-main-container">
-            <router-link class="article-item-title main-item" :to="`/posts/${article.id}`">
+            <NuxtLink class="article-item-title main-item" :to="`/posts/${article.id}`">
               <i v-if="article.pinned" class="fas fa-thumbtack pinned-icon"></i>
               {{ article.title }}
-            </router-link>
+            </NuxtLink>
             <div class="article-item-description main-item">{{ sanitizeDescription(article.description) }}</div>
             <div class="article-info-container main-item">
               <ArticleCategory :category="article.category" />
@@ -69,14 +69,14 @@
           </div>
 
           <div class="article-member-avatars-container">
-            <router-link
+            <NuxtLink
               v-for="member in article.members"
               :key="member.id"
               class="article-member-avatar-item"
               :to="`/users/${member.id}`"
             >
               <img class="article-member-avatar-item-img" :src="member.avatar" alt="avatar" />
-            </router-link>
+            </NuxtLink>
           </div>
 
           <div class="article-comments main-info-text">
@@ -111,7 +111,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useScrollLoadMore } from '../utils/loadMore'
 import { stripMarkdown } from '../utils/markdown'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import { getToken } from '../utils/auth'
 import TimeManager from '../utils/time'
 import CategorySelect from '../components/CategorySelect.vue'

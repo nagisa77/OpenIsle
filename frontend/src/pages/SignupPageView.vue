@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '../config'
 import { googleAuthorize } from '../utils/google'
 import { githubAuthorize } from '../utils/github'
 import { discordAuthorize } from '../utils/discord'

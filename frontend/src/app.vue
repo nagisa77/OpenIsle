@@ -9,51 +9,34 @@
         <MenuComponent :visible="!hideMenu && menuVisible" @item-click="menuVisible = false" />
       </div>
       <div class="content" :class="{ 'menu-open': menuVisible && !hideMenu }">
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" v-if="$route.meta.keepAlive" />
-          </keep-alive>
-          <component :is="Component" v-if="!$route.meta.keepAlive" />
-        </router-view>
+        <NuxtPage />
       </div>
     </div>
     <GlobalPopups />
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import HeaderComponent from './components/HeaderComponent.vue'
 import MenuComponent from './components/MenuComponent.vue'
 import GlobalPopups from './components/GlobalPopups.vue'
 
-export default {
-  name: 'App',
-  components: { HeaderComponent, MenuComponent, GlobalPopups },
-  data() {
-    return {
-      menuVisible: window.innerWidth > 768
-    }
-  },
-  computed: {
-    hideMenu() {
-      return [
-        '/login',
-        '/signup', 
-        '/404',
-        '/signup-reason',
-        '/github-callback',
-        '/twitter-callback',
-        '/discord-callback',
-        '/forgot-password',
-        '/google-callback'
-      ].includes(this.$route.path)
-    }
-  },
-  async mounted() {
-    // placeholder for future global initializations
-  },
-  methods: {}
-}
+const menuVisible = ref(process.client && window.innerWidth > 768)
+const route = useRoute()
+
+const hideMenu = computed(() => [
+  '/login',
+  '/signup',
+  '/404',
+  '/signup-reason',
+  '/github-callback',
+  '/twitter-callback',
+  '/discord-callback',
+  '/forgot-password',
+  '/google-callback'
+].includes(route.path))
 </script>
 
 <style>
@@ -74,7 +57,7 @@ export default {
   max-width: 100%;
   transition: max-width 0.3s ease;
   background-color: var(--background-color);
-  min-height: calc(100vh - var(--header-height)); 
+  min-height: calc(100vh - var(--header-height));
 }
 
 .content.menu-open {
@@ -89,7 +72,6 @@ export default {
 }
 
 @media (max-width: 768px) {
-
   .content,
   .content.menu-open {
     max-width: 100% !important;

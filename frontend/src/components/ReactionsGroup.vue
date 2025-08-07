@@ -32,7 +32,7 @@
 
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '../config'
 import { getToken, authState } from '../utils/auth'
 import { reactionEmojiMap } from '../utils/reactions'
 

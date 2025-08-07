@@ -18,7 +18,7 @@
 
 <script>
 import BaseInput from '../components/BaseInput.vue'
-import {API_BASE_URL, toast} from '../main'
+import {API_BASE_URL, toast} from '../config'
 
 export default {
   name: 'SignupReasonPageView',

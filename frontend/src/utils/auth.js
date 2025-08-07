@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import { reactive } from 'vue'
 
 const TOKEN_KEY = 'token'

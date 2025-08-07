@@ -11,7 +11,7 @@ import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent, DataZoomComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '../config'
 import { getToken } from '../utils/auth'
 
 use([LineChart, TitleComponent, TooltipComponent, GridComponent, DataZoomComponent, CanvasRenderer])

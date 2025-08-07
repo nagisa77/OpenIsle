@@ -251,7 +251,7 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '../config'
 import { getToken, authState } from '../utils/auth'
 import BaseTimeline from '../components/BaseTimeline.vue'
 import UserList from '../components/UserList.vue'

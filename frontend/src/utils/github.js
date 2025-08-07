@@ -1,4 +1,4 @@
-import { API_BASE_URL, GITHUB_CLIENT_ID, toast } from '../main'
+import { API_BASE_URL, GITHUB_CLIENT_ID, toast } from '../config'
 import { setToken, loadCurrentUser } from './auth'
 import { WEBSITE_BASE_URL } from '../constants'
 import { registerPush } from './push'
