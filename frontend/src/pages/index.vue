@@ -119,9 +119,7 @@ import TagSelect from '../components/TagSelect.vue'
 import ArticleTags from '../components/ArticleTags.vue'
 import ArticleCategory from '../components/ArticleCategory.vue'
 import SearchDropdown from '../components/SearchDropdown.vue'
-import { hatch } from 'ldrs'
 import { isMobile } from '../utils/screen'
-hatch.register()
 
 
 export default {

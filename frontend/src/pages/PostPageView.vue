@@ -119,11 +119,9 @@ import { renderMarkdown, handleMarkdownClick, stripMarkdownLength } from '../uti
 import { API_BASE_URL, toast } from '../config'
 import { getToken, authState } from '../utils/auth'
 import TimeManager from '../utils/time'
-import { hatch } from 'ldrs'
 import { useRouter } from 'vue-router'
 import { isMobile } from '../utils/screen'
 import Dropdown from '../components/Dropdown.vue'
-hatch.register()
 
 export default {
   name: 'PostPageView',

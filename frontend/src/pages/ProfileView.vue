@@ -260,8 +260,6 @@ import LevelProgress from '../components/LevelProgress.vue'
 import { stripMarkdown, stripMarkdownLength } from '../utils/markdown'
 import TimeManager from '../utils/time'
 import { prevLevelExp } from '../utils/level'
-import { hatch } from 'ldrs'
-hatch.register()
 
 export default {
   name: 'ProfileView',

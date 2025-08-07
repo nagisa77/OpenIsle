@@ -147,9 +147,7 @@
 
 <script>
 import { ref, computed, watch, onMounted } from "vue"
-import { hatch } from "ldrs"
 import { isMobile } from "../utils/screen"
-hatch.register()
 
 export default {
   name: "BaseDropdown",

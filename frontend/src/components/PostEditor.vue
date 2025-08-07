@@ -16,8 +16,6 @@ import {
   getPreviewTheme as getPreviewThemeUtil
 } from '../utils/vditor'
 import { clearVditorStorage } from '../utils/clearVditorStorage'
-import { hatch } from 'ldrs'
-hatch.register()
 
 export default {
   name: 'PostEditor',
