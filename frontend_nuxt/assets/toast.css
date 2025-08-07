@@ -1,0 +1,35 @@
+.Vue-Toastification__toast {
+  border-radius: 20px;
+}
+
+.Vue-Toastification__toast--info {
+  background-color: #d0e9ff;
+  color: #1b6ec2;
+}
+.Vue-Toastification__toast--success {
+  background-color: #dff6dd;
+  color: #2b7a2b;
+}
+.Vue-Toastification__toast--error {
+  background-color: #f99a9a;
+  color: #b73737;
+}
+
+@media (max-width: 768px) {
+  .Vue-Toastification__container.open-isle-toast-style-v1 {
+    width: auto;
+    max-width: 90vw;
+    right: 0.5em;
+    left: auto;
+  }
+
+  .Vue-Toastification__toast-body {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .Vue-Toastification__close-button {
+    font-size: 18px;
+    line-height: 18px;
+  }
+}
