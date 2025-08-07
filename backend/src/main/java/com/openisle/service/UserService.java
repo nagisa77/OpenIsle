@@ -114,9 +114,6 @@ public class UserService {
     }
 
     public Optional<User> findByIdentifier(String identifier) {
-        if (identifier.matches("\\d+")) {
-            return userRepository.findById(Long.parseLong(identifier));
-        }
         return userRepository.findByUsername(identifier);
     }
 
