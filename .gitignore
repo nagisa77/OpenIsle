@@ -5,3 +5,5 @@ node_modules
 dist
 open-isle.env
 logs
+
+.nuxt

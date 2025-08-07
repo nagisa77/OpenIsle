@@ -1,4 +1,7 @@
 <template>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  referrerpolicy="no-referrer" />
+  
   <div class="home-page">
     <div v-if="!isMobile" class="search-container">
       <div class="search-title">一切可能，从此刻启航</div>

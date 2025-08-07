@@ -9,12 +9,12 @@
     "test": "echo \"No tests specified\""
   },
   "dependencies": {
+    "highlight.js": "^11.9.0",
+    "ldrs": "^1.0.0",
+    "markdown-it": "^13.0.1",
     "nuxt": "^3.12.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4",
-    "vue-toastification": "^2.0.0",
-    "markdown-it": "^13.0.1",
-    "highlight.js": "^11.9.0",
-    "ldrs": "^1.0.0"
+    "vue-toastification": "^2.0.0-rc.5"
   }
 }
