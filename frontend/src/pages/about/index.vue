@@ -19,7 +19,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { renderMarkdown, handleMarkdownClick } from '../utils/markdown'
+import { renderMarkdown, handleMarkdownClick } from '~/utils/markdown'
 import { hatch } from 'ldrs'
 hatch.register()
 

@@ -3,17 +3,17 @@
 </template>
 
 <script>
-import CallbackPage from '../components/CallbackPage.vue'
-import { githubExchange } from '../utils/github'
+import CallbackPage from '~/components/CallbackPage.vue'
+import { discordExchange } from '~/utils/discord'
 
 export default {
-  name: 'GithubCallbackPageView',
+  name: 'DiscordCallbackPageView',
   components: { CallbackPage },
   async mounted() {
     const url = new URL(window.location.href)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
-    const result = await githubExchange(code, state, '')
+    const result = await discordExchange(code, state, '')
 
     if (result.needReason) {
       this.$router.push('/signup-reason?token=' + result.token)

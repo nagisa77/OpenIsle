@@ -3,7 +3,7 @@
     <div class="new-post-form">
       <input class="post-title-input" v-model="title" placeholder="标题" />
       <div class="post-editor-container">
-        <PostEditor v-model="content" :loading="isAiLoading" :disabled="!isLogin" />
+        <PostEditor v-model="content" v-model:loading="isAiLoading" :disabled="!isLogin" />
         <LoginOverlay v-if="!isLogin" />
       </div>
       <div class="post-options">
@@ -19,16 +19,17 @@
             <i class="fa-solid fa-robot"></i>
             md格式优化
           </div>
-          <div class="post-cancel" @click="cancelEdit">
-            取消
+          <div class="post-draft" @click="saveDraft">
+            <i class="fa-solid fa-floppy-disk"></i>
+            存草稿
           </div>
           <div
             v-if="!isWaitingPosting"
             class="post-submit"
             :class="{ disabled: !isLogin }"
             @click="submitPost"
-          >更新</div>
-          <div v-else class="post-submit-loading"> <i class="fa-solid fa-spinner fa-spin"></i> 更新中...</div>
+          >发布</div>
+          <div v-else class="post-submit-loading"> <i class="fa-solid fa-spinner fa-spin"></i> 发布中...</div>
         </div>
       </div>
     </div>
@@ -37,16 +38,15 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import PostEditor from '../components/PostEditor.vue'
-import CategorySelect from '../components/CategorySelect.vue'
-import TagSelect from '../components/TagSelect.vue'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import LoginOverlay from '../components/LoginOverlay.vue'
+import PostEditor from '~/components/PostEditor.vue'
+import CategorySelect from '~/components/CategorySelect.vue'
+import TagSelect from '~/components/TagSelect.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { getToken, authState } from '~/utils/auth'
+import LoginOverlay from '~/components/LoginOverlay.vue'
 
 export default {
-  name: 'EditPostPageView',
+  name: 'NewPostPageView',
   components: { PostEditor, CategorySelect, TagSelect, LoginOverlay },
   setup() {
     const title = ref('')
@@ -57,37 +57,82 @@ export default {
     const isAiLoading = ref(false)
     const isLogin = computed(() => authState.loggedIn)
 
-    const route = useRoute()
-    const router = useRouter()
-    const postId = route.params.id
-
-    const loadPost = async () => {
+    const loadDraft = async () => {
+      const token = getToken()
+      if (!token) return
       try {
-        const token = getToken()
-        const res = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await fetch(`${API_BASE_URL}/api/drafts/me`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
-        if (res.ok) {
+        if (res.ok && res.status !== 204) {
           const data = await res.json()
           title.value = data.title || ''
           content.value = data.content || ''
-          selectedCategory.value = data.category.id || ''
-          selectedTags.value = (data.tags || []).map(t => t.id)
+          selectedCategory.value = data.categoryId || ''
+          selectedTags.value = data.tagIds || []
+
+          toast.success('草稿已加载')
         }
       } catch (e) {
-        toast.error('加载失败')
+        console.error(e)
       }
     }
 
-    onMounted(loadPost)
+    onMounted(loadDraft)
 
-    const clearPost = () => {
+    const clearPost = async () => {
       title.value = ''
       content.value = ''
       selectedCategory.value = ''
       selectedTags.value = []
+
+      // 删除草稿
+      const token = getToken()
+      if (token) {
+        const res = await fetch(`${API_BASE_URL}/api/drafts/me`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (res.ok) {
+          toast.success('草稿已清空')
+        } else {
+          toast.error('云端草稿清空失败, 请稍后重试')
+        }
+      }
     }
 
+    const saveDraft = async () => {
+      const token = getToken()
+      if (!token) {
+        toast.error('请先登录')
+        return
+      }
+      try {
+        const tagIds = selectedTags.value.filter(t => typeof t === 'number')
+        const res = await fetch(`${API_BASE_URL}/api/drafts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: title.value,
+            content: content.value,
+            categoryId: selectedCategory.value || null,
+            tagIds
+          })
+        })
+        if (res.ok) {
+          toast.success('草稿已保存')
+        } else {
+          toast.error('保存失败')
+        }
+      } catch (e) {
+        toast.error('保存失败')
+      }
+    }
     const ensureTags = async (token) => {
       for (let i = 0; i < selectedTags.value.length; i++) {
         const t = selectedTags.value[i]
@@ -172,8 +217,8 @@ export default {
         const token = getToken()
         await ensureTags(token)
         isWaitingPosting.value = true
-        const res = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
-          method: 'PUT',
+        const res = await fetch(`${API_BASE_URL}/api/posts`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
@@ -187,21 +232,26 @@ export default {
         })
         const data = await res.json()
         if (res.ok) {
-          toast.success('更新成功')
-          window.location.href = `/posts/${postId}`
+          if (data.reward && data.reward > 0) {
+            toast.success(`发布成功，获得 ${data.reward} 经验值`)
+          } else {
+            toast.success('发布成功')
+          }
+          if (data.id) {
+            window.location.href = `/posts/${data.id}`
+          }
+        } else if (res.status === 429) {
+          toast.error('发布过于频繁，请稍后再试')
         } else {
-          toast.error(data.error || '更新失败')
+          toast.error(data.error || '发布失败')
         }
       } catch (e) {
-        toast.error('更新失败')
+        toast.error('发布失败')
       } finally {
         isWaitingPosting.value = false
       }
     }
-    const cancelEdit = () => {
-      router.push(`/posts/${postId}`)
-    }
-    return { title, content, selectedCategory, selectedTags, submitPost, clearPost, cancelEdit, isWaitingPosting, aiGenerate, isAiLoading, isLogin }
+    return { title, content, selectedCategory, selectedTags, submitPost, saveDraft, clearPost, isWaitingPosting, aiGenerate, isAiLoading, isLogin }
   }
 }
 </script>
@@ -211,10 +261,8 @@ export default {
   display: flex;
   justify-content: center;
   background-color: var(--background-color);
-  height: 100%;
   padding-right: 20px;
   padding-left: 20px;
-  overflow-y: auto;
 }
 
 .new-post-form {
@@ -233,13 +281,13 @@ export default {
   color: var(--text-color);
 }
 
-.post-cancel {
+.post-draft {
   color: var(--primary-color);
   border-radius: 10px;
   cursor: pointer;
 }
 
-.post-cancel:hover {
+.post-draft:hover {
   text-decoration: underline;
 }
 

@@ -1,4 +1,4 @@
-import { API_BASE_URL, GOOGLE_CLIENT_ID, toast } from '../main'
+import { API_BASE_URL, GOOGLE_CLIENT_ID, toast } from '~/main'
 import { setToken, loadCurrentUser } from './auth'
 import { registerPush } from './push'
 import { WEBSITE_BASE_URL } from '../constants'
@@ -65,15 +65,15 @@ export async function googleSignIn(redirect_success, redirect_not_approved) {
   }
 }
 
-import router from '../router'
+import { navigateTo } from '#app'
 
 export function loginWithGoogle() {
   googleSignIn(
     () => {
-      router.push('/')
+      navigateTo('/')
     },
     token => {
-      router.push('/signup-reason?token=' + token)
+      navigateTo('/signup-reason?token=' + token)
     }
   )
 }

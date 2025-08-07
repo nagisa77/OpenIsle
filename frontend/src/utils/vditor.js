@@ -1,6 +1,6 @@
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '~/main'
 import { getToken, authState } from './auth'
 import { searchUsers, fetchFollowings, fetchAdmins } from './user'
 import { tiebaEmoji } from './tiebaEmoji'

@@ -109,18 +109,19 @@
 <script>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useScrollLoadMore } from '../utils/loadMore'
-import { stripMarkdown } from '../utils/markdown'
-import { API_BASE_URL } from '../main'
-import { getToken } from '../utils/auth'
-import TimeManager from '../utils/time'
-import CategorySelect from '../components/CategorySelect.vue'
-import TagSelect from '../components/TagSelect.vue'
-import ArticleTags from '../components/ArticleTags.vue'
-import ArticleCategory from '../components/ArticleCategory.vue'
-import SearchDropdown from '../components/SearchDropdown.vue'
+import { definePageMeta } from '#imports'
+import { useScrollLoadMore } from '~/utils/loadMore'
+import { stripMarkdown } from '~/utils/markdown'
+import { API_BASE_URL } from '~/main'
+import { getToken } from '~/utils/auth'
+import TimeManager from '~/utils/time'
+import CategorySelect from '~/components/CategorySelect.vue'
+import TagSelect from '~/components/TagSelect.vue'
+import ArticleTags from '~/components/ArticleTags.vue'
+import ArticleCategory from '~/components/ArticleCategory.vue'
+import SearchDropdown from '~/components/SearchDropdown.vue'
 import { hatch } from 'ldrs'
-import { isMobile } from '../utils/screen'
+import { isMobile } from '~/utils/screen'
 hatch.register()
 
 
@@ -134,6 +135,7 @@ export default {
     SearchDropdown
   },
   setup() {
+    definePageMeta({ keepalive: true })
     const route = useRoute()
     const selectedCategory = ref('')
     if (route.query.category) {

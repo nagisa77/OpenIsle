@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '~/main'
 
 export async function fetchFollowings(username) {
   if (!username) return []

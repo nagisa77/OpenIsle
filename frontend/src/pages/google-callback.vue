@@ -3,8 +3,8 @@
 </template>
 
 <script>
-import CallbackPage from '../components/CallbackPage.vue'
-import { googleAuthWithToken } from '../utils/google'
+import CallbackPage from '~/components/CallbackPage.vue'
+import { googleAuthWithToken } from '~/utils/google'
 
 export default {
   name: 'GoogleCallbackPageView',

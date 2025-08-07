@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="site-stats-page">
     <VChart v-if="option" :option="option" :autoresize="true" style="height:400px" />
@@ -5,14 +6,15 @@
 </template>
 
 <script setup>
+/* eslint-disable vue/multi-word-component-names */
 import { ref, onMounted } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent, DataZoomComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { API_BASE_URL } from '../main'
-import { getToken } from '../utils/auth'
+import { API_BASE_URL } from '~/main'
+import { getToken } from '~/utils/auth'
 
 use([LineChart, TitleComponent, TooltipComponent, GridComponent, DataZoomComponent, CanvasRenderer])
 

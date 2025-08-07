@@ -27,7 +27,7 @@ import { ref, watch } from 'vue'
 import { isMobile } from '../utils/screen'
 import { useRouter } from 'vue-router'
 import Dropdown from './Dropdown.vue'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '~/main'
 import { stripMarkdown } from '../utils/markdown'
 
 export default {

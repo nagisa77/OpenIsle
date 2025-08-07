@@ -116,7 +116,7 @@ import { themeState, cycleTheme, ThemeMode } from '../utils/theme'
 import { authState } from '../utils/auth'
 import { fetchUnreadCount, notificationState } from '../utils/notification'
 import { watch } from 'vue'
-import { API_BASE_URL } from '../main'
+import { API_BASE_URL } from '~/main'
 import { hatch } from 'ldrs'
 hatch.register()
 

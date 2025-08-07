@@ -30,9 +30,9 @@
 </template>
 
 <script>
-import { API_BASE_URL } from '../main'
-import TimeManager from '../utils/time'
-import MilkTeaActivityComponent from '../components/MilkTeaActivityComponent.vue'
+import { API_BASE_URL } from '~/main'
+import TimeManager from '~/utils/time'
+import MilkTeaActivityComponent from '~/components/MilkTeaActivityComponent.vue'
 import { hatch } from 'ldrs'
 hatch.register()
 

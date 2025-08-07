@@ -61,11 +61,11 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import { getToken, fetchCurrentUser, setToken } from '../utils/auth'
-import BaseInput from '../components/BaseInput.vue'
-import Dropdown from '../components/Dropdown.vue'
-import AvatarCropper from '../components/AvatarCropper.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { getToken, fetchCurrentUser, setToken } from '~/utils/auth'
+import BaseInput from '~/components/BaseInput.vue'
+import Dropdown from '~/components/Dropdown.vue'
+import AvatarCropper from '~/components/AvatarCropper.vue'
 import { hatch } from 'ldrs'
 hatch.register()
 export default {

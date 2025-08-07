@@ -1,4 +1,4 @@
-import { API_BASE_URL, DISCORD_CLIENT_ID, toast } from '../main'
+import { API_BASE_URL, DISCORD_CLIENT_ID, toast } from '~/main'
 import { WEBSITE_BASE_URL } from '../constants'
 import { setToken, loadCurrentUser } from './auth'
 import { registerPush } from './push'

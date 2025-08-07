@@ -1,7 +1,7 @@
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
-import { toast } from '../main'
+import { toast } from '~/main'
 import { tiebaEmoji } from './tiebaEmoji'
 
 function mentionPlugin(md) {

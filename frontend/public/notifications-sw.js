@@ -1,3 +1,5 @@
+/* global clients */
+
 self.addEventListener('push', function(event) {
   let payload = { body: 'New notification', url: '/' }
   try {

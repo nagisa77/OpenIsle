@@ -9,12 +9,12 @@
         <MenuComponent :visible="!hideMenu && menuVisible" @item-click="menuVisible = false" />
       </div>
       <div class="content" :class="{ 'menu-open': menuVisible && !hideMenu }">
-        <router-view v-slot="{ Component }">
+        <NuxtPage v-slot="{ Component, route }">
           <keep-alive>
-            <component :is="Component" v-if="$route.meta.keepAlive" />
+            <component :is="Component" v-if="route.meta.keepAlive" />
           </keep-alive>
-          <component :is="Component" v-if="!$route.meta.keepAlive" />
-        </router-view>
+          <component :is="Component" v-if="!route.meta.keepAlive" />
+        </NuxtPage>
       </div>
     </div>
     <GlobalPopups />
@@ -31,7 +31,7 @@ export default {
   components: { HeaderComponent, MenuComponent, GlobalPopups },
   data() {
     return {
-      menuVisible: window.innerWidth > 768
+      menuVisible: process.client ? window.innerWidth > 768 : false
     }
   },
   computed: {

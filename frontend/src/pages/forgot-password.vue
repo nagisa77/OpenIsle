@@ -24,8 +24,8 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import BaseInput from '../components/BaseInput.vue'
+import { API_BASE_URL, toast } from '~/main'
+import BaseInput from '~/components/BaseInput.vue'
 export default {
   name: 'ForgotPasswordPageView',
   components: { BaseInput },

@@ -47,7 +47,7 @@ import ProgressBar from './ProgressBar.vue'
 import LevelProgress from './LevelProgress.vue'
 import BaseInput from './BaseInput.vue'
 import BasePopup from './BasePopup.vue'
-import { API_BASE_URL, toast } from '../main'
+import { API_BASE_URL, toast } from '~/main'
 import { getToken, fetchCurrentUser } from '../utils/auth'
 import { hatch } from 'ldrs'
 hatch.register()
