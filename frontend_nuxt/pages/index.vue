@@ -109,6 +109,7 @@
 <script>
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useNuxtApp } from '#app'
 import { useScrollLoadMore } from '~/utils/loadMore'
 import { stripMarkdown } from '~/utils/markdown'
 import { API_BASE_URL } from '~/main'
@@ -133,6 +134,7 @@ export default {
   },
   async setup() {
     const route = useRoute()
+    const nuxtApp = useNuxtApp()
     const selectedCategory = ref('')
     if (route.query.category) {
       const c = decodeURIComponent(route.query.category)
@@ -376,7 +378,9 @@ export default {
 
     const sanitizeDescription = text => stripMarkdown(text)
 
-    await Promise.all([loadOptions(), fetchContent()])
+    if (process.server || !nuxtApp.isHydrating) {
+      await Promise.all([loadOptions(), fetchContent()])
+    }
 
     return {
       topics,
