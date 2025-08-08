@@ -71,7 +71,7 @@
           <div v-if="isLoadingCategory" class="menu-loading-container">
             <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
           </div>
-          <div v-else v-for="c in categories" :key="c.id" class="section-item" @click="gotoCategory(c)">
+          <div v-else v-for="c in categoryData" :key="c.id" class="section-item" @click="gotoCategory(c)">
             <template v-if="c.smallIcon || c.icon">
               <img v-if="isImageIcon(c.smallIcon || c.icon)" :src="c.smallIcon || c.icon" class="section-item-icon" :alt="c.name" />
               <i v-else :class="['section-item-icon', c.smallIcon || c.icon]"></i>
@@ -93,7 +93,7 @@
           <div v-if="isLoadingTag" class="menu-loading-container">
             <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
           </div>
-          <div v-else v-for="t in tags" :key="t.id" class="section-item" @click="gotoTag(t)">
+          <div v-else v-for="t in tagData" :key="t.id" class="section-item" @click="gotoTag(t)">
             <img v-if="isImageIcon(t.smallIcon || t.icon)" :src="t.smallIcon || t.icon" class="section-item-icon" :alt="t.name" />
             <i v-else class="section-item-icon fas fa-hashtag"></i>
             <span class="section-item-text">{{ t.name }} <span class="section-item-text-count">x {{ t.count
@@ -115,7 +115,7 @@
 import { themeState, cycleTheme, ThemeMode } from '~/utils/theme'
 import { authState } from '~/utils/auth'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
-import { watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { API_BASE_URL } from '~/main'
 
 export default {
@@ -126,18 +126,39 @@ export default {
       default: true
     }
   },
-  data() {
-    return {
-      categories: [],
-      tags: [],
-      categoryOpen: true,
-      tagOpen: true,
-      isLoadingCategory: false,
-      isLoadingTag: false
+  async setup(props, { emit }) {
+    const router = useRouter()
+    const categories = ref([])
+    const tags = ref([])
+    const categoryOpen = ref(true)
+    const tagOpen = ref(true)
+    const isLoadingCategory = ref(false)
+    const isLoadingTag = ref(false)
+    const categoryData = ref([])
+    const tagData = ref([])
+
+    const fetchCategoryData = async () => {
+      isLoadingCategory.value = true
+      const res = await fetch(`${API_BASE_URL}/api/categories`)
+      const data = await res.json()
+      categoryData.value = data
+      isLoadingCategory.value = false
     }
-  },
-  computed: {
-    iconClass() {
+
+    const fetchTagData = async () => {
+      isLoadingTag.value = true
+      const res = await fetch(`${API_BASE_URL}/api/tags?limit=10`)
+      const data = await res.json()
+      tagData.value = data
+      isLoadingTag.value = false
+    }
+
+    onMounted(() => {
+      // fetchCategoryData()
+      // fetchTagData()
+    })
+
+    const iconClass = computed(() => {
       switch (themeState.mode) {
         case ThemeMode.DARK:
           return 'fas fa-moon'
@@ -146,18 +167,14 @@ export default {
         default:
           return 'fas fa-desktop'
       }
-    },
-    unreadCount() {
-      return notificationState.unreadCount
-    },
-    showUnreadCount() {
-      return this.unreadCount > 99 ? '99+' : this.unreadCount
-    },
-    shouldShowStats() {
-      return authState.role === 'ADMIN'
-    }
-  },
-  async mounted() {
+    })
+
+    const unreadCount = computed(() => notificationState.unreadCount)
+    const showUnreadCount = computed(() =>
+      unreadCount.value > 99 ? '99+' : unreadCount.value
+    )
+    const shouldShowStats = computed(() => authState.role === 'ADMIN')
+
     const updateCount = async () => {
       if (authState.loggedIn) {
         await fetchUnreadCount()
@@ -165,100 +182,64 @@ export default {
         notificationState.unreadCount = 0
       }
     }
-    
-    watch(() => authState.loggedIn, async () => {
+
+    onMounted(async () => {
       await updateCount()
+      watch(() => authState.loggedIn, updateCount)
     })
 
-    const CAT_CACHE_KEY = 'menu-categories'
-    const TAG_CACHE_KEY = 'menu-tags'
-
-    const cachedCategories = localStorage.getItem(CAT_CACHE_KEY)
-    if (cachedCategories) {
-      try {
-        this.categories = JSON.parse(cachedCategories)
-      } catch { /* ignore */ }
-    }
-
-    const cachedTags = localStorage.getItem(TAG_CACHE_KEY)
-    if (cachedTags) {
-      try {
-        this.tags = JSON.parse(cachedTags)
-      } catch { /* ignore */ }
-    }
-
-    this.isLoadingCategory = !cachedCategories
-    this.isLoadingTag = !cachedTags
-
-    const fetchCategories = () => {
-      fetch(`${API_BASE_URL}/api/categories`).then(res => {
-        if (res.ok) {
-          res.json().then(data => {
-            this.categories = data.slice(0, 10)
-            localStorage.setItem(CAT_CACHE_KEY, JSON.stringify(this.categories))
-          })
-        }
-        this.isLoadingCategory = false
-      })
-    }
-
-    const fetchTags = () => {
-      fetch(`${API_BASE_URL}/api/tags?limit=10`).then(res => {
-        if (res.ok) {
-          res.json().then(data => {
-            this.tags = data
-            localStorage.setItem(TAG_CACHE_KEY, JSON.stringify(this.tags))
-          })
-        }
-        this.isLoadingTag = false
-      })
-    }
-
-    if (cachedCategories) {
-      setTimeout(fetchCategories, 1500)
-    } else {
-      fetchCategories()
-    }
-
-    if (cachedTags) {
-      setTimeout(fetchTags, 1500)
-    } else {
-      fetchTags()
-    }
-
-    await updateCount()
-  },
-  methods: {
-    cycleTheme,
-    handleHomeClick() {
-      this.$router.push('/').then(() => {
+    const handleHomeClick = () => {
+      router.push('/').then(() => {
         window.location.reload()
       })
-    },
-    handleItemClick() {
-      if (window.innerWidth <= 768) this.$emit('item-click')
-    },
-    isImageIcon(icon) {
+    }
+
+    const handleItemClick = () => {
+      if (window.innerWidth <= 768) emit('item-click')
+    }
+
+    const isImageIcon = (icon) => {
       if (!icon) return false
       return /^https?:\/\//.test(icon) || icon.startsWith('/')
-    },
-    gotoCategory(c) {
+    }
+
+    const gotoCategory = (c) => {
       const value = encodeURIComponent(c.id ?? c.name)
-      this.$router
-        .push({ path: '/', query: { category: value } })
-        .then(() => {
+      router
+        .push({ path: '/', query: { category: value } }).then(() => {
           window.location.reload()
         })
-      this.handleItemClick()
-    },
-    gotoTag(t) {
+      handleItemClick()
+    }
+
+    const gotoTag = (t) => {
       const value = encodeURIComponent(t.id ?? t.name)
-      this.$router
-        .push({ path: '/', query: { tags: value } })
-        .then(() => {
+      router
+        .push({ path: '/', query: { tags: value } }).then(() => {
           window.location.reload()
         })
-      this.handleItemClick()
+      handleItemClick()
+    }
+
+    await Promise.all([fetchCategoryData(), fetchTagData()])
+
+    return {
+      categoryData,
+      tagData,
+      categoryOpen,
+      tagOpen,
+      isLoadingCategory,
+      isLoadingTag,
+      iconClass,
+      unreadCount,
+      showUnreadCount,
+      shouldShowStats,
+      cycleTheme,
+      handleHomeClick,
+      handleItemClick,
+      isImageIcon,
+      gotoCategory,
+      gotoTag
     }
   }
 }

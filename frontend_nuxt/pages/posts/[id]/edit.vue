@@ -38,12 +38,12 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import PostEditor from '../components/PostEditor.vue'
-import CategorySelect from '../components/CategorySelect.vue'
-import TagSelect from '../components/TagSelect.vue'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import LoginOverlay from '../components/LoginOverlay.vue'
+import PostEditor from '../../../components/PostEditor.vue'
+import CategorySelect from '../../../components/CategorySelect.vue'
+import TagSelect from '../../../components/TagSelect.vue'
+import { API_BASE_URL, toast } from '../../../main'
+import { getToken, authState } from '../../../utils/auth'
+import LoginOverlay from '../../../components/LoginOverlay.vue'
 
 export default {
   name: 'EditPostPageView',

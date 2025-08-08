@@ -107,7 +107,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useScrollLoadMore } from '~/utils/loadMore'
 import { stripMarkdown } from '~/utils/markdown'
@@ -131,12 +131,8 @@ export default {
     SearchDropdown,
     ClientOnly: () => import('vue').then(m => m.defineAsyncComponent(() => import('vue').then(() => ({ template: '<slot />' }))))
   },
-  setup() {
+  async setup() {
     const route = useRoute()
-
-    /**
-     * -------- 1. PARAMS & REFS --------
-     */
     const selectedCategory = ref('')
     if (route.query.category) {
       const c = decodeURIComponent(route.query.category)
@@ -169,19 +165,6 @@ export default {
     const pageSize = 10
     const allLoaded = ref(false)
 
-    /**
-     * -------- 2. CLIENT‑SIDE ONLY: LDRS REGISTER --------
-     * 这里使用动态 import 避免 SSR 阶段触发 HTMLElement 未定义错误。
-     */
-    onMounted(async () => {
-      // 首次加载
-      fetchContent()
-      await loadOptions()
-    })
-
-    /**
-     * -------- 3. FETCH OPTION HELPERS --------
-     */
     const loadOptions = async () => {
       if (selectedCategory.value && !isNaN(selectedCategory.value)) {
         try {
@@ -245,9 +228,6 @@ export default {
       return url
     }
 
-    /**
-     * -------- 4. FETCH CORE --------
-     */
     const fetchPosts = async (reset = false) => {
       if (reset) {
         page.value = 0
@@ -299,7 +279,12 @@ export default {
       if (isLoadingPosts.value || allLoaded.value) return
       try {
         isLoadingPosts.value = true
-        const res = await fetch(buildRankUrl())
+        const token = getToken()
+        const res = await fetch(buildRankUrl(), {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : ''
+          }
+        })
         isLoadingPosts.value = false
         if (!res.ok) return
         const data = await res.json()
@@ -336,7 +321,12 @@ export default {
       if (isLoadingPosts.value || allLoaded.value) return
       try {
         isLoadingPosts.value = true
-        const res = await fetch(buildReplyUrl())
+        const token = getToken()
+        const res = await fetch(buildReplyUrl(), {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : ''
+          }
+        })
         isLoadingPosts.value = false
         if (!res.ok) return
         const data = await res.json()
@@ -366,11 +356,11 @@ export default {
 
     const fetchContent = async (reset = false) => {
       if (selectedTopic.value === '排行榜') {
-        fetchRanking(reset)
+        await fetchRanking(reset)
       } else if (selectedTopic.value === '最新回复') {
-        fetchLatestReply(reset)
+        await fetchLatestReply(reset)
       } else {
-        fetchPosts(reset)
+        await fetchPosts(reset)
       }
     }
 
@@ -385,6 +375,8 @@ export default {
     })
 
     const sanitizeDescription = text => stripMarkdown(text)
+
+    await Promise.all([loadOptions(), fetchContent()])
 
     return {
       topics,

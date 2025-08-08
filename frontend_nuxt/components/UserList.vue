@@ -22,9 +22,7 @@ export default {
   },
   methods: {
     handleUserClick(user) {
-      this.$router.push(`/users/${user.id}`).then(() => {
-        window.location.reload()
-      })
+      this.$router.push(`/users/${user.id}`)
     }
   }
 }

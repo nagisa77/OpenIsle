@@ -15,27 +15,29 @@
         </div>
       </div>
 
-      <div v-if="isLogin" class="header-content-right">
-        <div v-if="isMobile" class="search-icon" @click="search">
-          <i class="fas fa-search"></i>
+      <ClientOnly>
+        <div v-if="isLogin" class="header-content-right">
+          <div v-if="isMobile" class="search-icon" @click="search">
+            <i class="fas fa-search"></i>
+          </div>
+          <DropdownMenu ref="userMenu" :items="headerMenuItems">
+            <template #trigger>
+              <div class="avatar-container">
+                <img class="avatar-img" :src="avatar" alt="avatar">
+                <i class="fas fa-caret-down dropdown-icon"></i>
+              </div>
+            </template>
+          </DropdownMenu>
         </div>
-        <DropdownMenu ref="userMenu" :items="headerMenuItems">
-          <template #trigger>
-            <div class="avatar-container">
-              <img class="avatar-img" :src="avatar" alt="avatar">
-              <i class="fas fa-caret-down dropdown-icon"></i>
-            </div>
-          </template>
-        </DropdownMenu>
-      </div>
 
-      <div v-else class="header-content-right">
-        <div v-if="isMobile" class="search-icon" @click="search">
-          <i class="fas fa-search"></i>
+        <div v-else class="header-content-right">
+          <div v-if="isMobile" class="search-icon" @click="search">
+            <i class="fas fa-search"></i>
+          </div>
+          <div class="header-content-item-main" @click="goToLogin">登录</div>
+          <div class="header-content-item-secondary" @click="goToSignup">注册</div>
         </div>
-        <div class="header-content-item-main" @click="goToLogin">登录</div>
-        <div class="header-content-item-secondary" @click="goToSignup">注册</div>
-      </div>
+      </ClientOnly>
       
       <SearchDropdown ref="searchDropdown" v-if="isMobile && showSearch" @close="closeSearch" />
     </div>
@@ -49,6 +51,7 @@ import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import DropdownMenu from '~/components/DropdownMenu.vue'
 import SearchDropdown from '~/components/SearchDropdown.vue'
 import { isMobile } from '~/utils/screen'
+import { ClientOnly } from '#components'
 
 export default {
   name: 'HeaderComponent',
@@ -62,27 +65,84 @@ export default {
   data() {
     return {
       avatar: '',
-      showSearch: false
+      showSearch: false,
+      searchDropdown: null
     }
   },
-  computed: {
-    isLogin() {
-      return authState.loggedIn
-    },
-    isMobile() {
-      return isMobile.value
-    },
-    headerMenuItems() {
-      return [
-        { text: '设置', onClick: this.goToSettings },
-        { text: '个人主页', onClick: this.goToProfile },
-        { text: '退出', onClick: this.goToLogout }
-      ]
-    },
-    unreadCount() {
-      return notificationState.unreadCount
+  setup() {
+    const isLogin = computed(() => authState.loggedIn)
+    const isMobile = computed(() => isMobile.value)
+    const unreadCount = computed(() => notificationState.unreadCount)
+    const router = useRouter()
+
+    const goToHome = () => {
+      router.push('/').then(() => {
+        window.location.reload()
+      })
+    }
+    const search = () => {
+      showSearch.value = true
+      nextTick(() => {
+        searchDropdown.value.toggle()
+      })
+    }
+    const closeSearch = () => {
+      nextTick(() => {
+        showSearch.value = false
+      })
+    }
+    const goToLogin = () => {
+      router.push('/login')
+    }
+    const goToSettings = () => {
+      router.push('/settings')
+    }
+    const goToProfile = async () => {
+      if (!authState.loggedIn) {
+        router.push('/login')
+        return
+      }
+      let id = authState.username || authState.userId
+      if (!id) {
+        const user = await loadCurrentUser()
+        if (user) {
+          id = user.username || user.id
+        }
+      }
+      if (id) {
+        router.push(`/users/${id}`)
+      }
+    }
+    const goToSignup = () => {
+      router.push('/signup')
+    }
+    const goToLogout = () => {
+      clearToken()
+      this.$router.push('/login')
+    }
+
+    const headerMenuItems = computed(() => [
+      { text: '设置', onClick: goToSettings },
+      { text: '个人主页', onClick: goToProfile },
+      { text: '退出', onClick: goToLogout }
+    ])
+
+    return {
+      isLogin,
+      isMobile,
+      headerMenuItems,
+      unreadCount,
+      goToHome,
+      search,
+      closeSearch,
+      goToLogin,
+      goToSettings,
+      goToProfile,
+      goToSignup,
+      goToLogout
     }
   },
+
   async mounted() {
     const updateAvatar = async () => {
       if (authState.loggedIn) {
@@ -113,57 +173,6 @@ export default {
       this.showSearch = false
     })
   },
-
-
-  methods: {
-    goToHome() {
-      this.$router.push('/').then(() => {
-        window.location.reload()
-      })
-    },
-    search() {
-      this.showSearch = true
-      nextTick(() => {
-        this.$refs.searchDropdown.toggle()
-      })
-    },
-    closeSearch() {
-      nextTick(() => {
-        this.showSearch = false
-      })
-    },
-    goToLogin() {
-      this.$router.push('/login')
-    },
-    goToSettings() {
-      this.$router.push('/settings')
-    },
-    async goToProfile() {
-      if (!authState.loggedIn) {
-        this.$router.push('/login')
-        return
-      }
-      let id = authState.username || authState.userId
-      if (!id) {
-        const user = await loadCurrentUser()
-        if (user) {
-          id = user.username || user.id
-        }
-      }
-      if (id) {
-        this.$router.push(`/users/${id}`).then(() => {
-          window.location.reload()
-        })
-      }
-    },
-    goToSignup() {
-      this.$router.push('/signup')
-    },
-    goToLogout() {
-      clearToken()
-      this.$router.push('/login')
-    }
-  }
 }
 </script>
 

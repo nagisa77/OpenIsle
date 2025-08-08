@@ -15,6 +15,7 @@
     "ldrs": "^1.0.0",
     "markdown-it": "^14.1.0",
     "nuxt": "latest",
+    "nprogress": "^0.2.0",
     "vditor": "^3.11.1",
     "vue-easy-lightbox": "^1.19.0",
     "vue-echarts": "^7.0.3",

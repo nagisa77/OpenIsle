@@ -108,25 +108,25 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import VueEasyLightbox from 'vue-easy-lightbox'
 import { useRoute } from 'vue-router'
-import CommentItem from '../components/CommentItem.vue'
-import CommentEditor from '../components/CommentEditor.vue'
-import BaseTimeline from '../components/BaseTimeline.vue'
-import ArticleTags from '../components/ArticleTags.vue'
-import ArticleCategory from '../components/ArticleCategory.vue'
-import ReactionsGroup from '../components/ReactionsGroup.vue'
-import DropdownMenu from '../components/DropdownMenu.vue'
-import { renderMarkdown, handleMarkdownClick, stripMarkdownLength } from '../utils/markdown'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import TimeManager from '../utils/time'
+import CommentItem from '../../../components/CommentItem.vue'
+import CommentEditor from '../../../components/CommentEditor.vue'
+import BaseTimeline from '../../../components/BaseTimeline.vue'
+import ArticleTags from '../../../components/ArticleTags.vue'
+import ArticleCategory from '../../../components/ArticleCategory.vue'
+import ReactionsGroup from '../../../components/ReactionsGroup.vue'
+import DropdownMenu from '../../../components/DropdownMenu.vue'
+import { renderMarkdown, handleMarkdownClick, stripMarkdownLength } from '../../../utils/markdown'
+import { API_BASE_URL, toast } from '../../../main'
+import { getToken, authState } from '../../../utils/auth'
+import TimeManager from '../../../utils/time'
 import { useRouter } from 'vue-router'
-import { isMobile } from '../utils/screen'
-import Dropdown from '../components/Dropdown.vue'
+import { isMobile } from '../../../utils/screen'
+import Dropdown from '../../../components/Dropdown.vue'
 
 export default {
   name: 'PostPageView',
   components: { CommentItem, CommentEditor, BaseTimeline, ArticleTags, ArticleCategory, ReactionsGroup, DropdownMenu, VueEasyLightbox, Dropdown },
-  setup() {
+  async setup() {
     const route = useRoute()
     const postId = route.params.id
     const router = useRouter()
@@ -150,27 +150,35 @@ export default {
     const commentSort = ref('NEWEST')
     const isFetchingComments = ref(false)
 
-    // record default metadata from the main document
-    const defaultTitle = document.title
-    const metaDescriptionEl = document.querySelector('meta[name="description"]')
-    const defaultDescription = metaDescriptionEl ? metaDescriptionEl.getAttribute('content') : ''
-    const headerHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 0
+    // record default metadata from the main document (client only)
+    const defaultTitle = process.client ? document.title : ''
+    const metaDescriptionEl = process.client
+      ? document.querySelector('meta[name="description"]')
+      : null
+    const defaultDescription = process.client && metaDescriptionEl
+      ? metaDescriptionEl.getAttribute('content')
+      : ''
+    const headerHeight = process.client
+      ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 0
+      : 0
 
-    watch(title, t => {
-      document.title = `OpenIsle - ${t}`
-    })
+    if (process.client) {
+      watch(title, t => {
+        document.title = `OpenIsle - ${t}`
+      })
 
-    watch(postContent, c => {
-      if (metaDescriptionEl) {
-        metaDescriptionEl.setAttribute('content', stripMarkdownLength(c, 400))
-      }
-    })
+      watch(postContent, c => {
+        if (metaDescriptionEl) {
+          metaDescriptionEl.setAttribute('content', stripMarkdownLength(c, 400))
+        }
+      })
 
-    onBeforeUnmount(() => {
-      document.title = defaultTitle
-      if (metaDescriptionEl) metaDescriptionEl.setAttribute('content', defaultDescription)
-      window.removeEventListener('scroll', updateCurrentIndex)
-    })
+      onBeforeUnmount(() => {
+        document.title = defaultTitle
+        if (metaDescriptionEl) metaDescriptionEl.setAttribute('content', defaultDescription)
+        window.removeEventListener('scroll', updateCurrentIndex)
+      })
+    }
       
     const lightboxVisible = ref(false)
     const lightboxIndex = ref(0)
@@ -294,7 +302,7 @@ export default {
         })
         isWaitingFetchingPost.value = false;
         if (!res.ok) {
-          if (res.status === 404) {
+          if (res.status === 404 && process.client) {
             router.replace('/404')
           }
           return
@@ -581,10 +589,11 @@ export default {
       router.push(`/users/${author.value.id}`)
     }
 
+    await fetchPost()
+
     onMounted(async () => {
       const hash = location.hash
       const id = hash.startsWith('#comment-') ? hash.substring('#comment-'.length) : null
-      await fetchPost()
       if (id) expandCommentPath(id)
       updateCurrentIndex()
       window.addEventListener('scroll', updateCurrentIndex)

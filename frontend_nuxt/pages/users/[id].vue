@@ -431,9 +431,7 @@ export default {
 
     const gotoTag = tag => {
       const value = encodeURIComponent(tag.id ?? tag.name)
-      router.push({ path: '/', query: { tags: value } }).then(() => {
-        window.location.reload()
-      })
+      router.push({ path: '/', query: { tags: value } })
     }
 
     const init = async () => {

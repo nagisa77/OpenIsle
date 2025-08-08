@@ -86,9 +86,15 @@ export function handleMarkdownClick(e) {
 
 export function stripMarkdown(text) {
   const html = md.render(text || '')
-  const el = document.createElement('div')
-  el.innerHTML = html
-  return el.textContent || el.innerText || ''
+  // SSR 环境下没有 document
+  if (typeof window === 'undefined') {
+    // 用正则去除 HTML 标签
+    return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  } else {
+    const el = document.createElement('div')
+    el.innerHTML = html
+    return el.textContent || el.innerText || ''
+  }
 }
 
 export function stripMarkdownLength(text, length) {
