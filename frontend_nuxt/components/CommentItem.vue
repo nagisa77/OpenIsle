@@ -11,7 +11,7 @@
       <div class="common-info-content-header">
         <div class="info-content-header-left">
           <span class="user-name">{{ comment.userName }}</span>
-          <span v-if="comment.medal" class="medal-name">{{ getMedalTitle(comment.medal) }}</span>
+          <span v-if="comment.medal" class="medal-name" @click="gotoMedals(comment.userId)">{{ getMedalTitle(comment.medal) }}</span>
           <span v-if="level >= 2">
             <i class="fas fa-reply reply-icon"></i>
             <span class="user-name reply-user-name">{{ comment.parentUserName }}</span>
@@ -113,6 +113,10 @@ const CommentItem = {
     }
     const toggleEditor = () => {
       showEditor.value = !showEditor.value
+    }
+
+    const gotoMedals = (id) => {
+      router.push({ path: `/users/${id}`, query: { tab: 'achievements' } })
     }
 
     // 合并所有子回复为一个扁平数组
@@ -234,7 +238,7 @@ const CommentItem = {
         lightboxVisible.value = true
       }
     }
-    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, replyList, getMedalTitle }
+    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, replyList, getMedalTitle, gotoMedals }
   }
 }
 
@@ -289,6 +293,7 @@ export default CommentItem
   font-size: 12px;
   margin-left: 4px;
   opacity: 0.6;
+  cursor: pointer;
 }
 
 @keyframes highlight {

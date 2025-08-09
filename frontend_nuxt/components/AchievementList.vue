@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { API_BASE_URL, toast } from '../main'
 import { getToken } from '../utils/auth'
 
@@ -75,6 +75,18 @@ const selectMedal = async (medal) => {
     toast('选择勋章失败')
   }
 }
+
+const ensureSelected = () => {
+  if (!props.canSelect) return
+  const selected = props.medals.some(m => m.selected)
+  if (!selected) {
+    const firstCompleted = props.medals.find(m => m.completed)
+    if (firstCompleted) selectMedal(firstCompleted)
+  }
+}
+
+onMounted(ensureSelected)
+watch(() => props.medals, ensureSelected, { deep: true })
 
 </script>
 
