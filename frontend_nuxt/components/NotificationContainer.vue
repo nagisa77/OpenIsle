@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { isMobile } from '../utils/screen'
+import { useIsMobile } from '../utils/screen'
 export default {
   name: 'NotificationContainer',
   props: {
@@ -21,6 +21,7 @@ export default {
     markRead: { type: Function, required: true }
   },
   setup() {
+    const isMobile = useIsMobile()
     return {
       isMobile
     }

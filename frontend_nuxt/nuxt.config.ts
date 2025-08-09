@@ -2,9 +2,25 @@ import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
   ssr: true,
-  css: ['~/assets/global.css'],
+  // Ensure Vditor styles load before our overrides in global.css
+  css: ['vditor/dist/index.css', '~/assets/global.css'],
   app: {
     head: {
+      script: [
+        {
+          tagPriority: 'high',
+          innerHTML: `
+            (function () {
+              try {
+                const mode = localStorage.getItem('theme-mode');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = mode === 'dark' || mode === 'light' ? mode : (prefersDark ? 'dark' : 'light');
+                document.documentElement.dataset.theme = theme;
+              } catch (e) {}
+            })();
+          `
+        }
+      ],
       link: [
         {
           rel: 'stylesheet',

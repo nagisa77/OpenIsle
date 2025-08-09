@@ -24,7 +24,7 @@
 
 <script>
 import { ref, watch } from 'vue'
-import { isMobile } from '~/utils/screen'
+import { useIsMobile } from '~/utils/screen'
 import { useRouter } from 'vue-router'
 import Dropdown from '~/components/Dropdown.vue'
 import { API_BASE_URL } from '~/main'
@@ -40,6 +40,7 @@ export default {
     const selected = ref(null)
     const results = ref([])
     const dropdown = ref(null)
+    const isMobile = useIsMobile()
 
     const toggle = () => {
       dropdown.value.toggle()

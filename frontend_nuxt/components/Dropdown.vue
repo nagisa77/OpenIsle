@@ -147,7 +147,7 @@
 
 <script>
 import { ref, computed, watch, onMounted } from "vue"
-import { isMobile } from "~/utils/screen"
+import { useIsMobile } from "~/utils/screen"
 
 
 export default {
@@ -176,6 +176,7 @@ export default {
     const loaded = ref(false)
     const loading = ref(false)
     const wrapper = ref(null)
+    const isMobile = useIsMobile()
 
     const toggle = () => {
       open.value = !open.value

@@ -119,7 +119,7 @@ import TagSelect from '~/components/TagSelect.vue'
 import ArticleTags from '~/components/ArticleTags.vue'
 import ArticleCategory from '~/components/ArticleCategory.vue'
 import SearchDropdown from '~/components/SearchDropdown.vue'
-import { isMobile } from '~/utils/screen'
+import { useIsMobile } from '~/utils/screen'
 
 export default {
   name: 'HomePageView',
@@ -163,6 +163,7 @@ export default {
     const articles = ref([])
     const page = ref(0)
     const pageSize = 10
+    const isMobile = useIsMobile()
     const allLoaded = ref(false)
 
     const loadOptions = async () => {

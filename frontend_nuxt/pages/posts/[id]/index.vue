@@ -120,7 +120,7 @@ import { API_BASE_URL, toast } from '../../../main'
 import { getToken, authState } from '../../../utils/auth'
 import TimeManager from '../../../utils/time'
 import { useRouter } from 'vue-router'
-import { isMobile } from '../../../utils/screen'
+import { useIsMobile } from '../../../utils/screen'
 import Dropdown from '../../../components/Dropdown.vue'
 
 export default {
@@ -149,6 +149,7 @@ export default {
     const subscribed = ref(false)
     const commentSort = ref('NEWEST')
     const isFetchingComments = ref(false)
+    const isMobile = useIsMobile()
 
     // record default metadata from the main document (client only)
     const defaultTitle = process.client ? document.title : ''

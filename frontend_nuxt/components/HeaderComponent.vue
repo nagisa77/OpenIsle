@@ -50,7 +50,7 @@ import { watch, nextTick } from 'vue'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import DropdownMenu from '~/components/DropdownMenu.vue'
 import SearchDropdown from '~/components/SearchDropdown.vue'
-import { isMobile } from '~/utils/screen'
+import { useIsMobile } from '~/utils/screen'
 import { ClientOnly } from '#components'
 
 export default {
@@ -71,7 +71,7 @@ export default {
   },
   setup() {
     const isLogin = computed(() => authState.loggedIn)
-    const isMobile = computed(() => isMobile.value)
+    const isMobile = useIsMobile()
     const unreadCount = computed(() => notificationState.unreadCount)
     const router = useRouter()
 

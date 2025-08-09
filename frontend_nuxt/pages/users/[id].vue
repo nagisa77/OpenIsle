@@ -261,6 +261,10 @@ import { stripMarkdown, stripMarkdownLength } from '../utils/markdown'
 import TimeManager from '../utils/time'
 import { prevLevelExp } from '../utils/level'
 
+definePageMeta({
+  alias: ['/users/:id/']
+})
+
 export default {
   name: 'ProfileView',
   components: { BaseTimeline, UserList, BasePlaceholder, LevelProgress },
