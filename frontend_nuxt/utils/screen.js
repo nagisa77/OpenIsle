@@ -5,25 +5,30 @@ export const useIsMobile = () => {
   const width = ref(0)
   const isClient = ref(false)
 
-  const isMobileUserAgent = () => {
-    let userAgent = ''
+  // Read the user-agent on the server during the first invocation so it is
+  // available when the computed getter executes.
+  const serverUserAgent = process.server
+    ? (useRequestHeaders(['user-agent'])['user-agent'] || '').toLowerCase()
+    : ''
 
-    if (typeof navigator !== 'undefined') {
-      userAgent = navigator.userAgent.toLowerCase()
-    } else {
-      const headers = useRequestHeaders(['user-agent'])
-      userAgent = (headers['user-agent'] || '').toLowerCase()
-    }
-
+  const isMobileUserAgent = ua => {
+    ua = (ua || '').toLowerCase()
     const mobileKeywords = [
-      'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone',
-      'mobile', 'tablet', 'opera mini', 'iemobile'
+      'android',
+      'iphone',
+      'ipad',
+      'ipod',
+      'blackberry',
+      'windows phone',
+      'mobile',
+      'tablet',
+      'opera mini',
+      'iemobile'
     ]
-
-    return mobileKeywords.some(keyword => userAgent.includes(keyword))
+    return mobileKeywords.some(keyword => ua.includes(keyword))
   }
 
-  if (typeof window !== 'undefined') {
+  if (process.client) {
     isClient.value = true
     const updateWidth = () => {
       width.value = window.innerWidth
@@ -37,10 +42,12 @@ export const useIsMobile = () => {
 
   return computed(() => {
     if (isClient.value) {
-      return width.value > 0 ? width.value <= 768 : isMobileUserAgent()
+      return width.value > 0
+        ? width.value <= 768
+        : isMobileUserAgent(navigator.userAgent)
     }
 
-    return isMobileUserAgent()
+    return isMobileUserAgent(serverUserAgent)
   })
 }
 
