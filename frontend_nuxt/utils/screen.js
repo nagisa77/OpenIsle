@@ -16,11 +16,19 @@ export const useIsMobile = () => {
     }
 
     const mobileKeywords = [
-      'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone',
-      'mobile', 'tablet', 'opera mini', 'iemobile'
+      'android',
+      'iphone',
+      'ipad',
+      'ipod',
+      'blackberry',
+      'windows phone',
+      'mobile',
+      'tablet',
+      'opera mini',
+      'iemobile',
     ]
 
-    return mobileKeywords.some(keyword => userAgent.includes(keyword))
+    return mobileKeywords.some((keyword) => userAgent.includes(keyword))
   }
 
   if (typeof window !== 'undefined') {
@@ -43,4 +51,3 @@ export const useIsMobile = () => {
     return isMobileUserAgent()
   })
 }
-

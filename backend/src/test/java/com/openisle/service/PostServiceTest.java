@@ -4,6 +4,8 @@ import com.openisle.model.*;
 import com.openisle.repository.*;
 import com.openisle.exception.RateLimitException;
 import org.junit.jupiter.api.Test;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.context.ApplicationContext;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,6 +21,7 @@ class PostServiceTest {
         UserRepository userRepo = mock(UserRepository.class);
         CategoryRepository catRepo = mock(CategoryRepository.class);
         TagRepository tagRepo = mock(TagRepository.class);
+        LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
         NotificationService notifService = mock(NotificationService.class);
         SubscriptionService subService = mock(SubscriptionService.class);
         CommentService commentService = mock(CommentService.class);
@@ -28,11 +31,15 @@ class PostServiceTest {
         NotificationRepository notificationRepo = mock(NotificationRepository.class);
         PostReadService postReadService = mock(PostReadService.class);
         ImageUploader imageUploader = mock(ImageUploader.class);
+        TaskScheduler taskScheduler = mock(TaskScheduler.class);
+        EmailSender emailSender = mock(EmailSender.class);
+        ApplicationContext context = mock(ApplicationContext.class);
 
-        PostService service = new PostService(postRepo, userRepo, catRepo, tagRepo,
+        PostService service = new PostService(postRepo, userRepo, catRepo, tagRepo, lotteryRepo,
                 notifService, subService, commentService, commentRepo,
                 reactionRepo, subRepo, notificationRepo, postReadService,
-                imageUploader, PublishMode.DIRECT);
+                imageUploader, taskScheduler, emailSender, context, PublishMode.DIRECT);
+        when(context.getBean(PostService.class)).thenReturn(service);
 
         Post post = new Post();
         post.setId(1L);
@@ -60,6 +67,7 @@ class PostServiceTest {
         UserRepository userRepo = mock(UserRepository.class);
         CategoryRepository catRepo = mock(CategoryRepository.class);
         TagRepository tagRepo = mock(TagRepository.class);
+        LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
         NotificationService notifService = mock(NotificationService.class);
         SubscriptionService subService = mock(SubscriptionService.class);
         CommentService commentService = mock(CommentService.class);
@@ -69,15 +77,20 @@ class PostServiceTest {
         NotificationRepository notificationRepo = mock(NotificationRepository.class);
         PostReadService postReadService = mock(PostReadService.class);
         ImageUploader imageUploader = mock(ImageUploader.class);
+        TaskScheduler taskScheduler = mock(TaskScheduler.class);
+        EmailSender emailSender = mock(EmailSender.class);
+        ApplicationContext context = mock(ApplicationContext.class);
 
-        PostService service = new PostService(postRepo, userRepo, catRepo, tagRepo,
+        PostService service = new PostService(postRepo, userRepo, catRepo, tagRepo, lotteryRepo,
                 notifService, subService, commentService, commentRepo,
                 reactionRepo, subRepo, notificationRepo, postReadService,
-                imageUploader, PublishMode.DIRECT);
+                imageUploader, taskScheduler, emailSender, context, PublishMode.DIRECT);
+        when(context.getBean(PostService.class)).thenReturn(service);
 
         when(postRepo.countByAuthorAfter(eq("alice"), any())).thenReturn(1L);
 
         assertThrows(RateLimitException.class,
-                () -> service.createPost("alice", 1L, "t", "c", List.of(1L)));
+                () -> service.createPost("alice", 1L, "t", "c", List.of(1L),
+                        null, null, null, null, null, null));
     }
 }

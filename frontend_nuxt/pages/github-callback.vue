@@ -3,8 +3,8 @@
 </template>
 
 <script>
-import CallbackPage from '../components/CallbackPage.vue'
-import { githubExchange } from '../utils/github'
+import CallbackPage from '~/components/CallbackPage.vue'
+import { githubExchange } from '~/utils/github'
 
 export default {
   name: 'GithubCallbackPageView',
@@ -20,7 +20,6 @@ export default {
     } else {
       this.$router.push('/')
     }
-  }
+  },
 }
 </script>
-

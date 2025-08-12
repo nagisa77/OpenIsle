@@ -24,8 +24,8 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import BaseInput from '../components/BaseInput.vue'
+import { API_BASE_URL, toast } from '~/main'
+import BaseInput from '~/components/BaseInput.vue'
 export default {
   name: 'ForgotPasswordPageView',
   components: { BaseInput },
@@ -40,7 +40,7 @@ export default {
       passwordError: '',
       isSending: false,
       isVerifying: false,
-      isResetting: false
+      isResetting: false,
     }
   },
   mounted() {
@@ -59,7 +59,7 @@ export default {
         const res = await fetch(`${API_BASE_URL}/api/auth/forgot/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: this.email })
+          body: JSON.stringify({ email: this.email }),
         })
         this.isSending = false
         if (res.ok) {
@@ -79,7 +79,7 @@ export default {
         const res = await fetch(`${API_BASE_URL}/api/auth/forgot/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: this.email, code: this.code })
+          body: JSON.stringify({ email: this.email, code: this.code }),
         })
         this.isVerifying = false
         const data = await res.json()
@@ -104,7 +104,7 @@ export default {
         const res = await fetch(`${API_BASE_URL}/api/auth/forgot/reset`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: this.token, password: this.password })
+          body: JSON.stringify({ token: this.token, password: this.password }),
         })
         this.isResetting = false
         const data = await res.json()
@@ -120,8 +120,8 @@ export default {
         this.isResetting = false
         toast.error('重置失败')
       }
-    }
-  }
+    },
+  },
 }
 </script>
 

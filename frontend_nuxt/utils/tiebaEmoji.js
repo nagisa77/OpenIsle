@@ -1,4 +1,5 @@
-export const TIEBA_EMOJI_CDN = 'https://cdn.jsdelivr.net/gh/microlong666/tieba_mobile_emotions@master/'
+export const TIEBA_EMOJI_CDN =
+  'https://cdn.jsdelivr.net/gh/microlong666/tieba_mobile_emotions@master/'
 // export const TIEBA_EMOJI_CDN = 'https://openisle-1307107697.cos.ap-guangzhou.myqcloud.com/assert/vditor/dist/images/emoji/'
 
 export const tiebaEmoji = (() => {

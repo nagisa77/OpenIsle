@@ -1,7 +1,9 @@
 package com.openisle.controller;
 
+import com.openisle.dto.ActivityDto;
 import com.openisle.dto.MilkTeaInfoDto;
 import com.openisle.dto.MilkTeaRedeemRequest;
+import com.openisle.mapper.ActivityMapper;
 import com.openisle.model.Activity;
 import com.openisle.model.ActivityType;
 import com.openisle.model.User;
@@ -12,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/activities")
@@ -19,10 +22,13 @@ import java.util.List;
 public class ActivityController {
     private final ActivityService activityService;
     private final UserService userService;
+    private final ActivityMapper activityMapper;
 
     @GetMapping
-    public List<Activity> list() {
-        return activityService.list();
+    public List<ActivityDto> list() {
+        return activityService.list().stream()
+                .map(activityMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/milk-tea")

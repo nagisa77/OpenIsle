@@ -2,12 +2,15 @@ package com.openisle.service;
 
 import com.openisle.model.Post;
 import com.openisle.model.PostStatus;
+import com.openisle.model.PostType;
 import com.openisle.model.PublishMode;
 import com.openisle.model.User;
 import com.openisle.model.Category;
 import com.openisle.model.Comment;
 import com.openisle.model.NotificationType;
+import com.openisle.model.LotteryPost;
 import com.openisle.repository.PostRepository;
+import com.openisle.repository.LotteryPostRepository;
 import com.openisle.repository.UserRepository;
 import com.openisle.repository.CategoryRepository;
 import com.openisle.repository.TagRepository;
@@ -19,21 +22,39 @@ import com.openisle.repository.PostSubscriptionRepository;
 import com.openisle.repository.NotificationRepository;
 import com.openisle.model.Role;
 import com.openisle.exception.RateLimitException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.TaskScheduler;
+import com.openisle.service.EmailSender;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+
+@Slf4j
 @Service
 public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
+    private final LotteryPostRepository lotteryPostRepository;
     private PublishMode publishMode;
     private final NotificationService notificationService;
     private final SubscriptionService subscriptionService;
@@ -44,12 +65,17 @@ public class PostService {
     private final NotificationRepository notificationRepository;
     private final PostReadService postReadService;
     private final ImageUploader imageUploader;
+    private final TaskScheduler taskScheduler;
+    private final EmailSender emailSender;
+    private final ApplicationContext applicationContext;
+    private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledFinalizations = new ConcurrentHashMap<>();
 
     @org.springframework.beans.factory.annotation.Autowired
     public PostService(PostRepository postRepository,
                        UserRepository userRepository,
                        CategoryRepository categoryRepository,
                        TagRepository tagRepository,
+                       LotteryPostRepository lotteryPostRepository,
                        NotificationService notificationService,
                        SubscriptionService subscriptionService,
                        CommentService commentService,
@@ -59,11 +85,15 @@ public class PostService {
                        NotificationRepository notificationRepository,
                        PostReadService postReadService,
                        ImageUploader imageUploader,
+                       TaskScheduler taskScheduler,
+                       EmailSender emailSender,
+                       ApplicationContext applicationContext,
                        @Value("${app.post.publish-mode:DIRECT}") PublishMode publishMode) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.tagRepository = tagRepository;
+        this.lotteryPostRepository = lotteryPostRepository;
         this.notificationService = notificationService;
         this.subscriptionService = subscriptionService;
         this.commentService = commentService;
@@ -73,7 +103,24 @@ public class PostService {
         this.notificationRepository = notificationRepository;
         this.postReadService = postReadService;
         this.imageUploader = imageUploader;
+        this.taskScheduler = taskScheduler;
+        this.emailSender = emailSender;
+        this.applicationContext = applicationContext;
         this.publishMode = publishMode;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void rescheduleLotteries() {
+        LocalDateTime now = LocalDateTime.now();
+        for (LotteryPost lp : lotteryPostRepository.findByEndTimeAfterAndWinnersIsEmpty(now)) {
+            ScheduledFuture<?> future = taskScheduler.schedule(
+                    () -> applicationContext.getBean(PostService.class).finalizeLottery(lp.getId()),
+                    java.util.Date.from(lp.getEndTime().atZone(ZoneId.systemDefault()).toInstant()));
+            scheduledFinalizations.put(lp.getId(), future);
+        }
+        for (LotteryPost lp : lotteryPostRepository.findByEndTimeBeforeAndWinnersIsEmpty(now)) {
+            applicationContext.getBean(PostService.class).finalizeLottery(lp.getId());
+        }
     }
 
     public PublishMode getPublishMode() {
@@ -88,7 +135,13 @@ public class PostService {
                            Long categoryId,
                            String title,
                            String content,
-                           java.util.List<Long> tagIds) {
+                           java.util.List<Long> tagIds,
+                           PostType type,
+                           String prizeDescription,
+                           String prizeIcon,
+                           Integer prizeCount,
+                           LocalDateTime startTime,
+                           LocalDateTime endTime) {
         long recent = postRepository.countByAuthorAfter(username,
                 java.time.LocalDateTime.now().minusMinutes(5));
         if (recent >= 1) {
@@ -108,14 +161,31 @@ public class PostService {
         if (tags.isEmpty()) {
             throw new IllegalArgumentException("Tag not found");
         }
-        Post post = new Post();
+        PostType actualType = type != null ? type : PostType.NORMAL;
+        Post post;
+        if (actualType == PostType.LOTTERY) {
+            LotteryPost lp = new LotteryPost();
+            lp.setPrizeDescription(prizeDescription);
+            lp.setPrizeIcon(prizeIcon);
+            lp.setPrizeCount(prizeCount != null ? prizeCount : 0);
+            lp.setStartTime(startTime);
+            lp.setEndTime(endTime);
+            post = lp;
+        } else {
+            post = new Post();
+        }
+        post.setType(actualType);
         post.setTitle(title);
         post.setContent(content);
         post.setAuthor(author);
         post.setCategory(category);
-        post.setTags(new java.util.HashSet<>(tags));
+        post.setTags(new HashSet<>(tags));
         post.setStatus(publishMode == PublishMode.REVIEW ? PostStatus.PENDING : PostStatus.PUBLISHED);
-        post = postRepository.save(post);
+        if (post instanceof LotteryPost) {
+            post = lotteryPostRepository.save((LotteryPost) post);
+        } else {
+            post = postRepository.save(post);
+        }
         imageUploader.addReferences(imageUploader.extractUrls(content));
         if (post.getStatus() == PostStatus.PENDING) {
             java.util.List<User> admins = userRepository.findByRole(com.openisle.model.Role.ADMIN);
@@ -141,7 +211,46 @@ public class PostService {
             }
         }
         notificationService.notifyMentions(content, author, post, null);
+
+        if (post instanceof LotteryPost lp && lp.getEndTime() != null) {
+            ScheduledFuture<?> future = taskScheduler.schedule(
+                    () -> applicationContext.getBean(PostService.class).finalizeLottery(lp.getId()),
+                    java.util.Date.from(lp.getEndTime().atZone(ZoneId.systemDefault()).toInstant()));
+            scheduledFinalizations.put(lp.getId(), future);
+        }
         return post;
+    }
+
+    public void joinLottery(Long postId, String username) {
+        LotteryPost post = lotteryPostRepository.findById(postId)
+                .orElseThrow(() -> new com.openisle.exception.NotFoundException("Post not found"));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
+        post.getParticipants().add(user);
+        lotteryPostRepository.save(post);
+    }
+
+    @Transactional
+    public void finalizeLottery(Long postId) {
+        log.info("start to finalizeLottery for {}", postId);
+        scheduledFinalizations.remove(postId);
+        lotteryPostRepository.findById(postId).ifPresent(lp -> {
+            List<User> participants = new ArrayList<>(lp.getParticipants());
+            if (participants.isEmpty()) {
+                return;
+            }
+            Collections.shuffle(participants);
+            int winnersCount = Math.min(lp.getPrizeCount(), participants.size());
+            java.util.Set<User> winners = new java.util.HashSet<>(participants.subList(0, winnersCount));
+            log.info("winner count {}", winnersCount);
+            lp.setWinners(winners);
+            lotteryPostRepository.save(lp);
+            for (User w : winners) {
+                if (w.getEmail() != null) {
+                    emailSender.sendEmail(w.getEmail(), "你中奖了", "恭喜你在抽奖贴 \"" + lp.getTitle() + "\" 中获奖");
+                }
+            }
+        });
     }
 
     @Transactional
@@ -430,6 +539,12 @@ public class PostService {
         notificationRepository.deleteAll(notificationRepository.findByPost(post));
         postReadService.deleteByPost(post);
         imageUploader.removeReferences(imageUploader.extractUrls(post.getContent()));
+        if (post instanceof LotteryPost lp) {
+            ScheduledFuture<?> future = scheduledFinalizations.remove(lp.getId());
+            if (future != null) {
+                future.cancel(false);
+            }
+        }
         postRepository.delete(post);
     }
 

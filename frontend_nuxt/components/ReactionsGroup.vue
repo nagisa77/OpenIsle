@@ -1,10 +1,16 @@
 <template>
   <div class="reactions-container">
     <div class="reactions-viewer">
-      <div class="reactions-viewer-item-container" @click="openPanel" @mouseenter="cancelHide"
-        @mouseleave="scheduleHide">
+      <div
+        class="reactions-viewer-item-container"
+        @click="openPanel"
+        @mouseenter="cancelHide"
+        @mouseleave="scheduleHide"
+      >
         <template v-if="displayedReactions.length">
-          <div v-for="r in displayedReactions" :key="r.type" class="reactions-viewer-item">{{ reactionEmojiMap[r.type] }}</div>
+          <div v-for="r in displayedReactions" :key="r.type" class="reactions-viewer-item">
+            {{ reactionEmojiMap[r.type] }}
+          </div>
           <div class="reactions-count">{{ totalCount }}</div>
         </template>
         <div v-else class="reactions-viewer-item placeholder">
@@ -21,9 +27,19 @@
       </div>
       <slot></slot>
     </div>
-    <div v-if="panelVisible" class="reactions-panel" @mouseenter="cancelHide" @mouseleave="scheduleHide">
-      <div v-for="t in panelTypes" :key="t" class="reaction-option" @click="toggleReaction(t)"
-        :class="{ selected: userReacted(t) }">
+    <div
+      v-if="panelVisible"
+      class="reactions-panel"
+      @mouseenter="cancelHide"
+      @mouseleave="scheduleHide"
+    >
+      <div
+        v-for="t in panelTypes"
+        :key="t"
+        class="reaction-option"
+        @click="toggleReaction(t)"
+        :class="{ selected: userReacted(t) }"
+      >
         {{ reactionEmojiMap[t] }}<span v-if="counts[t]">{{ counts[t] }}</span>
       </div>
     </div>
@@ -31,10 +47,10 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import { reactionEmojiMap } from '../utils/reactions'
+import { computed, onMounted, ref, watch } from 'vue'
+import { API_BASE_URL, toast } from '~/main'
+import { authState, getToken } from '~/utils/auth'
+import { reactionEmojiMap } from '~/utils/reactions'
 
 let cachedTypes = null
 const fetchTypes = async () => {
@@ -42,7 +58,7 @@ const fetchTypes = async () => {
   try {
     const token = getToken()
     const res = await fetch(`${API_BASE_URL}/api/reaction-types`, {
-      headers: { Authorization: token ? `Bearer ${token}` : '' }
+      headers: { Authorization: token ? `Bearer ${token}` : '' },
     })
     if (res.ok) {
       cachedTypes = await res.json()
@@ -60,12 +76,15 @@ export default {
   props: {
     modelValue: { type: Array, default: () => [] },
     contentType: { type: String, required: true },
-    contentId: { type: [Number, String], required: true }
+    contentId: { type: [Number, String], required: true },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const reactions = ref(props.modelValue)
-    watch(() => props.modelValue, v => reactions.value = v)
+    watch(
+      () => props.modelValue,
+      (v) => (reactions.value = v),
+    )
 
     const reactionTypes = ref([])
     onMounted(async () => {
@@ -83,7 +102,8 @@ export default {
     const totalCount = computed(() => Object.values(counts.value).reduce((a, b) => a + b, 0))
     const likeCount = computed(() => counts.value['LIKE'] || 0)
 
-    const userReacted = type => reactions.value.some(r => r.type === type && r.user === authState.username)
+    const userReacted = (type) =>
+      reactions.value.some((r) => r.type === type && r.user === authState.username)
 
     const displayedReactions = computed(() => {
       return Object.entries(counts.value)
@@ -92,7 +112,7 @@ export default {
         .map(([type]) => ({ type }))
     })
 
-    const panelTypes = computed(() => reactionTypes.value.filter(t => t !== 'LIKE'))
+    const panelTypes = computed(() => reactionTypes.value.filter((t) => t !== 'LIKE'))
 
     const panelVisible = ref(false)
     let hideTimer = null
@@ -102,7 +122,9 @@ export default {
     }
     const scheduleHide = () => {
       clearTimeout(hideTimer)
-      hideTimer = setTimeout(() => { panelVisible.value = false }, 500)
+      hideTimer = setTimeout(() => {
+        panelVisible.value = false
+      }, 500)
     }
     const cancelHide = () => {
       clearTimeout(hideTimer)
@@ -114,12 +136,15 @@ export default {
         toast.error('请先登录')
         return
       }
-      const url = props.contentType === 'post'
-        ? `${API_BASE_URL}/api/posts/${props.contentId}/reactions`
-        : `${API_BASE_URL}/api/comments/${props.contentId}/reactions`
+      const url =
+        props.contentType === 'post'
+          ? `${API_BASE_URL}/api/posts/${props.contentId}/reactions`
+          : `${API_BASE_URL}/api/comments/${props.contentId}/reactions`
 
       // optimistic update
-      const existingIdx = reactions.value.findIndex(r => r.type === type && r.user === authState.username)
+      const existingIdx = reactions.value.findIndex(
+        (r) => r.type === type && r.user === authState.username,
+      )
       let tempReaction = null
       let removedReaction = null
       if (existingIdx > -1) {
@@ -134,7 +159,7 @@ export default {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ type })
+          body: JSON.stringify({ type }),
         })
         if (res.ok) {
           if (res.status === 204) {
@@ -188,9 +213,9 @@ export default {
       scheduleHide,
       cancelHide,
       toggleReaction,
-      userReacted
+      userReacted,
     }
-  }
+  },
 }
 </script>
 

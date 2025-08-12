@@ -1,5 +1,5 @@
 // plugins/ldrs.client.ts
-import { defineNuxtPlugin } from '#app'
+import { defineNuxtPlugin } from 'nuxt/app'
 
 export default defineNuxtPlugin(async () => {
   // 动态引入，防止打包时把 ldrs 拉进 SSR bundle

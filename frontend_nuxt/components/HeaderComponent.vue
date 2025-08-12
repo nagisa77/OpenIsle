@@ -3,14 +3,18 @@
     <div class="header-content">
       <div class="header-content-left">
         <div v-if="showMenuBtn" class="menu-btn-wrapper">
-          <button class="menu-btn" @click="$emit('toggle-menu')">
+          <button class="menu-btn" ref="menuBtn" @click="$emit('toggle-menu')">
             <i class="fas fa-bars"></i>
           </button>
           <span v-if="isMobile && unreadCount > 0" class="menu-unread-dot"></span>
         </div>
         <div class="logo-container" @click="goToHome">
-          <img alt="OpenIsle" src="https://openisle-1307107697.cos.ap-guangzhou.myqcloud.com/assert/image.png"
-            width="60" height="60">
+          <img
+            alt="OpenIsle"
+            src="https://openisle-1307107697.cos.ap-guangzhou.myqcloud.com/assert/image.png"
+            width="60"
+            height="60"
+          />
           <div class="logo-text">OpenIsle</div>
         </div>
       </div>
@@ -23,7 +27,7 @@
           <DropdownMenu ref="userMenu" :items="headerMenuItems">
             <template #trigger>
               <div class="avatar-container">
-                <img class="avatar-img" :src="avatar" alt="avatar">
+                <img class="avatar-img" :src="avatar" alt="avatar" />
                 <i class="fas fa-caret-down dropdown-icon"></i>
               </div>
             </template>
@@ -38,20 +42,21 @@
           <div class="header-content-item-secondary" @click="goToSignup">注册</div>
         </div>
       </ClientOnly>
-      
+
       <SearchDropdown ref="searchDropdown" v-if="isMobile && showSearch" @close="closeSearch" />
     </div>
   </header>
 </template>
 
 <script>
-import { authState, clearToken, loadCurrentUser } from '~/utils/auth'
-import { watch, nextTick } from 'vue'
-import { fetchUnreadCount, notificationState } from '~/utils/notification'
+import { ClientOnly } from '#components'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import DropdownMenu from '~/components/DropdownMenu.vue'
 import SearchDropdown from '~/components/SearchDropdown.vue'
+import { authState, clearToken, loadCurrentUser } from '~/utils/auth'
+import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import { useIsMobile } from '~/utils/screen'
-import { ClientOnly } from '#components'
 
 export default {
   name: 'HeaderComponent',
@@ -59,21 +64,23 @@ export default {
   props: {
     showMenuBtn: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  data() {
-    return {
-      avatar: '',
-      showSearch: false,
-      searchDropdown: null
-    }
-  },
-  setup() {
+  setup(props, { expose }) {
     const isLogin = computed(() => authState.loggedIn)
     const isMobile = useIsMobile()
     const unreadCount = computed(() => notificationState.unreadCount)
     const router = useRouter()
+    const avatar = ref('')
+    const showSearch = ref(false)
+    const searchDropdown = ref(null)
+    const userMenu = ref(null)
+    const menuBtn = ref(null)
+
+    expose({
+      menuBtn,
+    })
 
     const goToHome = () => {
       router.push('/').then(() => {
@@ -124,8 +131,45 @@ export default {
     const headerMenuItems = computed(() => [
       { text: '设置', onClick: goToSettings },
       { text: '个人主页', onClick: goToProfile },
-      { text: '退出', onClick: goToLogout }
+      { text: '退出', onClick: goToLogout },
     ])
+
+    onMounted(async () => {
+      const updateAvatar = async () => {
+        if (authState.loggedIn) {
+          const user = await loadCurrentUser()
+          if (user && user.avatar) {
+            avatar.value = user.avatar
+          }
+        }
+      }
+      const updateUnread = async () => {
+        if (authState.loggedIn) {
+          await fetchUnreadCount()
+        } else {
+          notificationState.unreadCount = 0
+        }
+      }
+
+      await updateAvatar()
+      await updateUnread()
+
+      watch(
+        () => authState.loggedIn,
+        async () => {
+          await updateAvatar()
+          await updateUnread()
+        },
+      )
+
+      watch(
+        () => router.currentRoute.value.fullPath,
+        () => {
+          if (userMenu.value) userMenu.value.close()
+          showSearch.value = false
+        },
+      )
+    })
 
     return {
       isLogin,
@@ -139,39 +183,13 @@ export default {
       goToSettings,
       goToProfile,
       goToSignup,
-      goToLogout
+      goToLogout,
+      showSearch,
+      searchDropdown,
+      userMenu,
+      avatar,
+      menuBtn,
     }
-  },
-
-  async mounted() {
-    const updateAvatar = async () => {
-      if (authState.loggedIn) {
-        const user = await loadCurrentUser()
-        if (user && user.avatar) {
-          this.avatar = user.avatar
-        }
-      }
-    }
-    const updateUnread = async () => {
-      if (authState.loggedIn) {
-        await fetchUnreadCount()
-      } else {
-        notificationState.unreadCount = 0
-      }
-    }
-
-    await updateAvatar()
-    await updateUnread()
-
-    watch(() => authState.loggedIn, async () => {
-      await updateAvatar()
-      await updateUnread()
-    })
-
-    watch(() => this.$route.fullPath, () => {
-      if (this.$refs.userMenu) this.$refs.userMenu.close()
-      this.showSearch = false
-    })
   },
 }
 </script>
@@ -257,7 +275,6 @@ export default {
   cursor: pointer;
 }
 
-
 .header-content-item-main:hover {
   background-color: var(--primary-color-hover);
 }
@@ -318,5 +335,4 @@ export default {
     display: none;
   }
 }
-
 </style>

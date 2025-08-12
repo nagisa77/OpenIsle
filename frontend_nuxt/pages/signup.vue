@@ -2,9 +2,7 @@
   <div class="signup-page">
     <div class="signup-page-content">
       <div class="signup-page-header">
-        <div class="signup-page-header-title">
-          Welcome :)
-        </div>
+        <div class="signup-page-header-title">Welcome :)</div>
       </div>
 
       <div v-if="emailStep === 0" class="email-signup-page-content">
@@ -33,8 +31,11 @@
         />
         <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
 
-
-        <div v-if="!isWaitingForEmailSent" class="signup-page-button-primary" @click="sendVerification">
+        <div
+          v-if="!isWaitingForEmailSent"
+          class="signup-page-button-primary"
+          @click="sendVerification"
+        >
           <div class="signup-page-button-text">验证邮箱</div>
         </div>
         <div v-else class="signup-page-button-primary disabled">
@@ -44,17 +45,18 @@
           </div>
         </div>
 
-        <div class="signup-page-button-secondary">已经有账号？ <a class="signup-page-button-secondary-link"
-            href="/login">登录</a></div>
+        <div class="signup-page-button-secondary">
+          已经有账号？ <a class="signup-page-button-secondary-link" href="/login">登录</a>
+        </div>
       </div>
 
       <div v-if="emailStep === 1" class="email-signup-page-content">
-        <BaseInput
-          icon="fas fa-envelope"
-          v-model="code"
-          placeholder="邮箱验证码"
-        />
-        <div v-if="!isWaitingForEmailVerified" class="signup-page-button-primary" @click="verifyCode">
+        <BaseInput icon="fas fa-envelope" v-model="code" placeholder="邮箱验证码" />
+        <div
+          v-if="!isWaitingForEmailVerified"
+          class="signup-page-button-primary"
+          @click="verifyCode"
+        >
           <div class="signup-page-button-text">注册</div>
         </div>
         <div v-else class="signup-page-button-primary disabled">
@@ -68,19 +70,19 @@
 
     <div class="other-signup-page-content">
       <div class="signup-page-button" @click="googleAuthorize">
-        <img class="signup-page-button-icon" src="../assets/icons/google.svg" alt="Google Logo" />
+        <img class="signup-page-button-icon" src="~/assets/icons/google.svg" alt="Google Logo" />
         <div class="signup-page-button-text">Google 注册</div>
       </div>
       <div class="signup-page-button" @click="signupWithGithub">
-        <img class="signup-page-button-icon" src="../assets/icons/github.svg" alt="GitHub Logo" />
+        <img class="signup-page-button-icon" src="~/assets/icons/github.svg" alt="GitHub Logo" />
         <div class="signup-page-button-text">GitHub 注册</div>
       </div>
       <div class="signup-page-button" @click="signupWithDiscord">
-        <img class="signup-page-button-icon" src="../assets/icons/discord.svg" alt="Discord Logo" />
+        <img class="signup-page-button-icon" src="~/assets/icons/discord.svg" alt="Discord Logo" />
         <div class="signup-page-button-text">Discord 注册</div>
       </div>
       <div class="signup-page-button" @click="signupWithTwitter">
-        <img class="signup-page-button-icon" src="../assets/icons/twitter.svg" alt="Twitter Logo" />
+        <img class="signup-page-button-icon" src="~/assets/icons/twitter.svg" alt="Twitter Logo" />
         <div class="signup-page-button-text">Twitter 注册</div>
       </div>
     </div>
@@ -88,12 +90,12 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import { googleAuthorize } from '../utils/google'
-import { githubAuthorize } from '../utils/github'
-import { discordAuthorize } from '../utils/discord'
-import { twitterAuthorize } from '../utils/twitter'
-import BaseInput from '../components/BaseInput.vue'
+import BaseInput from '~/components/BaseInput.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { discordAuthorize } from '~/utils/discord'
+import { githubAuthorize } from '~/utils/github'
+import { googleAuthorize } from '~/utils/google'
+import { twitterAuthorize } from '~/utils/twitter'
 export default {
   name: 'SignupPageView',
   components: { BaseInput },
@@ -112,7 +114,7 @@ export default {
       passwordError: '',
       code: '',
       isWaitingForEmailSent: false,
-      isWaitingForEmailVerified: false
+      isWaitingForEmailVerified: false,
     }
   },
   async mounted() {
@@ -123,7 +125,9 @@ export default {
         const data = await res.json()
         this.registerMode = data.registerMode
       }
-    } catch {/* ignore */}
+    } catch {
+      /* ignore */
+    }
     if (this.$route.query.verify) {
       this.emailStep = 1
     }
@@ -157,8 +161,8 @@ export default {
           body: JSON.stringify({
             username: this.username,
             email: this.email,
-            password: this.password
-          })
+            password: this.password,
+          }),
         })
         this.isWaitingForEmailSent = false
         const data = await res.json()
@@ -184,10 +188,9 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code: this.code,
-            username: this.username
-          })
+            username: this.username,
+          }),
         })
-        this.isWaitingForEmailVerified = false
         const data = await res.json()
         if (res.ok) {
           if (this.registerMode === 'WHITELIST') {
@@ -201,6 +204,8 @@ export default {
         }
       } catch (e) {
         toast.error('注册失败')
+      } finally {
+        this.isWaitingForEmailVerified = false
       }
     },
     signupWithGithub() {
@@ -211,8 +216,8 @@ export default {
     },
     signupWithTwitter() {
       twitterAuthorize()
-    }
-  }
+    },
+  },
 }
 </script>
 

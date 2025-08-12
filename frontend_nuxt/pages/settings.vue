@@ -12,7 +12,6 @@
     <div v-else>
       <div class="settings-title">个人资料设置</div>
       <div class="profile-section">
-
         <div class="avatar-row">
           <!-- label 充当点击区域，内部隐藏 input -->
           <label class="avatar-container">
@@ -23,7 +22,12 @@
           </label>
         </div>
         <div class="form-row username-row">
-          <BaseInput icon="fas fa-user" v-model="username" @input="usernameError = ''" placeholder="用户名" />
+          <BaseInput
+            icon="fas fa-user"
+            v-model="username"
+            @input="usernameError = ''"
+            placeholder="用户名"
+          />
           <div class="setting-description">用户名是你在社区的唯一标识</div>
           <div v-if="usernameError" class="error-message">{{ usernameError }}</div>
         </div>
@@ -61,11 +65,11 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import { getToken, fetchCurrentUser, setToken } from '../utils/auth'
-import BaseInput from '../components/BaseInput.vue'
-import Dropdown from '../components/Dropdown.vue'
-import AvatarCropper from '../components/AvatarCropper.vue'
+import AvatarCropper from '~/components/AvatarCropper.vue'
+import BaseInput from '~/components/BaseInput.vue'
+import Dropdown from '~/components/Dropdown.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { fetchCurrentUser, getToken, setToken } from '~/utils/auth'
 export default {
   name: 'SettingsPageView',
   components: { BaseInput, Dropdown, AvatarCropper },
@@ -84,7 +88,7 @@ export default {
       aiFormatLimit: 3,
       registerMode: 'DIRECT',
       isLoadingPage: false,
-      isSaving: false
+      isSaving: false,
     }
   },
   async mounted() {
@@ -124,14 +128,14 @@ export default {
     fetchPublishModes() {
       return Promise.resolve([
         { id: 'DIRECT', name: '直接发布', icon: 'fas fa-bolt' },
-        { id: 'REVIEW', name: '审核后发布', icon: 'fas fa-search' }
+        { id: 'REVIEW', name: '审核后发布', icon: 'fas fa-search' },
       ])
     },
     fetchPasswordStrengths() {
       return Promise.resolve([
         { id: 'LOW', name: '低', icon: 'fas fa-lock-open' },
         { id: 'MEDIUM', name: '中', icon: 'fas fa-lock' },
-        { id: 'HIGH', name: '高', icon: 'fas fa-user-shield' }
+        { id: 'HIGH', name: '高', icon: 'fas fa-user-shield' },
       ])
     },
     fetchAiLimits() {
@@ -139,20 +143,20 @@ export default {
         { id: 3, name: '3次' },
         { id: 5, name: '5次' },
         { id: 10, name: '10次' },
-        { id: -1, name: '无限' }
+        { id: -1, name: '无限' },
       ])
     },
     fetchRegisterModes() {
       return Promise.resolve([
         { id: 'DIRECT', name: '直接注册', icon: 'fas fa-user-check' },
-        { id: 'WHITELIST', name: '白名单邀请制', icon: 'fas fa-envelope' }
+        { id: 'WHITELIST', name: '白名单邀请制', icon: 'fas fa-envelope' },
       ])
     },
     async loadAdminConfig() {
       try {
         const token = getToken()
         const res = await fetch(`${API_BASE_URL}/api/admin/config`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const data = await res.json()
@@ -184,7 +188,7 @@ export default {
           const res = await fetch(`${API_BASE_URL}/api/users/me/avatar`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
-            body: form
+            body: form,
           })
           const data = await res.json()
           if (res.ok) {
@@ -197,7 +201,7 @@ export default {
         const res = await fetch(`${API_BASE_URL}/api/users/me`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ username: this.username, introduction: this.introduction })
+          body: JSON.stringify({ username: this.username, introduction: this.introduction }),
         })
 
         const data = await res.json()
@@ -213,7 +217,12 @@ export default {
           await fetch(`${API_BASE_URL}/api/admin/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ publishMode: this.publishMode, passwordStrength: this.passwordStrength, aiFormatLimit: this.aiFormatLimit, registerMode: this.registerMode })
+            body: JSON.stringify({
+              publishMode: this.publishMode,
+              passwordStrength: this.passwordStrength,
+              aiFormatLimit: this.aiFormatLimit,
+              registerMode: this.registerMode,
+            }),
           })
         }
         toast.success('保存成功')
@@ -221,7 +230,7 @@ export default {
 
       this.isSaving = false
     },
-  }
+  },
 }
 </script>
 

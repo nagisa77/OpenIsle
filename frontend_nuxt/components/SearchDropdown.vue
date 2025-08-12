@@ -1,11 +1,25 @@
 <template>
   <div class="search-dropdown">
-    <Dropdown ref="dropdown" v-model="selected" :fetch-options="fetchResults" remote menu-class="search-menu"
-      option-class="search-option" :show-search="isMobile" @update:search="keyword = $event" @close="onClose">
+    <Dropdown
+      ref="dropdown"
+      v-model="selected"
+      :fetch-options="fetchResults"
+      remote
+      menu-class="search-menu"
+      option-class="search-option"
+      :show-search="isMobile"
+      @update:search="keyword = $event"
+      @close="onClose"
+    >
       <template #display="{ setSearch }">
         <div class="search-input">
           <i class="search-input-icon fas fa-search"></i>
-          <input class="text-input" v-model="keyword" placeholder="Search" @input="setSearch(keyword)" />
+          <input
+            class="text-input"
+            v-model="keyword"
+            placeholder="Search"
+            @input="setSearch(keyword)"
+          />
         </div>
       </template>
       <template #option="{ option }">
@@ -53,13 +67,13 @@ export default {
       const res = await fetch(`${API_BASE_URL}/api/search/global?keyword=${encodeURIComponent(kw)}`)
       if (!res.ok) return []
       const data = await res.json()
-      results.value = data.map(r => ({
+      results.value = data.map((r) => ({
         id: r.id,
         text: r.text,
         type: r.type,
         subText: r.subText,
         extra: r.extra,
-        postId: r.postId
+        postId: r.postId,
       }))
       return results.value
     }
@@ -68,8 +82,8 @@ export default {
       text = stripMarkdown(text)
       if (!keyword.value) return text
       const reg = new RegExp(keyword.value, 'gi')
-      const res = text.replace(reg, m => `<span class="highlight">${m}</span>`)
-      return res; 
+      const res = text.replace(reg, (m) => `<span class="highlight">${m}</span>`)
+      return res
     }
 
     const iconMap = {
@@ -77,12 +91,12 @@ export default {
       post: 'fas fa-file-alt',
       comment: 'fas fa-comment',
       category: 'fas fa-folder',
-      tag: 'fas fa-hashtag'
+      tag: 'fas fa-hashtag',
     }
 
-    watch(selected, val => {
+    watch(selected, (val) => {
       if (!val) return
-      const opt = results.value.find(r => r.id === val)
+      const opt = results.value.find((r) => r.id === val)
       if (!opt) return
       if (opt.type === 'post' || opt.type === 'post_title') {
         router.push(`/posts/${opt.id}`)
@@ -101,8 +115,18 @@ export default {
       keyword.value = ''
     })
 
-    return { keyword, selected, fetchResults, highlight, iconMap, isMobile, dropdown, onClose, toggle }
-  }
+    return {
+      keyword,
+      selected,
+      fetchResults,
+      highlight,
+      iconMap,
+      isMobile,
+      dropdown,
+      onClose,
+      toggle,
+    }
+  },
 }
 </script>
 

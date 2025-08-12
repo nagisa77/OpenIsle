@@ -10,11 +10,12 @@ export const authState = reactive({
   loggedIn: false,
   userId: null,
   username: null,
-  role: null
+  role: null,
 })
 
 if (process.client) {
-  authState.loggedIn = localStorage.getItem(TOKEN_KEY) !== null && localStorage.getItem(TOKEN_KEY) !== ''
+  authState.loggedIn =
+    localStorage.getItem(TOKEN_KEY) !== null && localStorage.getItem(TOKEN_KEY) !== ''
   authState.userId = localStorage.getItem(USER_ID_KEY)
   authState.username = localStorage.getItem(USERNAME_KEY)
   authState.role = localStorage.getItem(ROLE_KEY)
@@ -68,7 +69,7 @@ export async function fetchCurrentUser() {
   if (!token) return null
   try {
     const res = await fetch(`${API_BASE_URL}/api/users/me`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
     if (!res.ok) return null
     return await res.json()
@@ -94,7 +95,7 @@ export async function checkToken() {
   if (!token) return false
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/check`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
     authState.loggedIn = res.ok
     return res.ok

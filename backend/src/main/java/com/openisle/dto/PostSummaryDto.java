@@ -1,6 +1,7 @@
 package com.openisle.dto;
 
 import com.openisle.model.PostStatus;
+import com.openisle.model.PostType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -28,5 +29,7 @@ public class PostSummaryDto {
     private boolean subscribed;
     private int reward;
     private int pointReward;
+    private PostType type;
+    private LotteryDto lottery;
 }
 

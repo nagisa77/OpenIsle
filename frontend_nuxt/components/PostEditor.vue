@@ -8,14 +8,14 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, onUnmounted, useId } from 'vue'
-import { themeState } from '../utils/theme'
+import { onMounted, onUnmounted, ref, useId, watch } from 'vue'
+import { clearVditorStorage } from '~/utils/clearVditorStorage'
+import { themeState } from '~/utils/theme'
 import {
   createVditor,
   getEditorTheme as getEditorThemeUtil,
-  getPreviewTheme as getPreviewThemeUtil
-} from '../utils/vditor'
-import { clearVditorStorage } from '../utils/clearVditorStorage'
+  getPreviewTheme as getPreviewThemeUtil,
+} from '~/utils/vditor'
 
 export default {
   name: 'PostEditor',
@@ -23,20 +23,20 @@ export default {
   props: {
     modelValue: {
       type: String,
-      default: ''
+      default: '',
     },
     editorId: {
       type: String,
-      default: ''
+      default: '',
     },
     loading: {
       type: Boolean,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props, { emit }) {
     const vditorInstance = ref(null)
@@ -56,42 +56,42 @@ export default {
 
     watch(
       () => props.loading,
-      val => {
+      (val) => {
         if (!vditorRender) return
         if (val) {
           vditorInstance.value.disabled()
         } else {
           vditorInstance.value.enable()
         }
-      }
+      },
     )
 
     watch(
       () => props.disabled,
-      val => {
+      (val) => {
         if (!vditorInstance.value) return
         if (val) {
           vditorInstance.value.disabled()
         } else if (!props.loading) {
           vditorInstance.value.enable()
         }
-      }
+      },
     )
 
     watch(
       () => props.modelValue,
-      val => {
+      (val) => {
         if (vditorInstance.value && vditorInstance.value.getValue() !== val) {
           vditorInstance.value.setValue(val)
         }
-      }
+      },
     )
 
     watch(
       () => themeState.mode,
       () => {
         applyTheme()
-      }
+      },
     )
 
     onMounted(() => {
@@ -109,7 +109,7 @@ export default {
             vditorInstance.value.disabled()
           }
           applyTheme()
-        }
+        },
       })
       // applyTheme()
     })
@@ -119,7 +119,7 @@ export default {
     })
 
     return { editorId }
-  }
+  },
 }
 </script>
 
@@ -148,5 +148,4 @@ export default {
     min-height: 100px;
   }
 }
-
 </style>

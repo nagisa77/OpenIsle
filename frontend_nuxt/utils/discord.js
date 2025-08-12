@@ -18,7 +18,12 @@ export async function discordExchange(code, state, reason) {
     const res = await fetch(`${API_BASE_URL}/api/auth/discord`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirectUri: `${window.location.origin}/discord-callback`, reason, state })
+      body: JSON.stringify({
+        code,
+        redirectUri: `${window.location.origin}/discord-callback`,
+        reason,
+        state,
+      }),
     })
     const data = await res.json()
     if (res.ok && data.token) {
@@ -28,27 +33,27 @@ export async function discordExchange(code, state, reason) {
       registerPush()
       return {
         success: true,
-        needReason: false
+        needReason: false,
       }
     } else if (data.reason_code === 'NOT_APPROVED') {
       toast.info('当前为注册审核模式，请填写注册理由')
       return {
         success: false,
         needReason: true,
-        token: data.token
+        token: data.token,
       }
     } else if (data.reason_code === 'IS_APPROVING') {
       toast.info('您的注册理由正在审批中')
       return {
         success: true,
-        needReason: false
+        needReason: false,
       }
     } else {
       toast.error(data.error || '登录失败')
       return {
         success: false,
         needReason: false,
-        error: data.error || '登录失败'
+        error: data.error || '登录失败',
       }
     }
   } catch (e) {
@@ -56,7 +61,7 @@ export async function discordExchange(code, state, reason) {
     return {
       success: false,
       needReason: false,
-      error: '登录失败'
+      error: '登录失败',
     }
   }
 }

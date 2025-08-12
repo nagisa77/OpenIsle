@@ -1,11 +1,15 @@
 <template>
   <div id="app">
     <div class="header-container">
-      <HeaderComponent @toggle-menu="menuVisible = !menuVisible" :show-menu-btn="!hideMenu" />
+      <HeaderComponent
+        ref="header"
+        @toggle-menu="menuVisible = !menuVisible"
+        :show-menu-btn="!hideMenu"
+      />
     </div>
 
     <div class="main-container">
-      <div class="menu-container">
+      <div class="menu-container" v-click-outside="handleMenuOutside">
         <MenuComponent :visible="!hideMenu && menuVisible" @item-click="menuVisible = false" />
       </div>
       <div class="content" :class="{ 'menu-open': menuVisible && !hideMenu }">
@@ -19,37 +23,50 @@
 <script>
 import HeaderComponent from '~/components/HeaderComponent.vue'
 import MenuComponent from '~/components/MenuComponent.vue'
+
 import GlobalPopups from '~/components/GlobalPopups.vue'
 
 export default {
   name: 'App',
   components: { HeaderComponent, MenuComponent, GlobalPopups },
-  data() {
-    return {
-      menuVisible: true
-    }
-  },
-  computed: {
-    hideMenu() {
+  setup() {
+    const isMobile = useIsMobile()
+    const menuVisible = ref(!isMobile.value)
+    const hideMenu = computed(() => {
       return [
         '/login',
-        '/signup', 
+        '/signup',
         '/404',
         '/signup-reason',
         '/github-callback',
         '/twitter-callback',
         '/discord-callback',
         '/forgot-password',
-        '/google-callback'
-      ].includes(this.$route.path)
+        '/google-callback',
+      ].includes(useRoute().path)
+    })
+
+    const header = useTemplateRef('header')
+
+    onMounted(() => {
+      if (typeof window !== 'undefined') {
+        menuVisible.value = window.innerWidth > 768
+      }
+    })
+
+    const handleMenuOutside = (event) => {
+      const btn = header.value.$refs.menuBtn
+      if (btn && (btn === event.target || btn.contains(event.target))) {
+        return // 如果是菜单按钮的点击，不处理关闭
+      }
+
+      if (isMobile.value) {
+        menuVisible.value = false
+      }
     }
+
+    return { menuVisible, hideMenu, handleMenuOutside, header }
   },
-  async mounted() {
-    if (typeof window !== 'undefined') {
-      this.menuVisible = window.innerWidth > 768
-    }
-  },
-  methods: {}
 }
 </script>
 <style src="~/assets/global.css"></style>
@@ -62,7 +79,8 @@ export default {
   z-index: 1000;
 }
 
-.menu-container {}
+.menu-container {
+}
 
 .content {
   /* height: calc(100vh - var(--header-height)); */
@@ -71,7 +89,7 @@ export default {
   max-width: 100%;
   transition: max-width 0.3s ease;
   background-color: var(--background-color);
-  min-height: calc(100vh - var(--header-height)); 
+  min-height: calc(100vh - var(--header-height));
 }
 
 .content.menu-open {
@@ -86,7 +104,6 @@ export default {
 }
 
 @media (max-width: 768px) {
-
   .content,
   .content.menu-open {
     max-width: 100% !important;

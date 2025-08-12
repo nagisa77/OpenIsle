@@ -49,11 +49,7 @@
       </slot>
     </div>
     <div
-      v-if="
-        open &&
-        !isMobile &&
-        (loading || filteredOptions.length > 0 || showSearch)
-      "
+      v-if="open && !isMobile && (loading || filteredOptions.length > 0 || showSearch)"
       :class="['dropdown-menu', menuClass]"
       v-click-outside="close"
     >
@@ -62,32 +58,18 @@
         <input type="text" v-model="search" placeholder="搜索" />
       </div>
       <div v-if="loading" class="dropdown-loading">
-        <l-hatch
-          size="20"
-          stroke="4"
-          speed="3.5"
-          color="var(--primary-color)"
-        ></l-hatch>
+        <l-hatch size="20" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
       </div>
       <template v-else>
         <div
           v-for="o in filteredOptions"
           :key="o.id"
           @click="select(o.id)"
-          :class="[
-            'dropdown-option',
-            optionClass,
-            { selected: isSelected(o.id) },
-          ]"
+          :class="['dropdown-option', optionClass, { selected: isSelected(o.id) }]"
         >
           <slot name="option" :option="o" :isSelected="isSelected(o.id)">
             <template v-if="o.icon">
-              <img
-                v-if="isImageIcon(o.icon)"
-                :src="o.icon"
-                class="option-icon"
-                :alt="o.name"
-              />
+              <img v-if="isImageIcon(o.icon)" :src="o.icon" class="option-icon" :alt="o.name" />
               <i v-else :class="['option-icon', o.icon]"></i>
             </template>
             <span>{{ o.name }}</span>
@@ -107,32 +89,18 @@
             <input type="text" v-model="search" placeholder="搜索" />
           </div>
           <div v-if="loading" class="dropdown-loading">
-            <l-hatch
-              size="20"
-              stroke="4"
-              speed="3.5"
-              color="var(--primary-color)"
-            ></l-hatch>
+            <l-hatch size="20" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
           </div>
           <template v-else>
             <div
               v-for="o in filteredOptions"
               :key="o.id"
               @click="select(o.id)"
-              :class="[
-                'dropdown-option',
-                optionClass,
-                { selected: isSelected(o.id) },
-              ]"
+              :class="['dropdown-option', optionClass, { selected: isSelected(o.id) }]"
             >
               <slot name="option" :option="o" :isSelected="isSelected(o.id)">
                 <template v-if="o.icon">
-                  <img
-                    v-if="isImageIcon(o.icon)"
-                    :src="o.icon"
-                    class="option-icon"
-                    :alt="o.name"
-                  />
+                  <img v-if="isImageIcon(o.icon)" :src="o.icon" class="option-icon" :alt="o.name" />
                   <i v-else :class="['option-icon', o.icon]"></i>
                 </template>
                 <span>{{ o.name }}</span>
@@ -146,33 +114,30 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from "vue"
-import { useIsMobile } from "~/utils/screen"
-
+import { ref, computed, watch, onMounted } from 'vue'
+import { useIsMobile } from '~/utils/screen'
 
 export default {
-  name: "BaseDropdown",
+  name: 'BaseDropdown',
   props: {
     modelValue: { type: [Array, String, Number], default: () => [] },
-    placeholder: { type: String, default: "返回" },
+    placeholder: { type: String, default: '返回' },
     multiple: { type: Boolean, default: false },
     fetchOptions: { type: Function, required: true },
     remote: { type: Boolean, default: false },
-    menuClass: { type: String, default: "" },
-    optionClass: { type: String, default: "" },
+    menuClass: { type: String, default: '' },
+    optionClass: { type: String, default: '' },
     showSearch: { type: Boolean, default: true },
     initialOptions: { type: Array, default: () => [] },
   },
-  emits: ["update:modelValue", "update:search", "close"],
+  emits: ['update:modelValue', 'update:search', 'close'],
   setup(props, { emit, expose }) {
     const open = ref(false)
-    const search = ref("")
+    const search = ref('')
     const setSearch = (val) => {
       search.value = val
     }
-    const options = ref(
-      Array.isArray(props.initialOptions) ? [...props.initialOptions] : []
-    )
+    const options = ref(Array.isArray(props.initialOptions) ? [...props.initialOptions] : [])
     const loaded = ref(false)
     const loading = ref(false)
     const wrapper = ref(null)
@@ -180,12 +145,12 @@ export default {
 
     const toggle = () => {
       open.value = !open.value
-      if (!open.value) emit("close")
+      if (!open.value) emit('close')
     }
 
     const close = () => {
       open.value = false
-      emit("close")
+      emit('close')
     }
 
     const select = (id) => {
@@ -197,23 +162,21 @@ export default {
         } else {
           arr.push(id)
         }
-        emit("update:modelValue", arr)
+        emit('update:modelValue', arr)
       } else {
-        emit("update:modelValue", id)
+        emit('update:modelValue', id)
         close()
       }
-      search.value = ""
+      search.value = ''
     }
 
     const filteredOptions = computed(() => {
       if (props.remote) return options.value
       if (!search.value) return options.value
-      return options.value.filter((o) =>
-        o.name.toLowerCase().includes(search.value.toLowerCase())
-      )
+      return options.value.filter((o) => o.name.toLowerCase().includes(search.value.toLowerCase()))
     })
 
-    const loadOptions = async (kw = "") => {
+    const loadOptions = async (kw = '') => {
       if (!props.remote && loaded.value) return
       try {
         loading.value = true
@@ -233,7 +196,7 @@ export default {
         if (Array.isArray(val)) {
           options.value = [...val]
         }
-      }
+      },
     )
 
     watch(open, async (val) => {
@@ -247,7 +210,7 @@ export default {
     })
 
     watch(search, async (val) => {
-      emit("update:search", val)
+      emit('update:search', val)
       if (props.remote && open.value) {
         await loadOptions(val)
       }
@@ -261,9 +224,7 @@ export default {
 
     const selectedLabels = computed(() => {
       if (props.multiple) {
-        return options.value.filter((o) =>
-          (props.modelValue || []).includes(o.id)
-        )
+        return options.value.filter((o) => (props.modelValue || []).includes(o.id))
       }
       const match = options.value.find((o) => o.id === props.modelValue)
       return match ? [match] : []
@@ -275,7 +236,7 @@ export default {
 
     const isImageIcon = (icon) => {
       if (!icon) return false
-      return /^https?:\/\//.test(icon) || icon.startsWith("/")
+      return /^https?:\/\//.test(icon) || icon.startsWith('/')
     }
 
     expose({ toggle, close })

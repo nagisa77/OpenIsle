@@ -3,5 +3,5 @@ export default {
     if (process.client) {
       window.location.href = path
     }
-  }
+  },
 }

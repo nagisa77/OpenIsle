@@ -2,7 +2,7 @@ import { API_BASE_URL } from '../main'
 import { getToken } from './auth'
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
   const rawData = atob(base64)
   const outputArray = new Uint8Array(rawData.length)
@@ -28,19 +28,19 @@ export async function registerPush() {
     const { key } = await res.json()
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(key)
+      applicationServerKey: urlBase64ToUint8Array(key),
     })
     await fetch(`${API_BASE_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${getToken()}`
+        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify({
         endpoint: sub.endpoint,
         p256dh: arrayBufferToBase64(sub.getKey('p256dh')),
-        auth: arrayBufferToBase64(sub.getKey('auth'))
-      })
+        auth: arrayBufferToBase64(sub.getKey('auth')),
+      }),
     })
   } catch (e) {
     // ignore

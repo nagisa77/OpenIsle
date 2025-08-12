@@ -3,6 +3,8 @@ package com.openisle.controller;
 import com.openisle.dto.NotificationDto;
 import com.openisle.dto.NotificationMarkReadRequest;
 import com.openisle.dto.NotificationUnreadCountDto;
+import com.openisle.dto.NotificationPreferenceDto;
+import com.openisle.dto.NotificationPreferenceUpdateRequest;
 import com.openisle.mapper.NotificationMapper;
 import com.openisle.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +41,15 @@ public class NotificationController {
     @PostMapping("/read")
     public void markRead(@RequestBody NotificationMarkReadRequest req, Authentication auth) {
         notificationService.markRead(auth.getName(), req.getIds());
+    }
+
+    @GetMapping("/prefs")
+    public List<NotificationPreferenceDto> prefs(Authentication auth) {
+        return notificationService.listPreferences(auth.getName());
+    }
+
+    @PostMapping("/prefs")
+    public void updatePref(@RequestBody NotificationPreferenceUpdateRequest req, Authentication auth) {
+        notificationService.updatePreference(auth.getName(), req.getType(), req.isEnabled());
     }
 }

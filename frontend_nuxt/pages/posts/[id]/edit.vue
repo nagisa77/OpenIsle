@@ -12,23 +12,23 @@
           <TagSelect v-model="selectedTags" creatable />
         </div>
         <div class="post-options-right">
-          <div class="post-clear" @click="clearPost">
-            <i class="fa-solid fa-eraser"></i> 清空
-          </div>
+          <div class="post-clear" @click="clearPost"><i class="fa-solid fa-eraser"></i> 清空</div>
           <div class="ai-generate" @click="aiGenerate">
             <i class="fa-solid fa-robot"></i>
             md格式优化
           </div>
-          <div class="post-cancel" @click="cancelEdit">
-            取消
-          </div>
+          <div class="post-cancel" @click="cancelEdit">取消</div>
           <div
             v-if="!isWaitingPosting"
             class="post-submit"
             :class="{ disabled: !isLogin }"
             @click="submitPost"
-          >更新</div>
-          <div v-else class="post-submit-loading"> <i class="fa-solid fa-spinner fa-spin"></i> 更新中...</div>
+          >
+            更新
+          </div>
+          <div v-else class="post-submit-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> 更新中...
+          </div>
         </div>
       </div>
     </div>
@@ -38,12 +38,12 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import PostEditor from '../../../components/PostEditor.vue'
-import CategorySelect from '../../../components/CategorySelect.vue'
-import TagSelect from '../../../components/TagSelect.vue'
-import { API_BASE_URL, toast } from '../../../main'
-import { getToken, authState } from '../../../utils/auth'
-import LoginOverlay from '../../../components/LoginOverlay.vue'
+import PostEditor from '~/components/PostEditor.vue'
+import CategorySelect from '~/components/CategorySelect.vue'
+import TagSelect from '~/components/TagSelect.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { getToken, authState } from '~/utils/auth'
+import LoginOverlay from '~/components/LoginOverlay.vue'
 
 export default {
   name: 'EditPostPageView',
@@ -65,14 +65,14 @@ export default {
       try {
         const token = getToken()
         const res = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
         if (res.ok) {
           const data = await res.json()
           title.value = data.title || ''
           content.value = data.content || ''
           selectedCategory.value = data.category.id || ''
-          selectedTags.value = (data.tags || []).map(t => t.id)
+          selectedTags.value = (data.tags || []).map((t) => t.id)
         }
       } catch (e) {
         toast.error('加载失败')
@@ -97,9 +97,9 @@ export default {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ name, description: '' })
+            body: JSON.stringify({ name, description: '' }),
           })
           if (res.ok) {
             const data = await res.json()
@@ -132,9 +132,9 @@ export default {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ text: content.value })
+          body: JSON.stringify({ text: content.value }),
         })
         if (res.ok) {
           const data = await res.json()
@@ -176,14 +176,14 @@ export default {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             title: title.value,
             content: content.value,
             categoryId: selectedCategory.value,
-            tagIds: selectedTags.value
-          })
+            tagIds: selectedTags.value,
+          }),
         })
         const data = await res.json()
         if (res.ok) {
@@ -201,8 +201,20 @@ export default {
     const cancelEdit = () => {
       router.push(`/posts/${postId}`)
     }
-    return { title, content, selectedCategory, selectedTags, submitPost, clearPost, cancelEdit, isWaitingPosting, aiGenerate, isAiLoading, isLogin }
-  }
+    return {
+      title,
+      content,
+      selectedCategory,
+      selectedTags,
+      submitPost,
+      clearPost,
+      cancelEdit,
+      isWaitingPosting,
+      aiGenerate,
+      isAiLoading,
+      isLogin,
+    }
+  },
 }
 </script>
 
@@ -251,8 +263,6 @@ export default {
 .ai-generate:hover {
   text-decoration: underline;
 }
-
-
 
 .post-clear {
   color: var(--primary-color);

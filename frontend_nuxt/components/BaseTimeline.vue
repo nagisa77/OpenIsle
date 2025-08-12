@@ -21,8 +21,8 @@
 export default {
   name: 'BaseTimeline',
   props: {
-    items: { type: Array, default: () => [] }
-  }
+    items: { type: Array, default: () => [] },
+  },
 }
 </script>
 
@@ -92,12 +92,10 @@ export default {
 }
 
 @media (max-width: 768px) {
-
   .timeline-icon {
     margin-right: 2px;
     width: 30px;
     height: 30px;
   }
 }
-
 </style>

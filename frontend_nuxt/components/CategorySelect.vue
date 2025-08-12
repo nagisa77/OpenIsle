@@ -1,10 +1,20 @@
 <template>
-  <Dropdown v-model="selected" :fetch-options="fetchCategories" placeholder="选择分类" :initial-options="providedOptions">
+  <Dropdown
+    v-model="selected"
+    :fetch-options="fetchCategories"
+    placeholder="选择分类"
+    :initial-options="providedOptions"
+  >
     <template #option="{ option }">
       <div class="option-container">
         <div class="option-main">
           <template v-if="option.icon">
-            <img v-if="isImageIcon(option.icon)" :src="option.icon" class="option-icon" :alt="option.name" />
+            <img
+              v-if="isImageIcon(option.icon)"
+              :src="option.icon"
+              class="option-icon"
+              :alt="option.name"
+            />
             <i v-else :class="['option-icon', option.icon]"></i>
           </template>
           <span>{{ option.name }}</span>
@@ -26,7 +36,7 @@ export default {
   components: { Dropdown },
   props: {
     modelValue: { type: [String, Number], default: '' },
-    options: { type: Array, default: () => [] }
+    options: { type: Array, default: () => [] },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -34,9 +44,9 @@ export default {
 
     watch(
       () => props.options,
-      val => {
+      (val) => {
         providedOptions.value = Array.isArray(val) ? [...val] : []
-      }
+      },
     )
 
     const fetchCategories = async () => {
@@ -46,18 +56,18 @@ export default {
       return [{ id: '', name: '无分类' }, ...data]
     }
 
-    const isImageIcon = icon => {
+    const isImageIcon = (icon) => {
       if (!icon) return false
       return /^https?:\/\//.test(icon) || icon.startsWith('/')
     }
 
     const selected = computed({
       get: () => props.modelValue,
-      set: v => emit('update:modelValue', v)
+      set: (v) => emit('update:modelValue', v),
     })
 
     return { fetchCategories, selected, isImageIcon, providedOptions }
-  }
+  },
 }
 </script>
 

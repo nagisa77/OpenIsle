@@ -21,10 +21,10 @@ export default {
   props: {
     visible: { type: Boolean, default: false },
     icon: String,
-    text: String
+    text: String,
   },
   emits: ['close'],
-  setup (props, { emit }) {
+  setup(props, { emit }) {
     const router = useRouter()
     const gotoActivity = () => {
       emit('close')
@@ -32,7 +32,7 @@ export default {
     }
     const close = () => emit('close')
     return { gotoActivity, close }
-  }
+  },
 }
 </script>
 

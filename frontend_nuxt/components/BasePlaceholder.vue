@@ -12,8 +12,8 @@ export default {
   name: 'BasePlaceholder',
   props: {
     text: { type: String, default: '' },
-    icon: { type: String, default: 'fas fa-inbox' }
-  }
+    icon: { type: String, default: 'fas fa-inbox' },
+  },
 }
 </script>
 

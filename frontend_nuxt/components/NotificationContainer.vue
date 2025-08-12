@@ -13,19 +13,19 @@
 </template>
 
 <script>
-import { useIsMobile } from '../utils/screen'
+import { useIsMobile } from '~/utils/screen'
 export default {
   name: 'NotificationContainer',
   props: {
     item: { type: Object, required: true },
-    markRead: { type: Function, required: true }
+    markRead: { type: Function, required: true },
   },
   setup() {
     const isMobile = useIsMobile()
     return {
-      isMobile
+      isMobile,
     }
-  }
+  },
 }
 </script>
 
@@ -60,5 +60,4 @@ export default {
     display: none;
   }
 }
-
 </style>

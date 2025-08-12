@@ -43,7 +43,7 @@ export const toast = {
         console.warn('Toast not available:', error)
       }
     }
-  }
+  },
 }
 
 // 导出 useToast composable
@@ -59,16 +59,16 @@ export const useToast = () => {
           success: () => {},
           error: () => {},
           warning: () => {},
-          info: () => {}
+          info: () => {},
         })
       }
     })
   }
-  
+
   return Promise.resolve({
     success: () => {},
     error: () => {},
     warning: () => {},
-    info: () => {}
+    info: () => {},
   })
-} 
+}

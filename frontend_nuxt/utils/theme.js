@@ -4,20 +4,22 @@ import { toast } from '~/main'
 export const ThemeMode = {
   SYSTEM: 'system',
   LIGHT: 'light',
-  DARK: 'dark'
+  DARK: 'dark',
 }
 
 const THEME_KEY = 'theme-mode'
 
 export const themeState = reactive({
-  mode: ThemeMode.SYSTEM
+  mode: ThemeMode.SYSTEM,
 })
 
 function apply(mode) {
   if (!process.client) return
   const root = document.documentElement
   if (mode === ThemeMode.SYSTEM) {
-    root.dataset.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    root.dataset.theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
   } else {
     root.dataset.theme = mode
   }

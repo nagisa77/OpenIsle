@@ -75,7 +75,8 @@ class PostControllerTest {
         post.setCategory(cat);
         post.setTags(Set.of(tag));
 
-        when(postService.createPost(eq("alice"), eq(1L), eq("t"), eq("c"), eq(List.of(1L)))).thenReturn(post);
+        when(postService.createPost(eq("alice"), eq(1L), eq("t"), eq("c"), eq(List.of(1L)),
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(post);
         when(postService.viewPost(eq(1L), any())).thenReturn(post);
         when(commentService.getCommentsForPost(eq(1L), any())).thenReturn(List.of());
         when(commentService.getParticipants(anyLong(), anyInt())).thenReturn(List.of());
@@ -185,7 +186,8 @@ class PostControllerTest {
                         .principal(new UsernamePasswordAuthenticationToken("alice", "p")))
                 .andExpect(status().isBadRequest());
 
-        verify(postService, never()).createPost(any(), any(), any(), any(), any());
+        verify(postService, never()).createPost(any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any());
     }
 
     @Test

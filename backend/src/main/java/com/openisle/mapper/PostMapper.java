@@ -4,8 +4,10 @@ import com.openisle.dto.CommentDto;
 import com.openisle.dto.PostDetailDto;
 import com.openisle.dto.PostSummaryDto;
 import com.openisle.dto.ReactionDto;
+import com.openisle.dto.LotteryDto;
 import com.openisle.model.CommentSort;
 import com.openisle.model.Post;
+import com.openisle.model.LotteryPost;
 import com.openisle.model.User;
 import com.openisle.service.CommentService;
 import com.openisle.service.ReactionService;
@@ -75,5 +77,18 @@ public class PostMapper {
         dto.setLastReplyAt(last != null ? last : post.getCreatedAt());
         dto.setReward(0);
         dto.setSubscribed(false);
+        dto.setType(post.getType());
+
+        if (post instanceof LotteryPost lp) {
+            LotteryDto l = new LotteryDto();
+            l.setPrizeDescription(lp.getPrizeDescription());
+            l.setPrizeIcon(lp.getPrizeIcon());
+            l.setPrizeCount(lp.getPrizeCount());
+            l.setStartTime(lp.getStartTime());
+            l.setEndTime(lp.getEndTime());
+            l.setParticipants(lp.getParticipants().stream().map(userMapper::toAuthorDto).collect(Collectors.toList()));
+            l.setWinners(lp.getWinners().stream().map(userMapper::toAuthorDto).collect(Collectors.toList()));
+            dto.setLottery(l);
+        }
     }
 }

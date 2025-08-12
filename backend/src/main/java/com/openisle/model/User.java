@@ -7,6 +7,9 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Simple user entity with basic fields and a role.
@@ -58,6 +61,18 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
+
+    @Enumerated(EnumType.STRING)
+    private MedalType displayMedal;
+
+    @ElementCollection(targetClass = NotificationType.class)
+    @CollectionTable(name = "user_disabled_notification_types", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "notification_type")
+    @Enumerated(EnumType.STRING)
+    private Set<NotificationType> disabledNotificationTypes = EnumSet.of(
+            NotificationType.POST_VIEWED,
+            NotificationType.USER_ACTIVITY
+    );
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false,

@@ -1,6 +1,7 @@
 package com.openisle.service;
 
 import com.openisle.model.*;
+import com.openisle.dto.NotificationPreferenceDto;
 import com.openisle.repository.NotificationRepository;
 import com.openisle.repository.ReactionRepository;
 import com.openisle.repository.UserRepository;
@@ -20,7 +21,9 @@ import java.util.Set;
 import java.util.HashSet;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 /** Service for creating and retrieving notifications. */
 @Service
@@ -138,13 +141,43 @@ public class NotificationService {
         }
     }
 
+    public List<NotificationPreferenceDto> listPreferences(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
+        Set<NotificationType> disabled = user.getDisabledNotificationTypes();
+        List<NotificationPreferenceDto> prefs = new ArrayList<>();
+        for (NotificationType nt : NotificationType.values()) {
+            NotificationPreferenceDto dto = new NotificationPreferenceDto();
+            dto.setType(nt);
+            dto.setEnabled(!disabled.contains(nt));
+            prefs.add(dto);
+        }
+        return prefs;
+    }
+
+    public void updatePreference(String username, NotificationType type, boolean enabled) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
+        Set<NotificationType> disabled = user.getDisabledNotificationTypes();
+        if (enabled) {
+            disabled.remove(type);
+        } else {
+            disabled.add(type);
+        }
+        userRepository.save(user);
+    }
+
     public List<Notification> listNotifications(String username, Boolean read) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
+        Set<NotificationType> disabled = user.getDisabledNotificationTypes();
+        List<Notification> list;
         if (read == null) {
-            return notificationRepository.findByUserOrderByCreatedAtDesc(user);
+            list = notificationRepository.findByUserOrderByCreatedAtDesc(user);
+        } else {
+            list = notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, read);
         }
-        return notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, read);
+        return list.stream().filter(n -> !disabled.contains(n.getType())).collect(Collectors.toList());
     }
 
     public void markRead(String username, List<Long> ids) {
@@ -162,7 +195,9 @@ public class NotificationService {
     public long countUnread(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
-        return notificationRepository.countByUserAndRead(user, false);
+        Set<NotificationType> disabled = user.getDisabledNotificationTypes();
+        return notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, false).stream()
+                .filter(n -> !disabled.contains(n.getType())).count();
     }
 
     public void notifyMentions(String content, User fromUser, Post post, Comment comment) {

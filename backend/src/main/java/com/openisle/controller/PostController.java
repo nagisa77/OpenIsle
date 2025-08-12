@@ -39,7 +39,9 @@ public class PostController {
             return ResponseEntity.badRequest().build();
         }
         Post post = postService.createPost(auth.getName(), req.getCategoryId(),
-                req.getTitle(), req.getContent(), req.getTagIds());
+                req.getTitle(), req.getContent(), req.getTagIds(),
+                req.getType(), req.getPrizeDescription(), req.getPrizeIcon(),
+                req.getPrizeCount(), req.getStartTime(), req.getEndTime());
         draftService.deleteDraft(auth.getName());
         PostDetailDto dto = postMapper.toDetailDto(post, auth.getName());
         dto.setReward(levelService.awardForPost(auth.getName()));
@@ -65,6 +67,12 @@ public class PostController {
         String viewer = auth != null ? auth.getName() : null;
         Post post = postService.viewPost(id, viewer);
         return ResponseEntity.ok(postMapper.toDetailDto(post, viewer));
+    }
+
+    @PostMapping("/{id}/lottery/join")
+    public ResponseEntity<Void> joinLottery(@PathVariable Long id, Authentication auth) {
+        postService.joinLottery(id, auth.getName());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping

@@ -23,29 +23,27 @@ import { useRouter } from 'vue-router'
 export default {
   name: 'ArticleTags',
   props: {
-    tags: { type: Array, default: () => [] }
+    tags: { type: Array, default: () => [] },
   },
   setup() {
     const router = useRouter()
-    const gotoTag = tag => {
+    const gotoTag = (tag) => {
       const value = encodeURIComponent(tag.id ?? tag.name)
       router.push({ path: '/', query: { tags: value } }).then(() => {
         window.location.reload()
       })
     }
     return { gotoTag }
-  }
+  },
 }
 </script>
 
-<style scoped>  
-
+<style scoped>
 .article-tags-container {
   display: flex;
   flex-direction: row;
   gap: 10px;
 }
-
 
 .article-info-item {
   display: flex;
@@ -74,6 +72,4 @@ export default {
     font-size: 10px;
   }
 }
-
 </style>
-

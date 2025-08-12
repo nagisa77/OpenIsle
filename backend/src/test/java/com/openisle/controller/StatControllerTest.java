@@ -5,6 +5,7 @@ import com.openisle.config.SecurityConfig;
 import com.openisle.service.JwtService;
 import com.openisle.repository.UserRepository;
 import com.openisle.service.UserVisitService;
+import com.openisle.service.StatService;
 import com.openisle.model.Role;
 import com.openisle.model.User;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,8 @@ class StatControllerTest {
     private UserRepository userRepository;
     @MockBean
     private UserVisitService userVisitService;
+    @MockBean
+    private StatService statService;
 
     @Test
     void dauReturnsCount() throws Exception {
@@ -70,5 +73,65 @@ class StatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].value").value(1))
                 .andExpect(jsonPath("$[1].value").value(2));
+    }
+
+    @Test
+    void newUsersRangeReturnsSeries() throws Exception {
+        Mockito.when(jwtService.validateAndGetSubject("token")).thenReturn("user");
+        User user = new User();
+        user.setUsername("user");
+        user.setPassword("p");
+        user.setEmail("u@example.com");
+        user.setRole(Role.USER);
+        Mockito.when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        java.util.Map<java.time.LocalDate, Long> map = new java.util.LinkedHashMap<>();
+        map.put(java.time.LocalDate.now().minusDays(1), 5L);
+        map.put(java.time.LocalDate.now(), 6L);
+        Mockito.when(statService.countNewUsersRange(Mockito.any(), Mockito.any())).thenReturn(map);
+
+        mockMvc.perform(get("/api/stats/new-users-range").param("days", "2").header("Authorization", "Bearer token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].value").value(5))
+                .andExpect(jsonPath("$[1].value").value(6));
+    }
+
+    @Test
+    void postsRangeReturnsSeries() throws Exception {
+        Mockito.when(jwtService.validateAndGetSubject("token")).thenReturn("user");
+        User user = new User();
+        user.setUsername("user");
+        user.setPassword("p");
+        user.setEmail("u@example.com");
+        user.setRole(Role.USER);
+        Mockito.when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        java.util.Map<java.time.LocalDate, Long> map = new java.util.LinkedHashMap<>();
+        map.put(java.time.LocalDate.now().minusDays(1), 7L);
+        map.put(java.time.LocalDate.now(), 8L);
+        Mockito.when(statService.countPostsRange(Mockito.any(), Mockito.any())).thenReturn(map);
+
+        mockMvc.perform(get("/api/stats/posts-range").param("days", "2").header("Authorization", "Bearer token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].value").value(7))
+                .andExpect(jsonPath("$[1].value").value(8));
+    }
+
+    @Test
+    void commentsRangeReturnsSeries() throws Exception {
+        Mockito.when(jwtService.validateAndGetSubject("token")).thenReturn("user");
+        User user = new User();
+        user.setUsername("user");
+        user.setPassword("p");
+        user.setEmail("u@example.com");
+        user.setRole(Role.USER);
+        Mockito.when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        java.util.Map<java.time.LocalDate, Long> map = new java.util.LinkedHashMap<>();
+        map.put(java.time.LocalDate.now().minusDays(1), 9L);
+        map.put(java.time.LocalDate.now(), 10L);
+        Mockito.when(statService.countCommentsRange(Mockito.any(), Mockito.any())).thenReturn(map);
+
+        mockMvc.perform(get("/api/stats/comments-range").param("days", "2").header("Authorization", "Bearer token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].value").value(9))
+                .andExpect(jsonPath("$[1].value").value(10));
     }
 }

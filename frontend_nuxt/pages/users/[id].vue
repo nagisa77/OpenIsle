@@ -12,11 +12,19 @@
         <div class="profile-page-header-user-info">
           <div class="profile-page-header-user-info-name">{{ user.username }}</div>
           <div class="profile-page-header-user-info-description">{{ user.introduction }}</div>
-          <div v-if="!isMine && !subscribed" class="profile-page-header-subscribe-button" @click="subscribeUser">
+          <div
+            v-if="!isMine && !subscribed"
+            class="profile-page-header-subscribe-button"
+            @click="subscribeUser"
+          >
             <i class="fas fa-user-plus"></i>
             关注
           </div>
-          <div v-if="!isMine && subscribed" class="profile-page-header-unsubscribe-button" @click="unsubscribeUser">
+          <div
+            v-if="!isMine && subscribed"
+            class="profile-page-header-unsubscribe-button"
+            @click="unsubscribeUser"
+          >
             <i class="fas fa-user-minus"></i>
             取消关注
           </div>
@@ -46,7 +54,9 @@
         </div>
         <div class="profile-info-item">
           <div class="profile-info-item-label">最后评论时间:</div>
-          <div class="profile-info-item-value">{{ user.lastCommentTime!=null?formatDate(user.lastCommentTime):"暂无评论" }}</div>
+          <div class="profile-info-item-value">
+            {{ user.lastCommentTime != null ? formatDate(user.lastCommentTime) : '暂无评论' }}
+          </div>
         </div>
         <div class="profile-info-item">
           <div class="profile-info-item-label">浏览量:</div>
@@ -55,18 +65,33 @@
       </div>
 
       <div class="profile-tabs">
-        <div :class="['profile-tabs-item', { selected: selectedTab === 'summary' }]" @click="selectedTab = 'summary'">
+        <div
+          :class="['profile-tabs-item', { selected: selectedTab === 'summary' }]"
+          @click="selectedTab = 'summary'"
+        >
           <i class="fas fa-chart-line"></i>
           <div class="profile-tabs-item-label">总结</div>
         </div>
-        <div :class="['profile-tabs-item', { selected: selectedTab === 'timeline' }]" @click="selectedTab = 'timeline'">
+        <div
+          :class="['profile-tabs-item', { selected: selectedTab === 'timeline' }]"
+          @click="selectedTab = 'timeline'"
+        >
           <i class="fas fa-clock"></i>
           <div class="profile-tabs-item-label">时间线</div>
         </div>
-        <div :class="['profile-tabs-item', { selected: selectedTab === 'following' }]"
-          @click="selectedTab = 'following'">
+        <div
+          :class="['profile-tabs-item', { selected: selectedTab === 'following' }]"
+          @click="selectedTab = 'following'"
+        >
           <i class="fas fa-user-plus"></i>
           <div class="profile-tabs-item-label">关注</div>
+        </div>
+        <div
+          :class="['profile-tabs-item', { selected: selectedTab === 'achievements' }]"
+          @click="selectedTab = 'achievements'"
+        >
+          <i class="fas fa-medal"></i>
+          <div class="profile-tabs-item-label">勋章</div>
         </div>
       </div>
 
@@ -108,17 +133,19 @@
                     </router-link>
                     <template v-if="item.comment.parentComment">
                       下对
-                      <router-link :to="`/posts/${item.comment.post.id}#comment-${item.comment.parentComment.id}`"
-                        class="timeline-link">
+                      <router-link
+                        :to="`/posts/${item.comment.post.id}#comment-${item.comment.parentComment.id}`"
+                        class="timeline-link"
+                      >
                         {{ stripMarkdownLength(item.comment.parentComment.content, 200) }}
                       </router-link>
                       回复了
                     </template>
-                    <template v-else>
-                      下评论了
-                    </template>
-                    <router-link :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`"
-                      class="timeline-link">
+                    <template v-else> 下评论了 </template>
+                    <router-link
+                      :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`"
+                      class="timeline-link"
+                    >
                       {{ stripMarkdownLength(item.comment.content, 200) }}
                     </router-link>
                     <div class="timeline-date">
@@ -177,7 +204,11 @@
         </div>
 
         <div v-else-if="selectedTab === 'timeline'" class="profile-timeline">
-          <BasePlaceholder v-if="timelineItems.length === 0" text="暂无时间线" icon="fas fa-inbox" />
+          <BasePlaceholder
+            v-if="timelineItems.length === 0"
+            text="暂无时间线"
+            icon="fas fa-inbox"
+          />
           <BaseTimeline :items="timelineItems">
             <template #item="{ item }">
               <template v-if="item.type === 'post'">
@@ -193,7 +224,10 @@
                   {{ item.comment.post.title }}
                 </router-link>
                 下评论了
-                <router-link :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`" class="timeline-link">
+                <router-link
+                  :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`"
+                  class="timeline-link"
+                >
                   {{ stripMarkdownLength(item.comment.content, 200) }}
                 </router-link>
                 <div class="timeline-date">{{ formatDate(item.createdAt) }}</div>
@@ -204,12 +238,17 @@
                   {{ item.comment.post.title }}
                 </router-link>
                 下对
-                <router-link :to="`/posts/${item.comment.post.id}#comment-${item.comment.parentComment.id}`"
-                  class="timeline-link">
+                <router-link
+                  :to="`/posts/${item.comment.post.id}#comment-${item.comment.parentComment.id}`"
+                  class="timeline-link"
+                >
                   {{ stripMarkdownLength(item.comment.parentComment.content, 200) }}
                 </router-link>
                 回复了
-                <router-link :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`" class="timeline-link">
+                <router-link
+                  :to="`/posts/${item.comment.post.id}#comment-${item.comment.id}`"
+                  class="timeline-link"
+                >
                   {{ stripMarkdownLength(item.comment.content, 200) }}
                 </router-link>
                 <div class="timeline-date">{{ formatDate(item.createdAt) }}</div>
@@ -228,13 +267,19 @@
           </BaseTimeline>
         </div>
 
-        <div v-else class="follow-container">
+        <div v-else-if="selectedTab === 'following'" class="follow-container">
           <div class="follow-tabs">
-            <div :class="['follow-tab-item', { selected: followTab === 'followers' }]"
-              @click="followTab = 'followers'">关注者
+            <div
+              :class="['follow-tab-item', { selected: followTab === 'followers' }]"
+              @click="followTab = 'followers'"
+            >
+              关注者
             </div>
-            <div :class="['follow-tab-item', { selected: followTab === 'following' }]"
-              @click="followTab = 'following'">正在关注
+            <div
+              :class="['follow-tab-item', { selected: followTab === 'following' }]"
+              @click="followTab = 'following'"
+            >
+              正在关注
             </div>
           </div>
           <div class="follow-list">
@@ -243,32 +288,35 @@
           </div>
         </div>
 
+        <div v-else-if="selectedTab === 'achievements'" class="achievements-container">
+          <AchievementList :medals="medals" :can-select="isMine" />
+        </div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import BaseTimeline from '../components/BaseTimeline.vue'
-import UserList from '../components/UserList.vue'
-import BasePlaceholder from '../components/BasePlaceholder.vue'
-import LevelProgress from '../components/LevelProgress.vue'
-import { stripMarkdown, stripMarkdownLength } from '../utils/markdown'
-import TimeManager from '../utils/time'
-import { prevLevelExp } from '../utils/level'
-
-definePageMeta({
-  alias: ['/users/:id/']
-})
+import AchievementList from '~/components/AchievementList.vue'
+import BasePlaceholder from '~/components/BasePlaceholder.vue'
+import BaseTimeline from '~/components/BaseTimeline.vue'
+import LevelProgress from '~/components/LevelProgress.vue'
+import UserList from '~/components/UserList.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { authState, getToken } from '~/utils/auth'
+import { prevLevelExp } from '~/utils/level'
+import { stripMarkdown, stripMarkdownLength } from '~/utils/markdown'
+import TimeManager from '~/utils/time'
 
 export default {
   name: 'ProfileView',
-  components: { BaseTimeline, UserList, BasePlaceholder, LevelProgress },
+  components: { BaseTimeline, UserList, BasePlaceholder, LevelProgress, AchievementList },
   setup() {
+    definePageMeta({
+      alias: ['/users/:id/'],
+    })
     const route = useRoute()
     const router = useRouter()
     const username = route.params.id
@@ -280,10 +328,15 @@ export default {
     const timelineItems = ref([])
     const followers = ref([])
     const followings = ref([])
+    const medals = ref([])
     const subscribed = ref(false)
     const isLoading = ref(true)
     const tabLoading = ref(false)
-    const selectedTab = ref('summary')
+    const selectedTab = ref(
+      ['summary', 'timeline', 'following', 'achievements'].includes(route.query.tab)
+        ? route.query.tab
+        : 'summary',
+    )
     const followTab = ref('followers')
 
     const levelInfo = computed(() => {
@@ -297,7 +350,11 @@ export default {
       return { exp, currentLevel, nextExp, percent }
     })
 
-    const isMine = computed(() => authState.username === username)
+    const isMine = computed(function () {
+      const mine = authState.username === username || String(authState.userId) === username
+      console.log(mine)
+      return mine
+    })
 
     const formatDate = (d) => {
       if (!d) return ''
@@ -321,19 +378,19 @@ export default {
       const postsRes = await fetch(`${API_BASE_URL}/api/users/${username}/hot-posts`)
       if (postsRes.ok) {
         const data = await postsRes.json()
-        hotPosts.value = data.map(p => ({ icon: 'fas fa-book', post: p }))
+        hotPosts.value = data.map((p) => ({ icon: 'fas fa-book', post: p }))
       }
 
       const repliesRes = await fetch(`${API_BASE_URL}/api/users/${username}/hot-replies`)
       if (repliesRes.ok) {
         const data = await repliesRes.json()
-        hotReplies.value = data.map(c => ({ icon: 'fas fa-comment', comment: c }))
+        hotReplies.value = data.map((c) => ({ icon: 'fas fa-comment', comment: c }))
       }
 
       const tagsRes = await fetch(`${API_BASE_URL}/api/users/${username}/hot-tags`)
       if (tagsRes.ok) {
         const data = await tagsRes.json()
-        hotTags.value = data.map(t => ({ icon: 'fas fa-tag', tag: t }))
+        hotTags.value = data.map((t) => ({ icon: 'fas fa-tag', tag: t }))
       }
     }
 
@@ -341,30 +398,30 @@ export default {
       const [postsRes, repliesRes, tagsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/users/${username}/posts?limit=50`),
         fetch(`${API_BASE_URL}/api/users/${username}/replies?limit=50`),
-        fetch(`${API_BASE_URL}/api/users/${username}/tags?limit=50`)
+        fetch(`${API_BASE_URL}/api/users/${username}/tags?limit=50`),
       ])
       const posts = postsRes.ok ? await postsRes.json() : []
       const replies = repliesRes.ok ? await repliesRes.json() : []
       const tags = tagsRes.ok ? await tagsRes.json() : []
       const mapped = [
-        ...posts.map(p => ({
+        ...posts.map((p) => ({
           type: 'post',
           icon: 'fas fa-book',
           post: p,
-          createdAt: p.createdAt
+          createdAt: p.createdAt,
         })),
-        ...replies.map(r => ({
+        ...replies.map((r) => ({
           type: r.parentComment ? 'reply' : 'comment',
           icon: 'fas fa-comment',
           comment: r,
-          createdAt: r.createdAt
+          createdAt: r.createdAt,
         })),
-        ...tags.map(t => ({
+        ...tags.map((t) => ({
           type: 'tag',
           icon: 'fas fa-tag',
           tag: t,
-          createdAt: t.createdAt
-        }))
+          createdAt: t.createdAt,
+        })),
       ]
       mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       timelineItems.value = mapped
@@ -373,7 +430,7 @@ export default {
     const fetchFollowUsers = async () => {
       const [followerRes, followingRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/users/${username}/followers`),
-        fetch(`${API_BASE_URL}/api/users/${username}/following`)
+        fetch(`${API_BASE_URL}/api/users/${username}/following`),
       ])
       followers.value = followerRes.ok ? await followerRes.json() : []
       followings.value = followingRes.ok ? await followingRes.json() : []
@@ -397,6 +454,22 @@ export default {
       tabLoading.value = false
     }
 
+    const fetchAchievements = async () => {
+      const res = await fetch(`${API_BASE_URL}/api/medals?userId=${user.value.id}`)
+      if (res.ok) {
+        medals.value = await res.json()
+      } else {
+        medals.value = []
+        toast.error('获取成就失败')
+      }
+    }
+
+    const loadAchievements = async () => {
+      tabLoading.value = true
+      await fetchAchievements()
+      tabLoading.value = false
+    }
+
     const subscribeUser = async () => {
       const token = getToken()
       if (!token) {
@@ -405,7 +478,7 @@ export default {
       }
       const res = await fetch(`${API_BASE_URL}/api/subscriptions/users/${username}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
         subscribed.value = true
@@ -423,7 +496,7 @@ export default {
       }
       const res = await fetch(`${API_BASE_URL}/api/subscriptions/users/${username}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
         subscribed.value = false
@@ -433,7 +506,7 @@ export default {
       }
     }
 
-    const gotoTag = tag => {
+    const gotoTag = (tag) => {
       const value = encodeURIComponent(tag.id ?? tag.name)
       router.push({ path: '/', query: { tags: value } })
     }
@@ -441,7 +514,15 @@ export default {
     const init = async () => {
       try {
         await fetchUser()
-        await loadSummary()
+        if (selectedTab.value === 'summary') {
+          await loadSummary()
+        } else if (selectedTab.value === 'timeline') {
+          await loadTimeline()
+        } else if (selectedTab.value === 'following') {
+          await loadFollow()
+        } else if (selectedTab.value === 'achievements') {
+          await loadAchievements()
+        }
       } catch (e) {
         console.error(e)
       } finally {
@@ -451,13 +532,21 @@ export default {
 
     onMounted(init)
 
-    watch(selectedTab, async val => {
+    watch(selectedTab, async (val) => {
+      // router.replace({ query: { ...route.query, tab: val } })
       if (val === 'timeline' && timelineItems.value.length === 0) {
         await loadTimeline()
-      } else if (val === 'following' && followers.value.length === 0 && followings.value.length === 0) {
+      } else if (
+        val === 'following' &&
+        followers.value.length === 0 &&
+        followings.value.length === 0
+      ) {
         await loadFollow()
+      } else if (val === 'achievements' && medals.value.length === 0) {
+        await loadAchievements()
       }
     })
+
     return {
       user,
       hotPosts,
@@ -465,6 +554,7 @@ export default {
       timelineItems,
       followers,
       followings,
+      medals,
       subscribed,
       isMine,
       isLoading,
@@ -476,14 +566,15 @@ export default {
       stripMarkdownLength,
       loadTimeline,
       loadFollow,
+      loadAchievements,
       loadSummary,
       subscribeUser,
       unsubscribeUser,
       gotoTag,
       hotTags,
-      levelInfo
+      levelInfo,
     }
-  }
+  },
 }
 </script>
 
@@ -612,7 +703,7 @@ export default {
   gap: 20px;
   border-top: 1px solid var(--normal-border-color);
   border-bottom: 1px solid var(--normal-border-color);
-  scrollbar-width: none; 
+  scrollbar-width: none;
   overflow-x: auto;
 }
 
@@ -622,7 +713,7 @@ export default {
   gap: 5px;
   align-items: center;
   padding: 10px 0;
-  white-space: nowrap; 
+  white-space: nowrap;
 }
 
 .profile-info-item-label {
@@ -643,9 +734,9 @@ export default {
   flex-direction: row;
   padding: 0 20px;
   border-bottom: 1px solid var(--normal-border-color);
-  scrollbar-width: none; 
+  scrollbar-width: none;
   overflow-x: auto;
- }
+}
 
 .profile-tabs-item {
   display: flex;
@@ -657,7 +748,7 @@ export default {
   padding: 10px 0;
   width: 200px;
   cursor: pointer;
-  white-space: nowrap; 
+  white-space: nowrap;
 }
 
 .profile-tabs-item.selected {
@@ -765,7 +856,8 @@ export default {
   padding: 40px 0;
 }
 
-.follow-container {}
+.follow-container {
+}
 
 .follow-tabs {
   display: flex;

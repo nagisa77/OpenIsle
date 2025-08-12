@@ -22,7 +22,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 export default {
   name: 'DropdownMenu',
   props: {
-    items: { type: Array, default: () => [] }
+    items: { type: Array, default: () => [] },
   },
   setup(props, { expose }) {
     const visible = ref(false)
@@ -33,13 +33,13 @@ export default {
     const close = () => {
       visible.value = false
     }
-    const handle = item => {
+    const handle = (item) => {
       close()
       if (item && typeof item.onClick === 'function') {
         item.onClick()
       }
     }
-    const clickOutside = e => {
+    const clickOutside = (e) => {
       if (wrapper.value && !wrapper.value.contains(e.target)) {
         close()
       }
@@ -52,7 +52,7 @@ export default {
     })
     expose({ close })
     return { visible, toggle, wrapper, handle }
-  }
+  },
 }
 </script>
 

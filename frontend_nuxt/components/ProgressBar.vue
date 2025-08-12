@@ -9,15 +9,15 @@ export default {
   name: 'ProgressBar',
   props: {
     value: { type: Number, default: 0 },
-    max: { type: Number, default: 100 }
+    max: { type: Number, default: 100 },
   },
   computed: {
-    percent () {
+    percent() {
       if (this.max <= 0) return 0
       const p = (this.value / this.max) * 100
       return Math.max(0, Math.min(100, p))
-    }
-  }
+    },
+  },
 }
 </script>
 

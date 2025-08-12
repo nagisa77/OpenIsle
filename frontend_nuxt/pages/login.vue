@@ -2,16 +2,13 @@
   <div class="login-page">
     <div class="login-page-content">
       <div class="login-page-header">
-        <div class="login-page-header-title">
-          Welcome :)
-        </div>
+        <div class="login-page-header-title">Welcome :)</div>
       </div>
 
       <div class="email-login-page-content">
         <BaseInput icon="fas fa-envelope" v-model="username" placeholder="邮箱/用户名" />
 
         <BaseInput icon="fas fa-lock" v-model="password" type="password" placeholder="密码" />
-
 
         <div v-if="!isWaitingForLogin" class="login-page-button-primary" @click="submitLogin">
           <div class="login-page-button-text">登录</div>
@@ -24,8 +21,11 @@
           </div>
         </div>
 
-        <div class="login-page-button-secondary">没有账号？ <a class="login-page-button-secondary-link" href="/signup">注册</a> |
-          <a class="login-page-button-secondary-link" :href="`/forgot-password?email=${username}`">找回密码</a>
+        <div class="login-page-button-secondary">
+          没有账号？ <a class="login-page-button-secondary-link" href="/signup">注册</a> |
+          <a class="login-page-button-secondary-link" :href="`/forgot-password?email=${username}`"
+            >找回密码</a
+          >
         </div>
       </div>
     </div>
@@ -52,14 +52,14 @@
 </template>
 
 <script>
-import { API_BASE_URL, toast } from '../main'
-import { setToken, loadCurrentUser } from '../utils/auth'
-import { googleAuthorize } from '../utils/google'
-import { githubAuthorize } from '../utils/github'
-import { discordAuthorize } from '../utils/discord'
-import { twitterAuthorize } from '../utils/twitter'
-import BaseInput from '../components/BaseInput.vue'
-import { registerPush } from '../utils/push'
+import { API_BASE_URL, toast } from '~/main'
+import { setToken, loadCurrentUser } from '~/utils/auth'
+import { googleAuthorize } from '~/utils/google'
+import { githubAuthorize } from '~/utils/github'
+import { discordAuthorize } from '~/utils/discord'
+import { twitterAuthorize } from '~/utils/twitter'
+import BaseInput from '~/components/BaseInput.vue'
+import { registerPush } from '~/utils/push'
 export default {
   name: 'LoginPageView',
   components: { BaseInput },
@@ -70,7 +70,7 @@ export default {
     return {
       username: '',
       password: '',
-      isWaitingForLogin: false
+      isWaitingForLogin: false,
     }
   },
   methods: {
@@ -80,9 +80,8 @@ export default {
         const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: this.username, password: this.password })
+          body: JSON.stringify({ username: this.username, password: this.password }),
         })
-        this.isWaitingForLogin = false
         const data = await res.json()
         if (res.ok && data.token) {
           setToken(data.token)
@@ -103,6 +102,8 @@ export default {
         }
       } catch (e) {
         toast.error('登录失败')
+      } finally {
+        this.isWaitingForLogin = false
       }
     },
 
@@ -115,7 +116,7 @@ export default {
     loginWithTwitter() {
       twitterAuthorize()
     },
-  }
+  },
 }
 </script>
 

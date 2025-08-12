@@ -13,22 +13,17 @@ export function getPreviewTheme() {
 }
 
 export function createVditor(editorId, options = {}) {
-  const {
-    placeholder = '',
-    preview = {},
-    input,
-    after
-  } = options
+  const { placeholder = '', preview = {}, input, after } = options
 
   const fetchMentions = async (value) => {
     if (!value) {
       const [followings, admins] = await Promise.all([
         fetchFollowings(authState.username),
-        fetchAdmins()
+        fetchAdmins(),
       ])
       const combined = [...followings, ...admins]
       const seen = new Set()
-      return combined.filter(u => {
+      return combined.filter((u) => {
         if (seen.has(u.id)) return false
         seen.add(u.id)
         return true
@@ -56,7 +51,7 @@ export function createVditor(editorId, options = {}) {
         'redo',
         '|',
         'link',
-        'upload'
+        'upload',
       ]
 
   let vditor
@@ -64,9 +59,12 @@ export function createVditor(editorId, options = {}) {
     placeholder,
     height: 'auto',
     theme: getEditorTheme(),
-    preview: Object.assign({
-      theme: { current: getPreviewTheme() },
-    }, preview),
+    preview: Object.assign(
+      {
+        theme: { current: getPreviewTheme() },
+      },
+      preview,
+    ),
     hint: {
       emoji: tiebaEmoji,
       extend: [
@@ -74,9 +72,9 @@ export function createVditor(editorId, options = {}) {
           key: '@',
           hint: async (key) => {
             const list = await fetchMentions(key)
-            return list.map(u => ({
+            return list.map((u) => ({
               value: `@[${u.username}]`,
-              html: `<img src="${u.avatar}" /> @${u.username}`
+              html: `<img src="${u.avatar}" /> @${u.username}`,
             }))
           },
         },
@@ -93,7 +91,7 @@ export function createVditor(editorId, options = {}) {
         vditor.disabled()
         const res = await fetch(
           `${API_BASE_URL}/api/upload/presign?filename=${encodeURIComponent(file.name)}`,
-          { headers: { Authorization: `Bearer ${getToken()}` } }
+          { headers: { Authorization: `Bearer ${getToken()}` } },
         )
         if (!res.ok) {
           vditor.enable()
@@ -122,7 +120,7 @@ export function createVditor(editorId, options = {}) {
           'pjpeg',
           'png',
           'svg',
-          'webp'
+          'webp',
         ]
         const audioExts = ['wav', 'mp3', 'ogg']
         let md
@@ -137,7 +135,7 @@ export function createVditor(editorId, options = {}) {
         vditor.enable()
         vditor.tip('上传成功')
         return null
-      }
+      },
     },
     // upload: {
     //   fieldName: 'file',
@@ -168,7 +166,7 @@ export function createVditor(editorId, options = {}) {
     toolbarConfig: { pin: true },
     cache: { enable: false },
     input,
-    after
+    after,
   })
 
   return vditor

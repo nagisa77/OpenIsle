@@ -3,8 +3,8 @@
 </template>
 
 <script>
-import CallbackPage from '../components/CallbackPage.vue'
-import { discordExchange } from '../utils/discord'
+import CallbackPage from '~/components/CallbackPage.vue'
+import { discordExchange } from '~/utils/discord'
 
 export default {
   name: 'DiscordCallbackPageView',
@@ -20,7 +20,6 @@ export default {
     } else {
       this.$router.push('/')
     }
-  }
+  },
 }
 </script>
-

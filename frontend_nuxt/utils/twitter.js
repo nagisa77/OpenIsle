@@ -52,8 +52,8 @@ export async function twitterExchange(code, state, reason) {
         redirectUri: `${window.location.origin}/twitter-callback`,
         reason,
         state,
-        codeVerifier
-      })
+        codeVerifier,
+      }),
     })
     const data = await res.json()
     if (res.ok && data.token) {

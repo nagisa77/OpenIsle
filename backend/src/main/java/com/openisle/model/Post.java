@@ -9,10 +9,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.time.LocalDateTime;
+
 import com.openisle.model.Tag;
 
-
-import java.time.LocalDateTime;
 
 /**
  * Post entity representing an article posted by a user.
@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @Table(name = "posts")
+@Inheritance(strategy = InheritanceType.JOINED)
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,6 +59,10 @@ public class Post {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PostStatus status = PostStatus.PUBLISHED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PostType type = PostType.NORMAL;
 
     @Column
     private LocalDateTime pinnedAt;

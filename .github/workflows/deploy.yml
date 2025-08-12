@@ -11,29 +11,28 @@ jobs:
     environment: Deploy
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    # - uses: actions/setup-java@v4
-    #   with:
-    #     java-version: '17'
-    #     distribution: 'temurin'
+      # - uses: actions/setup-java@v4
+      #   with:
+      #     java-version: '17'
+      #     distribution: 'temurin'
 
-    # - run: mvn -B clean package -DskipTests
+      # - run: mvn -B clean package -DskipTests
 
-    # - uses: actions/setup-node@v4
-    #   with:
-    #     node-version: '20'
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
 
-    # - run: |
-    #     cd open-isle-cli
-    #     npm ci
-    #     npm run build
+      # - run: |
+      #     cd open-isle-cli
+      #     npm ci
+      #     npm run build
 
-    - name: Deploy to Server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host:   ${{ secrets.SSH_HOST }}
-        username: root
-        key:     ${{ secrets.SSH_KEY }}
-        script:  bash /opt/openisle/deploy.sh
-
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          script: bash /opt/openisle/deploy.sh

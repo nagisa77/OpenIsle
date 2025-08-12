@@ -13,16 +13,19 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 ## 🚀 部署
 
 ### 后端
+
 1. 确保安装 JDK 17 及 Maven
 2. 信息配置修改 `src/main/resources/application.properties`，或通过环境变量设置数据库等参数
 3. 执行 `mvn clean package` 生成包，之后使用 `java -jar target/openisle-0.0.1-SNAPSHOT.jar`启动，或在开发时直接使用 `mvn spring-boot:run`
 
 ### 前端
+
 1. `cd open-isle-cli`
 2. 执行 `npm install`
 3. `npm run serve`可在本地启动开发服务，产品环境使用 `npm run build`生成 `dist/` 文件，配合线上网站方式部署
 
 ## ✨ 项目特点
+
 - JWT 认证以及 Google、GitHub、Discord、Twitter 等多种 OAuth 登录
 - 支持分类、标签的贴文管理以及草稿保存功能
 - 嵌套评论、指定贴文或评论的点赞/抖弹系统
@@ -35,6 +38,7 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 - 浏览器推送通知，离开网站也能及时收到提醒
 
 ## 🌟 项目优势
+
 - 全面开源，便于二次开发和自定义扩展
 - Spring Boot + Vue 3 成熟技术栈，学习起点低，社区资源丰富
 - 支持多种登录方式和角色权限，容易展展到不同场景
@@ -52,6 +56,7 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 本项目以 MIT License 发布，欢迎自由使用与修改。
 
 ## 🙏 鼓赞
+
 - [Spring Boot](https://spring.io/projects/spring-boot)
 - [JJWT](https://github.com/jwtk/jjwt)
 - [Lombok](https://github.com/projectlombok/lombok)

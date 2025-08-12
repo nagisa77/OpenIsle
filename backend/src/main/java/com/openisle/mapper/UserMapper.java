@@ -22,19 +22,23 @@ public class UserMapper {
     private final UserVisitService userVisitService;
     private final PostReadService postReadService;
     private final LevelService levelService;
+    private final MedalService medalService;
 
     @Value("${app.snippet-length:50}")
     private int snippetLength;
 
     public AuthorDto toAuthorDto(User user) {
+        medalService.ensureDisplayMedal(user);
         AuthorDto dto = new AuthorDto();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setAvatar(user.getAvatar());
+        dto.setDisplayMedal(user.getDisplayMedal());
         return dto;
     }
 
     public UserDto toDto(User user, Authentication viewer) {
+        medalService.ensureDisplayMedal(user);
         UserDto dto = new UserDto();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());

@@ -13,7 +13,7 @@ export async function googleGetIdToken() {
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: ({ credential }) => resolve(credential),
-      use_fedcm: true 
+      use_fedcm: true,
     })
     window.google.accounts.id.prompt()
   })
@@ -35,7 +35,7 @@ export async function googleAuthWithToken(idToken, redirect_success, redirect_no
     const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken }),
     })
     const data = await res.json()
     if (res.ok && data.token) {
@@ -72,8 +72,8 @@ export function loginWithGoogle() {
     () => {
       router.push('/')
     },
-    token => {
+    (token) => {
       router.push('/signup-reason?token=' + token)
-    }
+    },
   )
 }

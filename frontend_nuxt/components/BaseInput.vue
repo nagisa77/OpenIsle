@@ -23,7 +23,6 @@
   </div>
 </template>
 
-
 <script>
 export default {
   name: 'BaseInput',
@@ -32,7 +31,7 @@ export default {
     modelValue: { type: [String, Number], default: '' },
     icon: { type: String, default: '' },
     type: { type: String, default: 'text' },
-    textarea: { type: Boolean, default: false }
+    textarea: { type: Boolean, default: false },
   },
   emits: ['update:modelValue'],
   computed: {
@@ -42,9 +41,9 @@ export default {
       },
       set(val) {
         this.$emit('update:modelValue', val)
-      }
-    }
-  }
+      },
+    },
+  },
 }
 </script>
 
@@ -75,7 +74,7 @@ export default {
   outline: none;
   width: 100%;
   font-size: 14px;
-  resize: none; 
+  resize: none;
   background-color: transparent;
   color: var(--text-color);
 }

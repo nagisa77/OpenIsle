@@ -12,14 +12,14 @@ export default {
   name: 'BasePopup',
   props: {
     visible: { type: Boolean, default: false },
-    closeOnOverlay: { type: Boolean, default: true }
+    closeOnOverlay: { type: Boolean, default: true },
   },
   emits: ['close'],
   methods: {
-    onOverlayClick () {
+    onOverlayClick() {
       if (this.closeOnOverlay) this.$emit('close')
-    }
-  }
+    },
+  },
 }
 </script>
 

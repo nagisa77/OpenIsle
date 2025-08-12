@@ -1,32 +1,28 @@
 <template>
   <div class="comment-editor-container">
-    <div class="comment-editor-wrapper">      
+    <div class="comment-editor-wrapper">
       <div :id="editorId" ref="vditorElement"></div>
       <LoginOverlay v-if="showLoginOverlay" />
     </div>
     <div class="comment-bottom-container">
       <div class="comment-submit" :class="{ disabled: isDisabled }" @click="submit">
-        <template v-if="!loading">
-          发布评论
-        </template>
-        <template v-else>
-          <i class="fa-solid fa-spinner fa-spin"></i> 发布中...
-        </template>
+        <template v-if="!loading"> 发布评论 </template>
+        <template v-else> <i class="fa-solid fa-spinner fa-spin"></i> 发布中... </template>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, computed, watch, onUnmounted, useId } from 'vue'
-import { themeState } from '../utils/theme'
+import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue'
+import { clearVditorStorage } from '~/utils/clearVditorStorage'
+import { themeState } from '~/utils/theme'
 import {
   createVditor,
   getEditorTheme as getEditorThemeUtil,
-  getPreviewTheme as getPreviewThemeUtil
-} from '../utils/vditor'
-import LoginOverlay from './LoginOverlay.vue'
-import { clearVditorStorage } from '../utils/clearVditorStorage'
+  getPreviewTheme as getPreviewThemeUtil,
+} from '~/utils/vditor'
+import LoginOverlay from '~/components/LoginOverlay.vue'
 
 export default {
   name: 'CommentEditor',
@@ -34,20 +30,24 @@ export default {
   props: {
     editorId: {
       type: String,
-      default: ''
+      default: '',
     },
     loading: {
       type: Boolean,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showLoginOverlay: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    parentUserName: {
+      type: String,
+      default: '',
+    },
   },
   components: { LoginOverlay },
   setup(props, { emit }) {
@@ -71,7 +71,7 @@ export default {
       if (!vditorInstance.value || isDisabled.value) return
       const value = vditorInstance.value.getValue()
       console.debug('CommentEditor submit', value)
-      emit('submit', value, () => {
+      emit('submit', props.parentUserName, value, () => {
         if (!vditorInstance.value) return
         vditorInstance.value.setValue('')
         text.value = ''
@@ -83,7 +83,7 @@ export default {
         placeholder: '说点什么...',
         preview: {
           actions: [],
-          markdown: { toc: false }
+          markdown: { toc: false },
         },
         input(value) {
           text.value = value
@@ -93,7 +93,7 @@ export default {
             vditorInstance.value.disabled()
           }
           applyTheme()
-        }
+        },
       })
       // applyTheme()
     })
@@ -104,37 +104,37 @@ export default {
 
     watch(
       () => props.loading,
-      val => {
+      (val) => {
         if (!vditorInstance.value) return
         if (val) {
           vditorInstance.value.disabled()
         } else if (!props.disabled) {
           vditorInstance.value.enable()
         }
-      }
+      },
     )
 
     watch(
       () => props.disabled,
-      val => {
+      (val) => {
         if (!vditorInstance.value) return
         if (val) {
           vditorInstance.value.disabled()
         } else if (!props.loading) {
           vditorInstance.value.enable()
         }
-      }
+      },
     )
 
     watch(
       () => themeState.mode,
       () => {
         applyTheme()
-      }
+      },
     )
 
     return { submit, isDisabled, editorId }
-  }
+  },
 }
 </script>
 

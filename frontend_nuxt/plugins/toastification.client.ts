@@ -1,4 +1,4 @@
-import { defineNuxtPlugin } from '#app'
+import { defineNuxtPlugin } from 'nuxt/app'
 import 'vue-toastification/dist/index.css'
 import '~/assets/toast.css'
 
@@ -8,7 +8,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     try {
       // 使用动态导入来避免 CommonJS 模块问题
       const { default: Toast, POSITION } = await import('vue-toastification')
-      
+
       nuxtApp.vueApp.use(Toast, {
         position: POSITION.TOP_RIGHT,
         containerClassName: 'open-isle-toast-style-v1',

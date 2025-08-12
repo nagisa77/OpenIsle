@@ -21,12 +21,12 @@ export default {
   props: {
     src: {
       type: String,
-      required: true
+      required: true,
     },
     show: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['close', 'crop'],
   data() {
@@ -39,7 +39,7 @@ export default {
       } else {
         this.destroy()
       }
-    }
+    },
   },
   mounted() {
     if (this.show) {
@@ -53,7 +53,7 @@ export default {
         aspectRatio: 1,
         viewMode: 1,
         autoCropArea: 1,
-        responsive: true
+        responsive: true,
       })
     },
     destroy() {
@@ -64,15 +64,15 @@ export default {
     },
     onConfirm() {
       if (!this.cropper) return
-      this.cropper.getCroppedCanvas({ width: 256, height: 256 }).toBlob(blob => {
+      this.cropper.getCroppedCanvas({ width: 256, height: 256 }).toBlob((blob) => {
         const file = new File([blob], 'avatar.png', { type: 'image/png' })
         const url = URL.createObjectURL(blob)
         this.$emit('crop', { file, url })
         this.$emit('close')
         this.destroy()
       })
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -84,7 +84,7 @@ export default {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.8);
-  opacity: 1.0;
+  opacity: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,4 +139,3 @@ export default {
   }
 }
 </style>
-

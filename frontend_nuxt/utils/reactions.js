@@ -21,5 +21,5 @@ export const reactionEmojiMap = {
   CHINA: '🇨🇳',
   USA: '🇺🇸',
   JAPAN: '🇯🇵',
-  KOREA: '🇰🇷'
+  KOREA: '🇰🇷',
 }

@@ -3,12 +3,8 @@
     <div class="login-overlay-blur"></div>
     <div class="login-overlay-content">
       <i class="fa-solid fa-user login-overlay-icon"></i>
-      <div class="login-overlay-text">
-        请先登录，点击跳转到登录页面
-      </div>
-      <div class="login-overlay-button" @click="goLogin">
-        登录
-      </div>
+      <div class="login-overlay-text">请先登录，点击跳转到登录页面</div>
+      <div class="login-overlay-button" @click="goLogin">登录</div>
     </div>
   </div>
 </template>
@@ -24,7 +20,7 @@ export default {
       router.push('/login')
     }
     return { goLogin }
-  }
+  },
 }
 </script>
 
@@ -81,5 +77,4 @@ export default {
 .login-overlay-button:hover {
   background-color: var(--primary-color-hover);
 }
-
 </style>

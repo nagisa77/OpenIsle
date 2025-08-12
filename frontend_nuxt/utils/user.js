@@ -22,7 +22,9 @@ export async function fetchAdmins() {
 export async function searchUsers(keyword) {
   if (!keyword) return []
   try {
-    const res = await fetch(`${API_BASE_URL}/api/search/users?keyword=${encodeURIComponent(keyword)}`)
+    const res = await fetch(
+      `${API_BASE_URL}/api/search/users?keyword=${encodeURIComponent(keyword)}`,
+    )
     return res.ok ? await res.json() : []
   } catch (e) {
     return []

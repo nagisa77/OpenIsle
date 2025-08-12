@@ -18,7 +18,7 @@ import { useRouter } from 'vue-router'
 export default {
   name: 'ArticleCategory',
   props: {
-    category: { type: Object, default: null }
+    category: { type: Object, default: null },
   },
   setup(props) {
     const router = useRouter()
@@ -30,7 +30,7 @@ export default {
       })
     }
     return { gotoCategory }
-  }
+  },
 }
 </script>
 

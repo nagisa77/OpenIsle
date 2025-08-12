@@ -1,7 +1,11 @@
 <template>
-  <div class="info-content-container" :id="'comment-' + comment.id" :style="{
-    ...(level > 0 ? { /*borderLeft: '1px solid #e0e0e0', */borderBottom: 'none' } : {})
-  }">
+  <div
+    class="info-content-container"
+    :id="'comment-' + comment.id"
+    :style="{
+      ...(level > 0 ? { /*borderLeft: '1px solid #e0e0e0', */ borderBottom: 'none' } : {}),
+    }"
+  >
     <!-- <div class="user-avatar-container">
       <div class="user-avatar-item">
         <img class="user-avatar-item-img" :src="comment.avatar" alt="avatar" />
@@ -11,6 +15,13 @@
       <div class="common-info-content-header">
         <div class="info-content-header-left">
           <span class="user-name">{{ comment.userName }}</span>
+          <i class="fas fa-medal medal-icon"></i>
+          <router-link
+            v-if="comment.medal"
+            class="medal-name"
+            :to="`/users/${comment.userId}?tab=achievements`"
+            >{{ getMedalTitle(comment.medal) }}</router-link
+          >
           <span v-if="level >= 2">
             <i class="fas fa-reply reply-icon"></i>
             <span class="user-name reply-user-name">{{ comment.parentUserName }}</span>
@@ -25,7 +36,11 @@
           </DropdownMenu>
         </div>
       </div>
-      <div class="info-content-text" v-html="renderMarkdown(comment.text)" @click="handleContentClick"></div>
+      <div
+        class="info-content-text"
+        v-html="renderMarkdown(comment.text)"
+        @click="handleContentClick"
+      ></div>
       <div class="article-footer-container">
         <ReactionsGroup v-model="comment.reactions" content-type="comment" :content-id="comment.id">
           <div class="make-reaction-item comment-reaction" @click="toggleEditor">
@@ -36,9 +51,15 @@
           </div>
         </ReactionsGroup>
       </div>
-      <div class="comment-editor-wrapper">
-        <CommentEditor v-if="showEditor" @submit="submitReply" :loading="isWaitingForReply" :disabled="!loggedIn"
-          :show-login-overlay="!loggedIn" />
+      <div class="comment-editor-wrapper" ref="editorWrapper">
+        <CommentEditor
+          v-if="showEditor"
+          @submit="submitReply"
+          :loading="isWaitingForReply"
+          :disabled="!loggedIn"
+          :show-login-overlay="!loggedIn"
+          :parent-user-name="comment.userName"
+        />
       </div>
       <div v-if="replyCount && level < 2" class="reply-toggle" @click="toggleReplies">
         <i v-if="showReplies" class="fas fa-chevron-up reply-toggle-icon"></i>
@@ -48,29 +69,39 @@
       <div v-if="showReplies && level < 2" class="reply-list">
         <BaseTimeline :items="replyList">
           <template #item="{ item }">
-            <CommentItem :key="item.id" :comment="item" :level="level + 1" :default-show-replies="item.openReplies" />
+            <CommentItem
+              :key="item.id"
+              :comment="item"
+              :level="level + 1"
+              :default-show-replies="item.openReplies"
+            />
           </template>
         </BaseTimeline>
       </div>
-      <vue-easy-lightbox :visible="lightboxVisible" :imgs="lightboxImgs" :index="lightboxIndex"
-        @hide="lightboxVisible = false" />
+      <vue-easy-lightbox
+        :visible="lightboxVisible"
+        :imgs="lightboxImgs"
+        :index="lightboxIndex"
+        @hide="lightboxVisible = false"
+      />
     </div>
   </div>
 </template>
 
 <script>
-import { ref, watch, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import VueEasyLightbox from 'vue-easy-lightbox'
 import { useRouter } from 'vue-router'
-import CommentEditor from './CommentEditor.vue'
-import { renderMarkdown, handleMarkdownClick } from '../utils/markdown'
-import TimeManager from '../utils/time'
-import BaseTimeline from './BaseTimeline.vue'
-import { API_BASE_URL, toast } from '../main'
-import { getToken, authState } from '../utils/auth'
-import ReactionsGroup from './ReactionsGroup.vue'
-import DropdownMenu from './DropdownMenu.vue'
-import LoginOverlay from './LoginOverlay.vue'
+import { API_BASE_URL, toast } from '~/main'
+import { authState, getToken } from '~/utils/auth'
+import { handleMarkdownClick, renderMarkdown } from '~/utils/markdown'
+import { getMedalTitle } from '~/utils/medal'
+import TimeManager from '~/utils/time'
+import BaseTimeline from '~/components/BaseTimeline.vue'
+import CommentEditor from '~/components/CommentEditor.vue'
+import DropdownMenu from '~/components/DropdownMenu.vue'
+import LoginOverlay from '~/components/LoginOverlay.vue'
+import ReactionsGroup from '~/components/ReactionsGroup.vue'
 
 const CommentItem = {
   name: 'CommentItem',
@@ -78,16 +109,16 @@ const CommentItem = {
   props: {
     comment: {
       type: Object,
-      required: true
+      required: true,
     },
     level: {
       type: Number,
-      default: 0
+      default: 0,
     },
     defaultShowReplies: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props, { emit }) {
     const router = useRouter()
@@ -96,9 +127,10 @@ const CommentItem = {
       () => props.defaultShowReplies,
       (val) => {
         showReplies.value = props.level === 0 ? true : val
-      }
+      },
     )
     const showEditor = ref(false)
+    const editorWrapper = ref(null)
     const isWaitingForReply = ref(false)
     const lightboxVisible = ref(false)
     const lightboxIndex = ref(0)
@@ -111,6 +143,11 @@ const CommentItem = {
     }
     const toggleEditor = () => {
       showEditor.value = !showEditor.value
+      if (showEditor.value) {
+        setTimeout(() => {
+          editorWrapper.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }, 100)
+      }
     }
 
     // 合并所有子回复为一个扁平数组
@@ -136,7 +173,9 @@ const CommentItem = {
     const isAuthor = computed(() => authState.username === props.comment.userName)
     const isAdmin = computed(() => authState.role === 'ADMIN')
     const commentMenuItems = computed(() =>
-      (isAuthor.value || isAdmin.value) ? [{ text: '删除评论', color: 'red', onClick: () => deleteComment() }] : []
+      isAuthor.value || isAdmin.value
+        ? [{ text: '删除评论', color: 'red', onClick: () => deleteComment() }]
+        : [],
     )
     const deleteComment = async () => {
       const token = getToken()
@@ -147,7 +186,7 @@ const CommentItem = {
       console.debug('Deleting comment', props.comment.id)
       const res = await fetch(`${API_BASE_URL}/api/comments/${props.comment.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       console.debug('Delete comment response status', res.status)
       if (res.ok) {
@@ -157,7 +196,7 @@ const CommentItem = {
         toast.error('操作失败')
       }
     }
-    const submitReply = async (text, clear) => {
+    const submitReply = async (parentUserName, text, clear) => {
       if (!text.trim()) return
       isWaitingForReply.value = true
       const token = getToken()
@@ -171,7 +210,7 @@ const CommentItem = {
         const res = await fetch(`${API_BASE_URL}/api/comments/${props.comment.id}/replies`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ content: text })
+          body: JSON.stringify({ content: text }),
         })
         console.debug('Submit reply response status', res.status)
         if (res.ok) {
@@ -183,9 +222,11 @@ const CommentItem = {
             userName: data.author.username,
             time: TimeManager.format(data.createdAt),
             avatar: data.author.avatar,
+            medal: data.author.displayMedal,
             text: data.content,
+            parentUserName: parentUserName,
             reactions: [],
-            reply: (data.replies || []).map(r => ({
+            reply: (data.replies || []).map((r) => ({
               id: r.id,
               userName: r.author.username,
               time: TimeManager.format(r.createdAt),
@@ -195,11 +236,11 @@ const CommentItem = {
               reply: [],
               openReplies: false,
               src: r.author.avatar,
-              iconClick: () => router.push(`/users/${r.author.id}`)
+              iconClick: () => router.push(`/users/${r.author.id}`),
             })),
             openReplies: false,
             src: data.author.avatar,
-            iconClick: () => router.push(`/users/${data.author.id}`)
+            iconClick: () => router.push(`/users/${data.author.id}`),
           })
           clear()
           showEditor.value = false
@@ -222,21 +263,49 @@ const CommentItem = {
         toast.success('已复制')
       })
     }
-    const handleContentClick = e => {
+    const handleContentClick = (e) => {
       handleMarkdownClick(e)
       if (e.target.tagName === 'IMG') {
         const container = e.target.parentNode
-        const imgs = [...container.querySelectorAll('img')].map(i => i.src)
+        const imgs = [...container.querySelectorAll('img')].map((i) => i.src)
         lightboxImgs.value = imgs
         lightboxIndex.value = imgs.indexOf(e.target.src)
         lightboxVisible.value = true
       }
     }
-    return { showReplies, toggleReplies, showEditor, toggleEditor, submitReply, copyCommentLink, renderMarkdown, isWaitingForReply, commentMenuItems, deleteComment, lightboxVisible, lightboxIndex, lightboxImgs, handleContentClick, loggedIn, replyCount, replyList }
-  }
+    return {
+      showReplies,
+      toggleReplies,
+      showEditor,
+      toggleEditor,
+      submitReply,
+      copyCommentLink,
+      renderMarkdown,
+      isWaitingForReply,
+      commentMenuItems,
+      deleteComment,
+      lightboxVisible,
+      lightboxIndex,
+      lightboxImgs,
+      handleContentClick,
+      loggedIn,
+      replyCount,
+      replyList,
+      getMedalTitle,
+      editorWrapper,
+    }
+  },
 }
 
-CommentItem.components = { CommentItem, CommentEditor, BaseTimeline, ReactionsGroup, DropdownMenu, VueEasyLightbox, LoginOverlay }
+CommentItem.components = {
+  CommentItem,
+  CommentEditor,
+  BaseTimeline,
+  ReactionsGroup,
+  DropdownMenu,
+  VueEasyLightbox,
+  LoginOverlay,
+}
 
 export default CommentItem
 </script>
@@ -248,7 +317,8 @@ export default CommentItem
   user-select: none;
 }
 
-.reply-list {}
+.reply-list {
+}
 
 .comment-reaction {
   color: var(--primary-color);
@@ -281,6 +351,23 @@ export default CommentItem
 
 .reply-user-name {
   opacity: 0.3;
+}
+
+.medal-name {
+  font-size: 12px;
+  margin-left: 1px;
+  opacity: 0.6;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+.medal-icon {
+  font-size: 12px;
+  opacity: 0.6;
+  cursor: pointer;
+  text-decoration: none;
+  margin-left: 10px;
 }
 
 @keyframes highlight {

@@ -8,7 +8,7 @@
 
 <script>
 export default {
-  name: 'NotFoundPageView'
+  name: 'NotFoundPageView',
 }
 </script>
 
