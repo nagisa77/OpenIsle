@@ -8,4 +8,5 @@ public class TwitterLoginRequest {
     private String code;
     private String redirectUri;
     private String codeVerifier;
+    private String inviteToken;
 }

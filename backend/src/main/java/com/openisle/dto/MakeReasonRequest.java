@@ -7,4 +7,5 @@ import lombok.Data;
 public class MakeReasonRequest {
     private String token;
     private String reason;
+    private String inviteToken;
 }

@@ -15,7 +15,7 @@ export function discordAuthorize(state = '') {
   window.location.href = url
 }
 
-export async function discordExchange(code, state, reason) {
+export async function discordExchange(code, inviteToken, reason) {
   try {
     const config = useRuntimeConfig()
     const API_BASE_URL = config.public.apiBaseUrl
@@ -26,7 +26,7 @@ export async function discordExchange(code, state, reason) {
         code,
         redirectUri: `${window.location.origin}/discord-callback`,
         reason,
-        state,
+        inviteToken,
       }),
     })
     const data = await res.json()

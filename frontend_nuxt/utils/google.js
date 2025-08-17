@@ -21,7 +21,7 @@ export async function googleGetIdToken() {
   })
 }
 
-export function googleAuthorize() {
+export function googleAuthorize(state = '') {
   const config = useRuntimeConfig()
   const GOOGLE_CLIENT_ID = config.public.googleClientId
   const WEBSITE_BASE_URL = config.public.websiteBaseUrl
@@ -31,18 +31,23 @@ export function googleAuthorize() {
   }
   const redirectUri = `${WEBSITE_BASE_URL}/google-callback`
   const nonce = Math.random().toString(36).substring(2)
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${nonce}`
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${nonce}&state=${state}`
   window.location.href = url
 }
 
-export async function googleAuthWithToken(idToken, redirect_success, redirect_not_approved) {
+export async function googleAuthWithToken(
+  idToken,
+  inviteToken,
+  redirect_success,
+  redirect_not_approved,
+) {
   try {
     const config = useRuntimeConfig()
     const API_BASE_URL = config.public.apiBaseUrl
     const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ idToken, inviteToken }),
     })
     const data = await res.json()
     if (res.ok && data.token) {
@@ -66,7 +71,7 @@ export async function googleAuthWithToken(idToken, redirect_success, redirect_no
 export async function googleSignIn(redirect_success, redirect_not_approved) {
   try {
     const token = await googleGetIdToken()
-    await googleAuthWithToken(token, redirect_success, redirect_not_approved)
+    await googleAuthWithToken(token, '', redirect_success, redirect_not_approved)
   } catch {
     /* ignore */
   }

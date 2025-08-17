@@ -9,11 +9,12 @@ import { githubExchange } from '~/utils/github'
 onMounted(async () => {
   const url = new URL(window.location.href)
   const code = url.searchParams.get('code')
-  const state = url.searchParams.get('state')
-  const result = await githubExchange(code, state, '')
+  const inviteToken = url.searchParams.get('state')
+  const result = await githubExchange(code, inviteToken, '')
 
   if (result.needReason) {
-    navigateTo(`/signup-reason?token=${result.token}`, { replace: true })
+    const q = inviteToken ? `&invite_token=${inviteToken}` : ''
+    navigateTo(`/signup-reason?token=${result.token}${q}`, { replace: true })
   } else {
     navigateTo('/', { replace: true })
   }

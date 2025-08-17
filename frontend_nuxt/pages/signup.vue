@@ -69,7 +69,7 @@
     </div>
 
     <div class="other-signup-page-content">
-      <div class="signup-page-button" @click="googleAuthorize">
+      <div class="signup-page-button" @click="signupWithGoogle">
         <img class="signup-page-button-icon" src="~/assets/icons/google.svg" alt="Google Logo" />
         <div class="signup-page-button-text">Google 注册</div>
       </div>
@@ -97,6 +97,7 @@ import { githubAuthorize } from '~/utils/github'
 import { googleAuthorize } from '~/utils/google'
 import { twitterAuthorize } from '~/utils/twitter'
 const config = useRuntimeConfig()
+const route = useRoute()
 const API_BASE_URL = config.public.apiBaseUrl
 const emailStep = ref(0)
 const email = ref('')
@@ -109,9 +110,11 @@ const passwordError = ref('')
 const code = ref('')
 const isWaitingForEmailSent = ref(false)
 const isWaitingForEmailVerified = ref(false)
+const inviteToken = ref('')
 
 onMounted(async () => {
   username.value = route.query.u || ''
+  inviteToken.value = route.query.invite_token || ''
   try {
     const res = await fetch(`${API_BASE_URL}/api/config`)
     if (res.ok) {
@@ -156,6 +159,7 @@ const sendVerification = async () => {
         username: username.value,
         email: email.value,
         password: password.value,
+        ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
       }),
     })
     isWaitingForEmailSent.value = false
@@ -184,12 +188,14 @@ const verifyCode = async () => {
       body: JSON.stringify({
         code: code.value,
         username: username.value,
+        ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
       }),
     })
     const data = await res.json()
     if (res.ok) {
       if (registerMode.value === 'WHITELIST') {
-        navigateTo(`/signup-reason?token=${data.token}`, { replace: true })
+        const q = inviteToken.value ? `&invite_token=${inviteToken.value}` : ''
+        navigateTo(`/signup-reason?token=${data.token}${q}`, { replace: true })
       } else {
         toast.success('注册成功，请登录')
         navigateTo('/login', { replace: true })
@@ -203,14 +209,17 @@ const verifyCode = async () => {
     isWaitingForEmailVerified.value = false
   }
 }
+const signupWithGoogle = () => {
+  googleAuthorize(inviteToken.value)
+}
 const signupWithGithub = () => {
-  githubAuthorize()
+  githubAuthorize(inviteToken.value)
 }
 const signupWithDiscord = () => {
-  discordAuthorize()
+  discordAuthorize(inviteToken.value)
 }
 const signupWithTwitter = () => {
-  twitterAuthorize()
+  twitterAuthorize(inviteToken.value)
 }
 </script>
 

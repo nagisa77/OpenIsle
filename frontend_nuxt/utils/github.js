@@ -15,7 +15,7 @@ export function githubAuthorize(state = '') {
   window.location.href = url
 }
 
-export async function githubExchange(code, state, reason) {
+export async function githubExchange(code, inviteToken, reason) {
   try {
     const config = useRuntimeConfig()
     const API_BASE_URL = config.public.apiBaseUrl
@@ -26,7 +26,7 @@ export async function githubExchange(code, state, reason) {
         code,
         redirectUri: `${window.location.origin}/github-callback`,
         reason,
-        state,
+        inviteToken,
       }),
     })
     const data = await res.json()

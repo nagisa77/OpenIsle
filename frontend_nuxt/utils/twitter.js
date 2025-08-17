@@ -42,7 +42,7 @@ export async function twitterAuthorize(state = '') {
   window.location.href = url
 }
 
-export async function twitterExchange(code, state, reason) {
+export async function twitterExchange(code, inviteToken, reason) {
   try {
     const config = useRuntimeConfig()
     const API_BASE_URL = config.public.apiBaseUrl
@@ -55,7 +55,7 @@ export async function twitterExchange(code, state, reason) {
         code,
         redirectUri: `${window.location.origin}/twitter-callback`,
         reason,
-        state,
+        inviteToken,
         codeVerifier,
       }),
     })

@@ -23,14 +23,17 @@ import BaseInput from '~/components/BaseInput.vue'
 import { toast } from '~/main'
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
+const route = useRoute()
 
 const reason = ref('')
 const error = ref('')
 const isWaitingForRegister = ref(false)
 const token = ref('')
+const inviteToken = ref('')
 
 onMounted(async () => {
   token.value = route.query.token || ''
+  inviteToken.value = route.query.invite_token || ''
   if (!token.value) {
     await navigateTo({ path: '/signup' }, { replace: true })
   }
@@ -50,8 +53,9 @@ const submit = async () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        token: this.token,
-        reason: this.reason,
+        token: token.value,
+        reason: reason.value,
+        ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
       }),
     })
     isWaitingForRegister.value = false

@@ -7,4 +7,5 @@ import lombok.Data;
 public class DiscordLoginRequest {
     private String code;
     private String redirectUri;
+    private String inviteToken;
 }
