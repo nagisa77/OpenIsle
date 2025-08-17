@@ -1,6 +1,12 @@
 <template>
   <div>
     <ActivityPopup
+      :visible="showInvitePointsPopup"
+      :icon="invitePointsIcon"
+      text="邀请码送积分活动火热进行中，快来邀请好友吧！"
+      @close="closeInvitePointsPopup"
+    />
+    <ActivityPopup
       :visible="showMilkTeaPopup"
       :icon="milkTeaIcon"
       text="建站送奶茶活动火热进行中，快来参与吧！"
@@ -20,6 +26,8 @@ import { authState } from '~/utils/auth'
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
 
+const showInvitePointsPopup = ref(false)
+const invitePointsIcon = ref('')
 const showMilkTeaPopup = ref(false)
 const milkTeaIcon = ref('')
 const showNotificationPopup = ref(false)
@@ -27,6 +35,9 @@ const showMedalPopup = ref(false)
 const newMedals = ref([])
 
 onMounted(async () => {
+  await checkInvitePointsActivity()
+  if (showInvitePointsPopup.value) return
+
   await checkMilkTeaActivity()
   if (showMilkTeaPopup.value) return
 
@@ -58,6 +69,29 @@ const closeMilkTeaPopup = () => {
   localStorage.setItem('milkTeaActivityPopupShown', 'true')
   showMilkTeaPopup.value = false
   checkNotificationSetting()
+}
+const checkInvitePointsActivity = async () => {
+  if (!process.client) return
+  if (localStorage.getItem('invitePointsActivityPopupShown')) return
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/activities`)
+    if (res.ok) {
+      const list = await res.json()
+      const a = list.find((i) => i.type === 'INVITE_POINTS' && !i.ended)
+      if (a) {
+        invitePointsIcon.value = a.icon
+        showInvitePointsPopup.value = true
+      }
+    }
+  } catch (e) {
+    // ignore network errors
+  }
+}
+const closeInvitePointsPopup = () => {
+  if (!process.client) return
+  localStorage.setItem('invitePointsActivityPopupShown', 'true')
+  showInvitePointsPopup.value = false
+  checkMilkTeaActivity()
 }
 const checkNotificationSetting = async () => {
   if (!process.client) return
