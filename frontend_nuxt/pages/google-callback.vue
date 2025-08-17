@@ -9,6 +9,7 @@ import { googleAuthWithToken } from '~/utils/google'
 onMounted(async () => {
   const hash = new URLSearchParams(window.location.hash.substring(1))
   const idToken = hash.get('id_token')
+  const state = hash.get('state') || ''
   if (idToken) {
     await googleAuthWithToken(
       idToken,
@@ -18,6 +19,7 @@ onMounted(async () => {
       (token) => {
         navigateTo(`/signup-reason?token=${token}`, { replace: true })
       },
+      state,
     )
   } else {
     navigateTo('/login', { replace: true })
