@@ -186,6 +186,8 @@ body {
   white-space: no-wrap;
   background-color: var(--code-highlight-background-color);
   color: var(--text-color);
+  padding: 2px 4px;
+  margin: 0 2px;
 }
 
 .copy-code-btn {
