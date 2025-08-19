@@ -8,6 +8,8 @@ import com.openisle.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import com.openisle.service.EmailSender;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
@@ -180,15 +182,16 @@ public class NotificationService {
         userRepository.save(user);
     }
 
-    public List<Notification> listNotifications(String username, Boolean read) {
+    public List<Notification> listNotifications(String username, Boolean read, int page, int pageSize) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
         Set<NotificationType> disabled = user.getDisabledNotificationTypes();
+        Pageable pageable = PageRequest.of(page, pageSize);
         List<Notification> list;
         if (read == null) {
-            list = notificationRepository.findByUserOrderByCreatedAtDesc(user);
+            list = notificationRepository.findByUserOrderByCreatedAtDesc(user, pageable);
         } else {
-            list = notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, read);
+            list = notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, read, pageable);
         }
         return list.stream().filter(n -> !disabled.contains(n.getType())).collect(Collectors.toList());
     }

@@ -48,7 +48,7 @@
     </div>
 
     <template v-else>
-      <div v-if="isLoadingMessage" class="loading-message">
+      <div v-if="isLoadingMessage && filteredNotifications.length === 0" class="loading-message">
         <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
       </div>
 
@@ -58,7 +58,7 @@
         icon="fas fa-inbox"
       />
 
-      <div class="timeline-container" v-if="filteredNotifications.length > 0">
+      <div v-else class="timeline-container">
         <BaseTimeline :items="filteredNotifications">
           <template #item="{ item }">
             <div class="notif-content" :class="{ read: item.read }">
@@ -505,13 +505,17 @@
             </div>
           </template>
         </BaseTimeline>
+        <div v-if="isLoadingMessage" class="loading-message">
+          <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+        </div>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onActivated, ref } from 'vue'
+import { useScrollLoadMore } from '~/utils/loadMore'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
 import BaseTimeline from '~/components/BaseTimeline.vue'
 import NotificationContainer from '~/components/NotificationContainer.vue'
@@ -525,6 +529,9 @@ import {
   markRead,
   notifications,
   markAllRead,
+  allLoaded,
+  fetchNotificationPreferences,
+  updateNotificationPreference,
 } from '~/utils/notification'
 import TimeManager from '~/utils/time'
 
@@ -547,7 +554,7 @@ const togglePref = async (pref) => {
   const ok = await updateNotificationPreference(pref.type, !pref.enabled)
   if (ok) {
     pref.enabled = !pref.enabled
-    await fetchNotifications()
+    await fetchNotifications(true)
     await fetchUnreadCount()
   } else {
     toast.error('操作失败')
@@ -627,8 +634,14 @@ const formatType = (t) => {
   }
 }
 
+const loadMore = async () => {
+  if (allLoaded.value) return
+  await fetchNotifications()
+}
+useScrollLoadMore(loadMore)
+
 onActivated(() => {
-  fetchNotifications()
+  fetchNotifications(true)
   fetchPrefs()
 })
 </script>
