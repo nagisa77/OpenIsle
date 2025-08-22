@@ -59,6 +59,14 @@ public class MessageController {
         return ResponseEntity.ok(toDto(message));
     }
 
+    @PostMapping("/conversations/{conversationId}/messages")
+    public ResponseEntity<MessageDto> sendMessageToConversation(@PathVariable Long conversationId,
+                                                                @RequestBody ContentRequest req,
+                                                                Authentication auth) {
+        Message message = messageService.sendMessageToConversation(getCurrentUserId(auth), conversationId, req.getContent());
+        return ResponseEntity.ok(toDto(message));
+    }
+
     @PostMapping("/conversations/{conversationId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long conversationId, Authentication auth) {
         messageService.markConversationAsRead(conversationId, getCurrentUserId(auth));
@@ -105,6 +113,18 @@ public class MessageController {
         public void setRecipientId(Long recipientId) {
             this.recipientId = recipientId;
         }
+
+        public String getContent() {
+            return content;
+        }
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+    }
+
+    static class ContentRequest {
+        private String content;
 
         public String getContent() {
             return content;

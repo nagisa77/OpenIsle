@@ -8,6 +8,9 @@ import com.openisle.repository.MessageConversationRepository;
 import com.openisle.repository.MessageParticipantRepository;
 import com.openisle.repository.MessageRepository;
 import com.openisle.repository.UserRepository;
+import com.openisle.repository.ChannelRepository;
+import com.openisle.model.Channel;
+import com.openisle.dto.ChannelDto;
 import com.openisle.dto.ConversationDetailDto;
 import com.openisle.dto.ConversationDto;
 import com.openisle.dto.MessageDto;
@@ -33,6 +36,7 @@ public class MessageService {
     private final MessageConversationRepository conversationRepository;
     private final MessageParticipantRepository participantRepository;
     private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
@@ -82,6 +86,39 @@ public class MessageService {
         return message;
     }
 
+    @Transactional
+    public Message sendMessageToConversation(Long senderId, Long conversationId, String content) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new IllegalArgumentException("Sender not found"));
+        MessageConversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        Message message = new Message();
+        message.setConversation(conversation);
+        message.setSender(sender);
+        message.setContent(content);
+        message = messageRepository.save(message);
+
+        conversation.setLastMessage(message);
+        conversationRepository.save(conversation);
+
+        MessageDto messageDto = toDto(message);
+        String conversationDestination = "/topic/conversation/" + conversation.getId();
+        messagingTemplate.convertAndSend(conversationDestination, messageDto);
+
+        conversation.getParticipants().forEach(p -> {
+            if (!p.getUser().getId().equals(senderId)) {
+                String userDestination = "/topic/user/" + p.getUser().getId() + "/messages";
+                messagingTemplate.convertAndSend(userDestination, messageDto);
+                long unreadCount = getUnreadMessageCount(p.getUser().getId());
+                String recipientUsername = p.getUser().getUsername();
+                messagingTemplate.convertAndSendToUser(recipientUsername, "/queue/unread-count", unreadCount);
+            }
+        });
+
+        return message;
+    }
+
     private MessageDto toDto(Message message) {
         MessageDto dto = new MessageDto();
         dto.setId(message.getId());
@@ -95,6 +132,19 @@ public class MessageService {
         userSummaryDto.setAvatar(message.getSender().getAvatar());
         dto.setSender(userSummaryDto);
 
+        return dto;
+    }
+
+    private ChannelDto toDto(Channel channel) {
+        ChannelDto dto = new ChannelDto();
+        dto.setId(channel.getId());
+        dto.setName(channel.getName());
+        dto.setDescription(channel.getDescription());
+        dto.setAvatar(channel.getAvatar());
+        if (channel.getConversation() != null) {
+            dto.setConversationId(channel.getConversation().getId());
+            dto.setMemberCount(channel.getConversation().getParticipants().size());
+        }
         return dto;
     }
 
@@ -154,6 +204,9 @@ public class MessageService {
                 })
                 .collect(Collectors.toList()));
 
+        channelRepository.findByConversationId(conversation.getId())
+                .ifPresent(channel -> dto.setChannel(toDto(channel)));
+
         MessageParticipant self = conversation.getParticipants().stream()
                 .filter(p -> p.getUser().getId().equals(userId))
                 .findFirst()
@@ -191,6 +244,8 @@ public class MessageService {
         detailDto.setId(conversation.getId());
         detailDto.setParticipants(participants);
         detailDto.setMessages(messageDtoPage);
+        channelRepository.findByConversationId(conversation.getId())
+                .ifPresent(channel -> detailDto.setChannel(toDto(channel)));
 
         return detailDto;
     }

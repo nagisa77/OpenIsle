@@ -1,10 +1,10 @@
 <template>
   <div class="chat-container">
-    <div v-if="!loading && otherParticipant" class="chat-header">
+    <div v-if="!loading" class="chat-header">
       <NuxtLink to="/message-box" class="back-button">
         <i class="fas fa-arrow-left"></i>
       </NuxtLink>
-      <h2 class="participant-name">{{ otherParticipant.username }}</h2>
+      <h2 class="participant-name">{{ channel ? channel.name : otherParticipant?.username }}</h2>
     </div>
 
     <div class="messages-list" ref="messagesListEl">
@@ -65,6 +65,7 @@ let subscription = null
 
 const messages = ref([])
 const participants = ref([])
+const channel = ref(null)
 const loading = ref(true)
 const sending = ref(false)
 const error = ref(null)
@@ -126,6 +127,7 @@ async function fetchMessages(page = 0) {
 
     if (page === 0) {
       participants.value = conversationData.participants
+      channel.value = conversationData.channel
     }
 
     // Since the backend sorts by descending, we need to reverse for correct chat order
@@ -173,25 +175,31 @@ async function loadMoreMessages() {
 async function sendMessage(content, clearInput) {
   if (!content.trim()) return
 
-  const recipient = otherParticipant.value
-  if (!recipient) {
-    toast.error('无法确定收信人')
-    return
-  }
-
-  sending.value = true
   const token = getToken()
+  sending.value = true
   try {
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+    let url
+    let body
+    if (channel.value) {
+      url = `${API_BASE_URL}/api/messages/conversations/${conversationId}/messages`
+      body = { content: content }
+    } else {
+      const recipient = otherParticipant.value
+      if (!recipient) {
+        toast.error('无法确定收信人')
+        sending.value = false
+        return
+      }
+      url = `${API_BASE_URL}/api/messages`
+      body = { recipientId: recipient.id, content: content }
+    }
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        recipientId: recipient.id,
-        content: content,
-      }),
+      body: JSON.stringify(body),
     })
     if (!response.ok) throw new Error('发送失败')
 

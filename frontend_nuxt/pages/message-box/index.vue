@@ -1,50 +1,105 @@
 <template>
   <div class="messages-container">
-    <div v-if="loading" class="loading-message">
-      <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+    <div class="tabs">
+      <div
+        class="tab"
+        :class="{ active: activeTab === 'messages' }"
+        @click="activeTab = 'messages'"
+      >
+        站内信
+      </div>
+      <div
+        class="tab"
+        :class="{ active: activeTab === 'channels' }"
+        @click="activeTab = 'channels'"
+      >
+        频道
+      </div>
     </div>
 
-    <div v-else-if="error" class="error-container">
-      <div class="error-text">{{ error }}</div>
-    </div>
-
-    <div v-else-if="conversations.length === 0" class="empty-container">
-      <div class="empty-text">暂无会话</div>
-    </div>
-
-    <div
-      v-for="convo in conversations"
-      :key="convo.id"
-      class="conversation-item"
-      @click="goToConversation(convo.id)"
-    >
-      <div class="conversation-avatar">
-        <img
-          :src="getOtherParticipant(convo)?.avatar || '/default-avatar.svg'"
-          :alt="getOtherParticipant(convo)?.username || '用户'"
-          class="avatar-img"
-          @error="handleAvatarError"
-        />
+    <div v-if="activeTab === 'messages'">
+      <div v-if="loading" class="loading-message">
+        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
       </div>
 
-      <div class="conversation-content">
-        <div class="conversation-header">
-          <div class="participant-name">
-            {{ getOtherParticipant(convo)?.username || '未知用户' }}
-          </div>
-          <div class="message-time">
-            {{ formatTime(convo.lastMessage?.createdAt || convo.createdAt) }}
-          </div>
+      <div v-else-if="error" class="error-container">
+        <div class="error-text">{{ error }}</div>
+      </div>
+
+      <div v-else-if="conversations.length === 0" class="empty-container">
+        <div class="empty-text">暂无会话</div>
+      </div>
+
+      <div
+        v-for="convo in conversations"
+        :key="convo.id"
+        class="conversation-item"
+        @click="goToConversation(convo.id)"
+      >
+        <div class="conversation-avatar">
+          <img
+            :src="getOtherParticipant(convo)?.avatar || '/default-avatar.svg'"
+            :alt="getOtherParticipant(convo)?.username || '用户'"
+            class="avatar-img"
+            @error="handleAvatarError"
+          />
         </div>
 
-        <div class="last-message-row">
-          <div class="last-message">
-            {{
-              convo.lastMessage ? stripMarkdownLength(convo.lastMessage.content, 100) : '暂无消息'
-            }}
+        <div class="conversation-content">
+          <div class="conversation-header">
+            <div class="participant-name">
+              {{ getOtherParticipant(convo)?.username || '未知用户' }}
+            </div>
+            <div class="message-time">
+              {{ formatTime(convo.lastMessage?.createdAt || convo.createdAt) }}
+            </div>
           </div>
-          <div v-if="convo.unreadCount > 0" class="unread-count-badge">
-            {{ convo.unreadCount }}
+
+          <div class="last-message-row">
+            <div class="last-message">
+              {{
+                convo.lastMessage ? stripMarkdownLength(convo.lastMessage.content, 100) : '暂无消息'
+              }}
+            </div>
+            <div v-if="convo.unreadCount > 0" class="unread-count-badge">
+              {{ convo.unreadCount }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else>
+      <div v-if="channelsLoading" class="loading-message">
+        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+      </div>
+      <div v-else-if="channelsError" class="error-container">
+        <div class="error-text">{{ channelsError }}</div>
+      </div>
+      <div v-else-if="channels.length === 0" class="empty-container">
+        <div class="empty-text">暂无频道</div>
+      </div>
+      <div
+        v-for="channel in channels"
+        :key="channel.id"
+        class="conversation-item"
+        @click="goToChannel(channel)"
+      >
+        <div class="conversation-avatar" style="position: relative">
+          <img
+            :src="channel.avatar || '/default-avatar.svg'"
+            :alt="channel.name"
+            class="avatar-img"
+            @error="handleAvatarError"
+          />
+          <span v-if="channel.unreadCount > 0" class="unread-dot"></span>
+        </div>
+        <div class="conversation-content">
+          <div class="conversation-header">
+            <div class="participant-name">{{ channel.name }}</div>
+          </div>
+          <div class="last-message-row">
+            <div class="last-message">{{ channel.description }}</div>
           </div>
         </div>
       </div>
@@ -63,9 +118,13 @@ import TimeManager from '~/utils/time'
 import { stripMarkdownLength } from '~/utils/markdown'
 
 const config = useRuntimeConfig()
+const activeTab = ref('messages')
 const conversations = ref([])
 const loading = ref(true)
 const error = ref(null)
+const channels = ref([])
+const channelsLoading = ref(true)
+const channelsError = ref(null)
 const router = useRouter()
 const currentUser = ref(null)
 const API_BASE_URL = config.public.apiBaseUrl
@@ -88,11 +147,33 @@ async function fetchConversations() {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     const data = await response.json()
-    conversations.value = data
+    conversations.value = data.filter((c) => !c.channel)
   } catch (e) {
     error.value = '无法加载会话列表。'
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchChannels() {
+  const token = getToken()
+  if (!token) {
+    toast.error('请先登录')
+    return
+  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/channels`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    channels.value = await response.json()
+  } catch (e) {
+    channelsError.value = '无法加载频道。'
+  } finally {
+    channelsLoading.value = false
   }
 }
 
@@ -119,6 +200,7 @@ onActivated(async () => {
 
   if (currentUser.value) {
     await fetchConversations()
+    await fetchChannels()
     refreshGlobalUnreadCount() // Refresh global count when entering the list
     const token = getToken()
     if (token && !isConnected.value) {
@@ -140,6 +222,7 @@ watch(isConnected, (newValue) => {
 
     subscription = subscribe(destination, (message) => {
       fetchConversations()
+      fetchChannels()
     })
   }
 })
@@ -154,12 +237,41 @@ onUnmounted(() => {
 function goToConversation(id) {
   router.push(`/message-box/${id}`)
 }
+
+async function goToChannel(channel) {
+  const token = getToken()
+  if (!token) {
+    toast.error('请先登录')
+    return
+  }
+  await fetch(`${API_BASE_URL}/api/channels/${channel.id}/join`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  router.push(`/message-box/${channel.conversationId}`)
+}
 </script>
 
 <style scoped>
 .messages-container {
   margin: 0 auto;
   padding: 20px;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 10px;
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.tab.active {
+  border-bottom: 2px solid var(--primary-color);
+  font-weight: 600;
 }
 
 .loading-message {
@@ -278,6 +390,16 @@ function goToConversation(id) {
   border-radius: 12px;
   line-height: 1.5;
   flex-shrink: 0;
+}
+
+.unread-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #f56c6c;
+  border-radius: 50%;
 }
 
 /* 响应式设计 */

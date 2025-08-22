@@ -10,4 +10,5 @@ public class ConversationDetailDto {
     private Long id;
     private List<UserSummaryDto> participants;
     private Page<MessageDto> messages;
+    private ChannelDto channel;
 }
