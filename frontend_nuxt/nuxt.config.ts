@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     },
   },
   css: ['vditor/dist/index.css', '~/assets/fonts.css', '~/assets/global.css'],
+  modules: ['@nuxt/image'],
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {

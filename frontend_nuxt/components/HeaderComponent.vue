@@ -63,7 +63,7 @@
           <DropdownMenu v-if="isLogin" ref="userMenu" :items="headerMenuItems">
             <template #trigger>
               <div class="avatar-container">
-                <img class="avatar-img" :src="avatar" alt="avatar" />
+                <BaseImg class="avatar-img" :src="avatar" alt="avatar" width="32" height="32" />
                 <i class="fas fa-caret-down dropdown-icon"></i>
               </div>
             </template>
@@ -87,6 +87,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import DropdownMenu from '~/components/DropdownMenu.vue'
 import ToolTip from '~/components/ToolTip.vue'
 import SearchDropdown from '~/components/SearchDropdown.vue'
+import BaseImg from '~/components/BaseImg.vue'
 import { authState, clearToken, loadCurrentUser } from '~/utils/auth'
 import { useUnreadCount } from '~/composables/useUnreadCount'
 import { useChannelsUnreadCount } from '~/composables/useChannelsUnreadCount'
@@ -149,13 +150,14 @@ const copyInviteLink = async () => {
     if (res.ok) {
       const data = await res.json()
       const inviteLink = data.token ? `${WEBSITE_BASE_URL}/signup?invite_token=${data.token}` : ''
-      /** 
+      /**
        * navigator.clipboard在webkit中有点奇怪的行为
        * https://stackoverflow.com/questions/62327358/javascript-clipboard-api-safari-ios-notallowederror-message
        * https://webkit.org/blog/10247/new-webkit-features-in-safari-13-1/
-      */
+       */
       setTimeout(() => {
-        navigator.clipboard.writeText(inviteLink)
+        navigator.clipboard
+          .writeText(inviteLink)
           .then(() => {
             toast.success('邀请链接已复制')
           })
