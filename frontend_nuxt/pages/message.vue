@@ -1,545 +1,527 @@
 <template>
   <div class="message-page">
-    <div class="message-page-header">
-      <div class="message-tabs">
-        <div
-          :class="['message-tab-item', { selected: selectedTab === 'all' }]"
-          @click="selectedTab = 'all'"
-        >
-          消息
-        </div>
-        <div
-          :class="['message-tab-item', { selected: selectedTab === 'unread' }]"
-          @click="selectedTab = 'unread'"
-        >
-          未读
-        </div>
-        <div
-          :class="['message-tab-item', { selected: selectedTab === 'control' }]"
-          @click="selectedTab = 'control'"
-        >
-          消息设置
-        </div>
-      </div>
-
-      <div class="message-page-header-right">
-        <div class="message-page-header-right-item" @click="markAllRead">
-          <i class="fas fa-bolt message-page-header-right-item-button-icon"></i>
-          <span class="message-page-header-right-item-button-text"> 已读所有消息 </span>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="selectedTab === 'control'">
-      <div class="message-control-container">
-        <div class="message-control-title">通知设置</div>
-        <div class="message-control-item-container">
-          <div v-for="pref in notificationPrefs" :key="pref.type" class="message-control-item">
-            <div class="message-control-item-label">{{ formatType(pref.type) }}</div>
-            <BaseSwitch
-              :model-value="pref.enabled"
-              @update:modelValue="(val) => togglePref(pref, val)"
-            />
+    <BaseTabs v-model="selectedTab" :tabs="tabs">
+      <template #right>
+        <div class="message-page-header-right">
+          <div class="message-page-header-right-item" @click="markAllRead">
+            <i class="fas fa-bolt message-page-header-right-item-button-icon"></i>
+            <span class="message-page-header-right-item-button-text"> 已读所有消息 </span>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
 
-    <template v-else>
-      <div v-if="isLoadingMessage" class="loading-message">
-        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
-      </div>
-
-      <BasePlaceholder
-        v-else-if="notifications.length === 0"
-        text="暂时没有消息 :)"
-        icon="fas fa-inbox"
-      />
-
-      <div class="timeline-container" v-if="notifications.length > 0">
-        <BaseTimeline :items="notifications">
-          <template #item="{ item }">
-            <div class="notif-content" :class="{ read: item.read }">
-              <span v-if="!item.read" class="unread-dot"></span>
-              <span class="notif-type">
-                <template v-if="item.type === 'COMMENT_REPLY' && item.parentComment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.comment.author.id}`"
-                      >{{ item.comment.author.username }}
-                    </NuxtLink>
-                    对我的评论
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}#comment-${item.parentComment.id}`"
-                      >
-                        {{ stripMarkdownLength(item.parentComment.content, 100) }}
-                      </NuxtLink>
-                    </span>
-                    回复了
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                      >
-                        {{ stripMarkdownLength(item.comment.content, 100) }}
-                      </NuxtLink>
-                    </span>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'COMMENT_REPLY' && !item.parentComment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.comment.author.id}`"
-                      >{{ item.comment.author.username }}
-                    </NuxtLink>
-                    对我的文章
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}`"
-                      >
-                        {{ stripMarkdownLength(item.post.title, 100) }}
-                      </NuxtLink>
-                    </span>
-                    回复了
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                      >
-                        {{ stripMarkdownLength(item.comment.content, 100) }}
-                      </NuxtLink>
-                    </span>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'ACTIVITY_REDEEM' && !item.parentComment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <span class="notif-user">{{ item.fromUser.username }} </span>
-                    申请进行奶茶兑换，联系方式是：{{ item.content }}
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POINT_REDEEM' && !item.parentComment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <span class="notif-user">{{ item.fromUser.username }} </span>
-                    申请积分兑换，联系方式是：{{ item.content }}
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'REACTION' && item.post && !item.comment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <span class="notif-user">{{ item.fromUser.username }} </span> 对我的文章
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}`"
-                      >
-                        {{ stripMarkdownLength(item.post.title, 100) }}
-                      </NuxtLink>
-                    </span>
-                    进行了表态
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'REACTION' && item.comment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                      >{{ item.fromUser.username }}
-                    </NuxtLink>
-                    对我的评论
-                    <span>
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                      >
-                        {{ stripMarkdownLength(item.comment.content, 100) }}
-                      </NuxtLink>
-                    </span>
-                    进行了表态
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_VIEWED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    查看了您的帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'LOTTERY_WIN'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    恭喜你在抽奖贴
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    中获奖
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'LOTTERY_DRAW'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您的抽奖贴
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    已开奖
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_UPDATED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您关注的帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    下面有新评论
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                    >
-                      {{ stripMarkdownLength(item.comment.content, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'USER_ACTIVITY' && item.parentComment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    你关注的
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.comment.author.id}`"
-                    >
-                      {{ item.comment.author.username }}
-                    </NuxtLink>
-                    在 对评论
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}#comment-${item.parentComment.id}`"
-                    >
-                      {{ stripMarkdownLength(item.parentComment.content, 100) }}
-                    </NuxtLink>
-                    回复了
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                    >
-                      {{ stripMarkdownLength(item.comment.content, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'USER_ACTIVITY'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    你关注的
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.comment.author.id}`"
-                    >
-                      {{ item.comment.author.username }}
-                    </NuxtLink>
-                    在文章
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    下面评论了
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                    >
-                      {{ stripMarkdownLength(item.comment.content, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'MENTION' && item.comment">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    在评论中提到了你：
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
-                    >
-                      {{ stripMarkdownLength(item.comment.content, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'MENTION'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    在帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    中提到了你
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'USER_FOLLOWED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    开始关注你了
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'USER_UNFOLLOWED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    取消关注你了
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'FOLLOWED_POST'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    你关注的
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    发布了文章
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_SUBSCRIBED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    订阅了你的文章
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_UNSUBSCRIBED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    取消订阅了你的文章
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_REVIEW_REQUEST' && item.fromUser">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/users/${item.fromUser.id}`"
-                    >
-                      {{ item.fromUser.username }}
-                    </NuxtLink>
-                    发布了帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    ，请审核
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_REVIEW_REQUEST'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您发布的帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    已提交审核
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'REGISTER_REQUEST'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    {{ item.fromUser.username }} 希望注册为会员，理由是：{{ item.content }}
-                    <template #actions v-if="authState.role === 'ADMIN'">
-                      <div v-if="!item.read" class="optional-buttons">
-                        <div
-                          class="mark-approve-button-item"
-                          @click="approve(item.fromUser.id, item.id)"
-                        >
-                          同意
-                        </div>
-                        <div
-                          class="mark-reject-button-item"
-                          @click="reject(item.fromUser.id, item.id)"
-                        >
-                          拒绝
-                        </div>
-                      </div>
-                      <div v-else class="has_read_button" @click="markRead(item.id)">已读</div>
-                    </template>
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_REVIEWED' && item.approved">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您发布的帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    已审核通过
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_REVIEWED' && item.approved === false">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您发布的帖子
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    已被管理员拒绝
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_FEATURED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    您的文章
-                    <NuxtLink
-                      class="notif-content-text"
-                      @click="markRead(item.id)"
-                      :to="`/posts/${item.post.id}`"
-                    >
-                      {{ stripMarkdownLength(item.post.title, 100) }}
-                    </NuxtLink>
-                    被收录为精选
-                  </NotificationContainer>
-                </template>
-                <template v-else-if="item.type === 'POST_DELETED'">
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    管理员
-                    <template v-if="item.fromUser">
-                      <NuxtLink
-                        class="notif-content-text"
-                        @click="markRead(item.id)"
-                        :to="`/users/${item.fromUser.id}`"
-                      >
-                        {{ item.fromUser.username }}
-                      </NuxtLink>
-                    </template>
-                    删除了您的帖子
-                    <span class="notif-content-text">
-                      {{ stripMarkdownLength(item.content, 100) }}
-                    </span>
-                  </NotificationContainer>
-                </template>
-                <template v-else>
-                  <NotificationContainer :item="item" :markRead="markRead">
-                    {{ formatType(item.type) }}
-                  </NotificationContainer>
-                </template>
-              </span>
-              <span class="notif-time">{{ TimeManager.format(item.createdAt) }}</span>
+      <template #default>
+        <div v-if="selectedTab === 'control'">
+          <div class="message-control-container">
+            <div class="message-control-title">通知设置</div>
+            <div class="message-control-item-container">
+              <div v-for="pref in notificationPrefs" :key="pref.type" class="message-control-item">
+                <div class="message-control-item-label">{{ formatType(pref.type) }}</div>
+                <BaseSwitch
+                  :model-value="pref.enabled"
+                  @update:modelValue="(val) => togglePref(pref, val)"
+                />
+              </div>
             </div>
-          </template>
-        </BaseTimeline>
-        <InfiniteLoadMore :key="selectedTab" :on-load="loadMore" :pause="isLoadingMessage" />
-      </div>
-    </template>
+          </div>
+        </div>
+
+        <template v-else>
+          <div v-if="isLoadingMessage" class="loading-message">
+            <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+          </div>
+
+          <BasePlaceholder
+            v-else-if="notifications.length === 0"
+            text="暂时没有消息 :)"
+            icon="fas fa-inbox"
+          />
+
+          <div class="timeline-container" v-if="notifications.length > 0">
+            <BaseTimeline :items="notifications">
+              <template #item="{ item }">
+                <div class="notif-content" :class="{ read: item.read }">
+                  <span v-if="!item.read" class="unread-dot"></span>
+                  <span class="notif-type">
+                    <template v-if="item.type === 'COMMENT_REPLY' && item.parentComment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.comment.author.id}`"
+                          >{{ item.comment.author.username }}
+                        </NuxtLink>
+                        对我的评论
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}#comment-${item.parentComment.id}`"
+                          >
+                            {{ stripMarkdownLength(item.parentComment.content, 100) }}
+                          </NuxtLink>
+                        </span>
+                        回复了
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                          >
+                            {{ stripMarkdownLength(item.comment.content, 100) }}
+                          </NuxtLink>
+                        </span>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'COMMENT_REPLY' && !item.parentComment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.comment.author.id}`"
+                          >{{ item.comment.author.username }}
+                        </NuxtLink>
+                        对我的文章
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}`"
+                          >
+                            {{ stripMarkdownLength(item.post.title, 100) }}
+                          </NuxtLink>
+                        </span>
+                        回复了
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                          >
+                            {{ stripMarkdownLength(item.comment.content, 100) }}
+                          </NuxtLink>
+                        </span>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'ACTIVITY_REDEEM' && !item.parentComment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <span class="notif-user">{{ item.fromUser.username }} </span>
+                        申请进行奶茶兑换，联系方式是：{{ item.content }}
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POINT_REDEEM' && !item.parentComment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <span class="notif-user">{{ item.fromUser.username }} </span>
+                        申请积分兑换，联系方式是：{{ item.content }}
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'REACTION' && item.post && !item.comment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <span class="notif-user">{{ item.fromUser.username }} </span> 对我的文章
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}`"
+                          >
+                            {{ stripMarkdownLength(item.post.title, 100) }}
+                          </NuxtLink>
+                        </span>
+                        进行了表态
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'REACTION' && item.comment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                          >{{ item.fromUser.username }}
+                        </NuxtLink>
+                        对我的评论
+                        <span>
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                          >
+                            {{ stripMarkdownLength(item.comment.content, 100) }}
+                          </NuxtLink>
+                        </span>
+                        进行了表态
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_VIEWED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        查看了您的帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'LOTTERY_WIN'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        恭喜你在抽奖贴
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        中获奖
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'LOTTERY_DRAW'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您的抽奖贴
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        已开奖
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_UPDATED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您关注的帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        下面有新评论
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                        >
+                          {{ stripMarkdownLength(item.comment.content, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'USER_ACTIVITY' && item.parentComment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        你关注的
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.comment.author.id}`"
+                        >
+                          {{ item.comment.author.username }}
+                        </NuxtLink>
+                        在 对评论
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}#comment-${item.parentComment.id}`"
+                        >
+                          {{ stripMarkdownLength(item.parentComment.content, 100) }}
+                        </NuxtLink>
+                        回复了
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                        >
+                          {{ stripMarkdownLength(item.comment.content, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'USER_ACTIVITY'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        你关注的
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.comment.author.id}`"
+                        >
+                          {{ item.comment.author.username }}
+                        </NuxtLink>
+                        在文章
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        下面评论了
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                        >
+                          {{ stripMarkdownLength(item.comment.content, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'MENTION' && item.comment">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        在评论中提到了你：
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}#comment-${item.comment.id}`"
+                        >
+                          {{ stripMarkdownLength(item.comment.content, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'MENTION'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        在帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        中提到了你
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'USER_FOLLOWED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        开始关注你了
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'USER_UNFOLLOWED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        取消关注你了
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'FOLLOWED_POST'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        你关注的
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        发布了文章
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_SUBSCRIBED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        订阅了你的文章
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_UNSUBSCRIBED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        取消订阅了你的文章
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_REVIEW_REQUEST' && item.fromUser">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/users/${item.fromUser.id}`"
+                        >
+                          {{ item.fromUser.username }}
+                        </NuxtLink>
+                        发布了帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        ，请审核
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_REVIEW_REQUEST'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您发布的帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        已提交审核
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'REGISTER_REQUEST'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        {{ item.fromUser.username }} 希望注册为会员，理由是：{{ item.content }}
+                        <template #actions v-if="authState.role === 'ADMIN'">
+                          <div v-if="!item.read" class="optional-buttons">
+                            <div
+                              class="mark-approve-button-item"
+                              @click="approve(item.fromUser.id, item.id)"
+                            >
+                              同意
+                            </div>
+                            <div
+                              class="mark-reject-button-item"
+                              @click="reject(item.fromUser.id, item.id)"
+                            >
+                              拒绝
+                            </div>
+                          </div>
+                          <div v-else class="has_read_button" @click="markRead(item.id)">已读</div>
+                        </template>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_REVIEWED' && item.approved">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您发布的帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        已审核通过
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_REVIEWED' && item.approved === false">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您发布的帖子
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        已被管理员拒绝
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_FEATURED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        您的文章
+                        <NuxtLink
+                          class="notif-content-text"
+                          @click="markRead(item.id)"
+                          :to="`/posts/${item.post.id}`"
+                        >
+                          {{ stripMarkdownLength(item.post.title, 100) }}
+                        </NuxtLink>
+                        被收录为精选
+                      </NotificationContainer>
+                    </template>
+                    <template v-else-if="item.type === 'POST_DELETED'">
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        管理员
+                        <template v-if="item.fromUser">
+                          <NuxtLink
+                            class="notif-content-text"
+                            @click="markRead(item.id)"
+                            :to="`/users/${item.fromUser.id}`"
+                          >
+                            {{ item.fromUser.username }}
+                          </NuxtLink>
+                        </template>
+                        删除了您的帖子
+                        <span class="notif-content-text">
+                          {{ stripMarkdownLength(item.content, 100) }}
+                        </span>
+                      </NotificationContainer>
+                    </template>
+                    <template v-else>
+                      <NotificationContainer :item="item" :markRead="markRead">
+                        {{ formatType(item.type) }}
+                      </NotificationContainer>
+                    </template>
+                  </span>
+                  <span class="notif-time">{{ TimeManager.format(item.createdAt) }}</span>
+                </div>
+              </template>
+            </BaseTimeline>
+            <InfiniteLoadMore :key="selectedTab" :on-load="loadMore" :pause="isLoadingMessage" />
+          </div>
+        </template>
+      </template>
+    </BaseTabs>
   </div>
 </template>
-
 <script setup>
 import { ref, watch, onActivated } from 'vue'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
@@ -562,6 +544,7 @@ import {
 } from '~/utils/notification'
 import TimeManager from '~/utils/time'
 import BaseSwitch from '~/components/BaseSwitch.vue'
+import BaseTabs from '~/components/BaseTabs.vue'
 
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
@@ -569,6 +552,11 @@ const route = useRoute()
 const selectedTab = ref(
   ['all', 'unread', 'control'].includes(route.query.tab) ? route.query.tab : 'unread',
 )
+const tabs = [
+  { name: 'all', label: '消息' },
+  { name: 'unread', label: '未读' },
+  { name: 'control', label: '消息设置' },
+]
 const notificationPrefs = ref([])
 const page = ref(0)
 const pageSize = 30
@@ -714,13 +702,12 @@ onActivated(async () => {
   overflow-x: hidden;
 }
 
-.message-page-header {
+.message-page :deep(.base-tabs-header) {
   position: sticky;
   top: 1px;
   z-index: 200;
   background-color: var(--background-color-blur);
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   backdrop-filter: var(--blur-10);
@@ -833,21 +820,6 @@ onActivated(async () => {
 .notif-user {
   font-weight: bold;
   color: var(--text-color);
-}
-
-.message-tabs {
-  display: flex;
-  flex-direction: row;
-}
-
-.message-tab-item {
-  padding: 10px 20px;
-  cursor: pointer;
-}
-
-.message-tab-item.selected {
-  color: var(--primary-color);
-  border-bottom: 2px solid var(--primary-color);
 }
 
 .message-control-title {

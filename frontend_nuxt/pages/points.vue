@@ -1,177 +1,172 @@
 <template>
   <div class="point-mall-page">
-    <div class="point-tabs">
-      <div
-        :class="['point-tab-item', { selected: selectedTab === 'mall' }]"
-        @click="selectedTab = 'mall'"
-      >
-        积分兑换
-      </div>
-      <div
-        :class="['point-tab-item', { selected: selectedTab === 'history' }]"
-        @click="selectedTab = 'history'"
-      >
-        积分历史
-      </div>
-    </div>
+    <BaseTabs v-model="selectedTab" :tabs="tabs">
+      <template #default>
+        <template v-if="selectedTab === 'mall'">
+          <div class="point-mall-page-content">
+            <section class="rules">
+              <div class="section-title">🎉 积分规则</div>
+              <div class="section-content">
+                <div class="section-item" v-for="(rule, idx) in pointRules" :key="idx">
+                  {{ rule }}
+                </div>
+              </div>
+            </section>
 
-    <template v-if="selectedTab === 'mall'">
-      <div class="point-mall-page-content">
-        <section class="rules">
-          <div class="section-title">🎉 积分规则</div>
-          <div class="section-content">
-            <div class="section-item" v-for="(rule, idx) in pointRules" :key="idx">{{ rule }}</div>
-          </div>
-        </section>
-
-        <div class="loading-points-container" v-if="isLoading">
-          <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
-        </div>
-
-        <div class="point-info">
-          <p v-if="authState.loggedIn && point !== null">
-            <span><i class="fas fa-coins coin-icon"></i></span>我的积分：<span
-              class="point-value"
-              >{{ point }}</span
-            >
-          </p>
-        </div>
-
-        <section class="goods">
-          <div class="goods-item" v-for="(good, idx) in goods" :key="idx">
-            <img class="goods-item-image" :src="good.image" alt="good.name" />
-            <div class="goods-item-name">{{ good.name }}</div>
-            <div class="goods-item-cost">
-              <i class="fas fa-coins"></i>
-              {{ good.cost }} 积分
+            <div class="loading-points-container" v-if="isLoading">
+              <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
             </div>
-            <div
-              class="goods-item-button"
-              :class="{ disabled: !authState.loggedIn || point === null || point < good.cost }"
-              @click="openRedeem(good)"
-            >
-              兑换
-            </div>
-          </div>
-        </section>
-        <RedeemPopup
-          :visible="dialogVisible"
-          v-model="contact"
-          :loading="loading"
-          @close="closeRedeem"
-          @submit="submitRedeem"
-        />
-      </div>
-    </template>
 
-    <template v-else>
-      <div class="loading-points-container" v-if="historyLoading">
-        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
-      </div>
-      <BasePlaceholder v-else-if="histories.length === 0" text="暂无积分记录" icon="fas fa-inbox" />
-      <div class="timeline-container" v-else>
-        <BaseTimeline :items="histories">
-          <template #item="{ item }">
-            <div class="history-content">
-              <template v-if="item.type === 'POST'">
-                发送帖子
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                ，获得{{ item.amount }}积分
-              </template>
-              <template v-else-if="item.type === 'COMMENT'">
-                在文章
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                中
-                <template v-if="!item.fromUserId">
-                  发送评论
-                  <NuxtLink
-                    :to="`/posts/${item.postId}#comment-${item.commentId}`"
-                    class="timeline-link"
-                    >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
-                  >
-                  ，获得{{ item.amount }}积分
-                </template>
-                <template v-else>
-                  被评论
-                  <NuxtLink
-                    :to="`/posts/${item.postId}#comment-${item.commentId}`"
-                    class="timeline-link"
-                    >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
-                  >
-                  ，获得{{ item.amount }}积分
-                </template>
-              </template>
-              <template v-else-if="item.type === 'POST_LIKED' && item.fromUserId">
-                帖子
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                被
-                <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
-                  item.fromUserName
-                }}</NuxtLink>
-                按赞，获得{{ item.amount }}积分
-              </template>
-              <template v-else-if="item.type === 'COMMENT_LIKED' && item.fromUserId">
-                评论
-                <NuxtLink
-                  :to="`/posts/${item.postId}#comment-${item.commentId}`"
-                  class="timeline-link"
-                  >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
+            <div class="point-info">
+              <p v-if="authState.loggedIn && point !== null">
+                <span><i class="fas fa-coins coin-icon"></i></span>我的积分：<span
+                  class="point-value"
+                  >{{ point }}</span
                 >
-                被
-                <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
-                  item.fromUserName
-                }}</NuxtLink>
-                按赞，获得{{ item.amount }}积分
-              </template>
-              <template v-else-if="item.type === 'INVITE' && item.fromUserId">
-                邀请了好友
-                <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
-                  item.fromUserName
-                }}</NuxtLink>
-                加入社区 🎉，获得 {{ item.amount }} 积分
-              </template>
-              <template v-else-if="item.type === 'FEATURE'">
-                文章
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                被收录为精选，获得 {{ item.amount }} 积分
-              </template>
-              <template v-else-if="item.type === 'REDEEM'">
-                兑换商品，消耗 {{ -item.amount }} 积分
-              </template>
-              <template v-else-if="item.type === 'LOTTERY_JOIN'">
-                参与抽奖帖
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                ，消耗 {{ -item.amount }} 积分
-              </template>
-              <template v-else-if="item.type === 'LOTTERY_REWARD'">
-                你的抽奖帖
-                <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
-                  item.postTitle
-                }}</NuxtLink>
-                被
-                <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
-                  item.fromUserName
-                }}</NuxtLink>
-                参与，获得 {{ item.amount }} 积分
-              </template>
-              <template v-else-if="item.type === 'SYSTEM_ONLINE'"> 积分历史系统上线 </template>
-              <i class="fas fa-coins"></i> 你目前的积分是 {{ item.balance }}
+              </p>
             </div>
-            <div class="history-time">{{ TimeManager.format(item.createdAt) }}</div>
-          </template>
-        </BaseTimeline>
-      </div>
-    </template>
+
+            <section class="goods">
+              <div class="goods-item" v-for="(good, idx) in goods" :key="idx">
+                <img class="goods-item-image" :src="good.image" alt="good.name" />
+                <div class="goods-item-name">{{ good.name }}</div>
+                <div class="goods-item-cost">
+                  <i class="fas fa-coins"></i>
+                  {{ good.cost }} 积分
+                </div>
+                <div
+                  class="goods-item-button"
+                  :class="{ disabled: !authState.loggedIn || point === null || point < good.cost }"
+                  @click="openRedeem(good)"
+                >
+                  兑换
+                </div>
+              </div>
+            </section>
+            <RedeemPopup
+              :visible="dialogVisible"
+              v-model="contact"
+              :loading="loading"
+              @close="closeRedeem"
+              @submit="submitRedeem"
+            />
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="loading-points-container" v-if="historyLoading">
+            <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+          </div>
+          <BasePlaceholder
+            v-else-if="histories.length === 0"
+            text="暂无积分记录"
+            icon="fas fa-inbox"
+          />
+          <div class="timeline-container" v-else>
+            <BaseTimeline :items="histories">
+              <template #item="{ item }">
+                <div class="history-content">
+                  <template v-if="item.type === 'POST'">
+                    发送帖子
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    ，获得{{ item.amount }}积分
+                  </template>
+                  <template v-else-if="item.type === 'COMMENT'">
+                    在文章
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    中
+                    <template v-if="!item.fromUserId">
+                      发送评论
+                      <NuxtLink
+                        :to="`/posts/${item.postId}#comment-${item.commentId}`"
+                        class="timeline-link"
+                        >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
+                      >
+                      ，获得{{ item.amount }}积分
+                    </template>
+                    <template v-else>
+                      被评论
+                      <NuxtLink
+                        :to="`/posts/${item.postId}#comment-${item.commentId}`"
+                        class="timeline-link"
+                        >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
+                      >
+                      ，获得{{ item.amount }}积分
+                    </template>
+                  </template>
+                  <template v-else-if="item.type === 'POST_LIKED' && item.fromUserId">
+                    帖子
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    被
+                    <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
+                      item.fromUserName
+                    }}</NuxtLink>
+                    按赞，获得{{ item.amount }}积分
+                  </template>
+                  <template v-else-if="item.type === 'COMMENT_LIKED' && item.fromUserId">
+                    评论
+                    <NuxtLink
+                      :to="`/posts/${item.postId}#comment-${item.commentId}`"
+                      class="timeline-link"
+                      >{{ stripMarkdownLength(item.commentContent, 100) }}</NuxtLink
+                    >
+                    被
+                    <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
+                      item.fromUserName
+                    }}</NuxtLink>
+                    按赞，获得{{ item.amount }}积分
+                  </template>
+                  <template v-else-if="item.type === 'INVITE' && item.fromUserId">
+                    邀请了好友
+                    <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
+                      item.fromUserName
+                    }}</NuxtLink>
+                    加入社区 🎉，获得 {{ item.amount }} 积分
+                  </template>
+                  <template v-else-if="item.type === 'FEATURE'">
+                    文章
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    被收录为精选，获得 {{ item.amount }} 积分
+                  </template>
+                  <template v-else-if="item.type === 'REDEEM'">
+                    兑换商品，消耗 {{ -item.amount }} 积分
+                  </template>
+                  <template v-else-if="item.type === 'LOTTERY_JOIN'">
+                    参与抽奖帖
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    ，消耗 {{ -item.amount }} 积分
+                  </template>
+                  <template v-else-if="item.type === 'LOTTERY_REWARD'">
+                    你的抽奖帖
+                    <NuxtLink :to="`/posts/${item.postId}`" class="timeline-link">{{
+                      item.postTitle
+                    }}</NuxtLink>
+                    被
+                    <NuxtLink :to="`/users/${item.fromUserId}`" class="timeline-link">{{
+                      item.fromUserName
+                    }}</NuxtLink>
+                    参与，获得 {{ item.amount }} 积分
+                  </template>
+                  <template v-else-if="item.type === 'SYSTEM_ONLINE'"> 积分历史系统上线 </template>
+                  <i class="fas fa-coins"></i> 你目前的积分是 {{ item.balance }}
+                </div>
+                <div class="history-time">{{ TimeManager.format(item.createdAt) }}</div>
+              </template>
+            </BaseTimeline>
+          </div>
+        </template>
+      </template>
+    </BaseTabs>
   </div>
 </template>
 
@@ -182,6 +177,7 @@ import { toast } from '~/main'
 import RedeemPopup from '~/components/RedeemPopup.vue'
 import BaseTimeline from '~/components/BaseTimeline.vue'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
+import BaseTabs from '~/components/BaseTabs.vue'
 import { stripMarkdownLength } from '~/utils/markdown'
 import TimeManager from '~/utils/time'
 
@@ -189,6 +185,10 @@ const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
 
 const selectedTab = ref('mall')
+const tabs = [
+  { name: 'mall', label: '积分兑换' },
+  { name: 'history', label: '积分历史' },
+]
 const point = ref(null)
 const isLoading = ref(false)
 const histories = ref([])
@@ -313,21 +313,6 @@ const submitRedeem = async () => {
 
 .point-mall-page-content {
   padding: 0 20px;
-}
-
-.point-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--normal-border-color);
-}
-
-.point-tab-item {
-  padding: 10px 15px;
-  cursor: pointer;
-}
-
-.point-tab-item.selected {
-  border-bottom: 2px solid var(--primary-color);
-  color: var(--primary-color);
 }
 
 .timeline-container {

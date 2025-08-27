@@ -7,116 +7,119 @@
     <div v-if="!isFloatMode" class="float-control">
       <i class="fas fa-compress" @click="minimize" title="最小化"></i>
     </div>
-    <div class="tabs">
-      <div :class="['tab', { active: activeTab === 'messages' }]" @click="switchToMessage">
-        站内信
-      </div>
-      <div :class="['tab', { active: activeTab === 'channels' }]" @click="switchToChannels">
-        频道
-      </div>
-    </div>
-
-    <div v-if="activeTab === 'messages'">
-      <div v-if="loading" class="loading-message">
-        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
-      </div>
-
-      <div v-else-if="error" class="error-container">
-        <div class="error-text">{{ error }}</div>
-      </div>
-
-      <div v-if="!loading && !isFloatMode" class="search-container">
-        <SearchPersonDropdown />
-      </div>
-
-      <div v-if="!loading && conversations.length === 0" class="empty-container">
-        <BasePlaceholder v-if="conversations.length === 0" text="暂无会话" icon="fas fa-inbox" />
-      </div>
-
-      <div
-        v-if="!loading"
-        v-for="convo in conversations"
-        :key="convo.id"
-        class="conversation-item"
-        @click="goToConversation(convo.id)"
-      >
-        <div class="conversation-avatar">
-          <img
-            :src="getOtherParticipant(convo)?.avatar || '/default-avatar.svg'"
-            :alt="getOtherParticipant(convo)?.username || '用户'"
-            class="avatar-img"
-            @error="handleAvatarError"
-          />
-        </div>
-
-        <div class="conversation-content">
-          <div class="conversation-header">
-            <div class="participant-name">
-              {{ getOtherParticipant(convo)?.username || '未知用户' }}
-            </div>
-            <div class="message-time">
-              {{ formatTime(convo.lastMessage?.createdAt || convo.createdAt) }}
-            </div>
+    <BaseTabs v-model="activeTab" :tabs="tabs">
+      <template #default>
+        <div v-if="activeTab === 'messages'">
+          <div v-if="loading" class="loading-message">
+            <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
           </div>
 
-          <div class="last-message-row">
-            <div class="last-message">
-              {{
-                convo.lastMessage ? stripMarkdownLength(convo.lastMessage.content, 100) : '暂无消息'
-              }}
-            </div>
-            <div v-if="convo.unreadCount > 0" class="unread-count-badge">
-              {{ convo.unreadCount }}
-            </div>
+          <div v-else-if="error" class="error-container">
+            <div class="error-text">{{ error }}</div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <div v-else>
-      <div v-if="loadingChannels" class="loading-message">
-        <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
-      </div>
-      <div v-else>
-        <div v-if="channels.length === 0" class="empty-container">
-          <BasePlaceholder text="暂无频道" icon="fas fa-inbox" />
-        </div>
-        <div
-          v-for="ch in channels"
-          :key="ch.id"
-          class="conversation-item"
-          @click="goToChannel(ch.id)"
-        >
-          <div class="conversation-avatar">
-            <img
-              :src="ch.avatar || '/default-avatar.svg'"
-              :alt="ch.name"
-              class="avatar-img"
-              @error="handleAvatarError"
+          <div v-if="!loading && !isFloatMode" class="search-container">
+            <SearchPersonDropdown />
+          </div>
+
+          <div v-if="!loading && conversations.length === 0" class="empty-container">
+            <BasePlaceholder
+              v-if="conversations.length === 0"
+              text="暂无会话"
+              icon="fas fa-inbox"
             />
           </div>
-          <div class="conversation-content">
-            <div class="conversation-header">
-              <div class="participant-name">
-                {{ ch.name }}
-                <span v-if="ch.unreadCount > 0" class="unread-dot"></span>
-              </div>
-              <div class="message-time">
-                {{ formatTime(ch.lastMessage?.createdAt || ch.createdAt) }}
-              </div>
+
+          <div
+            v-if="!loading"
+            v-for="convo in conversations"
+            :key="convo.id"
+            class="conversation-item"
+            @click="goToConversation(convo.id)"
+          >
+            <div class="conversation-avatar">
+              <img
+                :src="getOtherParticipant(convo)?.avatar || '/default-avatar.svg'"
+                :alt="getOtherParticipant(convo)?.username || '用户'"
+                class="avatar-img"
+                @error="handleAvatarError"
+              />
             </div>
-            <div class="last-message-row">
-              <div class="last-message">
-                {{
-                  ch.lastMessage ? stripMarkdownLength(ch.lastMessage.content, 100) : ch.description
-                }}
+
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <div class="participant-name">
+                  {{ getOtherParticipant(convo)?.username || '未知用户' }}
+                </div>
+                <div class="message-time">
+                  {{ formatTime(convo.lastMessage?.createdAt || convo.createdAt) }}
+                </div>
               </div>
-              <div class="member-count">成员 {{ ch.memberCount }}</div>
+
+              <div class="last-message-row">
+                <div class="last-message">
+                  {{
+                    convo.lastMessage
+                      ? stripMarkdownLength(convo.lastMessage.content, 100)
+                      : '暂无消息'
+                  }}
+                </div>
+                <div v-if="convo.unreadCount > 0" class="unread-count-badge">
+                  {{ convo.unreadCount }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div v-else>
+          <div v-if="loadingChannels" class="loading-message">
+            <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
+          </div>
+          <div v-else>
+            <div v-if="channels.length === 0" class="empty-container">
+              <BasePlaceholder text="暂无频道" icon="fas fa-inbox" />
+            </div>
+            <div
+              v-for="ch in channels"
+              :key="ch.id"
+              class="conversation-item"
+              @click="goToChannel(ch.id)"
+            >
+              <div class="conversation-avatar">
+                <img
+                  :src="ch.avatar || '/default-avatar.svg'"
+                  :alt="ch.name"
+                  class="avatar-img"
+                  @error="handleAvatarError"
+                />
+              </div>
+              <div class="conversation-content">
+                <div class="conversation-header">
+                  <div class="participant-name">
+                    {{ ch.name }}
+                    <span v-if="ch.unreadCount > 0" class="unread-dot"></span>
+                  </div>
+                  <div class="message-time">
+                    {{ formatTime(ch.lastMessage?.createdAt || ch.createdAt) }}
+                  </div>
+                </div>
+                <div class="last-message-row">
+                  <div class="last-message">
+                    {{
+                      ch.lastMessage
+                        ? stripMarkdownLength(ch.lastMessage.content, 100)
+                        : ch.description
+                    }}
+                  </div>
+                  <div class="member-count">成员 {{ ch.memberCount }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </BaseTabs>
   </div>
 </template>
 
@@ -132,6 +135,7 @@ import TimeManager from '~/utils/time'
 import { stripMarkdownLength } from '~/utils/markdown'
 import SearchPersonDropdown from '~/components/SearchPersonDropdown.vue'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
+import BaseTabs from '~/components/BaseTabs.vue'
 
 const config = useRuntimeConfig()
 const conversations = ref([])
@@ -152,6 +156,10 @@ const channels = ref([])
 const loadingChannels = ref(false)
 const isFloatMode = computed(() => route.query.float === '1')
 const floatRoute = useState('messageFloatRoute')
+const tabs = [
+  { name: 'messages', label: '站内信' },
+  { name: 'channels', label: '频道' },
+]
 
 async function fetchConversations() {
   const token = getToken()
@@ -216,16 +224,6 @@ async function fetchChannels() {
   }
 }
 
-function switchToMessage() {
-  activeTab.value = 'messages'
-  fetchConversations()
-}
-
-function switchToChannels() {
-  activeTab.value = 'channels'
-  fetchChannels()
-}
-
 async function goToChannel(id) {
   const token = getToken()
   if (!token) {
@@ -285,6 +283,14 @@ watch(isConnected, (newValue) => {
   }
 })
 
+watch(activeTab, (val) => {
+  if (val === 'messages') {
+    fetchConversations()
+  } else {
+    fetchChannels()
+  }
+})
+
 onUnmounted(() => {
   if (subscription) {
     subscription.unsubscribe()
@@ -323,20 +329,8 @@ function minimize() {
   cursor: pointer;
 }
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--normal-border-color);
+.messages-container :deep(.base-tabs-header) {
   margin-bottom: 16px;
-}
-
-.tab {
-  padding: 10px 20px;
-  cursor: pointer;
-}
-
-.tab.active {
-  border-bottom: 2px solid var(--primary-color);
-  color: var(--primary-color);
 }
 
 .loading-message {
@@ -500,7 +494,7 @@ function minimize() {
     display: block;
   }
 
-  .tabs,
+  .base-tabs-wrapper,
   .loading-message,
   .error-container,
   .search-container,

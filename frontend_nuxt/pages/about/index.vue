@@ -1,33 +1,29 @@
 <template>
   <div class="about-page">
-    <div class="about-tabs">
-      <div
-        v-for="tab in tabs"
-        :key="tab.name"
-        :class="['about-tabs-item', { selected: selectedTab === tab.name }]"
-        @click="selectTab(tab.name)"
-      >
-        <div class="about-tabs-item-label">{{ tab.label }}</div>
-      </div>
-    </div>
-    <div class="about-loading" v-if="isFetching">
-      <l-hatch-spinner size="100" stroke="10" speed="1" color="var(--primary-color)" />
-    </div>
-    <div
-      v-else
-      class="about-content"
-      v-html="renderMarkdown(content)"
-      @click="handleContentClick"
-    ></div>
+    <BaseTabs v-model="selectedTab" :tabs="tabs" class="about-tabs">
+      <template #default>
+        <div class="about-loading" v-if="isFetching">
+          <l-hatch-spinner size="100" stroke="10" speed="1" color="var(--primary-color)" />
+        </div>
+        <div
+          v-else
+          class="about-content"
+          v-html="renderMarkdown(content)"
+          @click="handleContentClick"
+        ></div>
+      </template>
+    </BaseTabs>
   </div>
 </template>
 
 <script>
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { handleMarkdownClick, renderMarkdown } from '~/utils/markdown'
+import BaseTabs from '~/components/BaseTabs.vue'
 
 export default {
   name: 'AboutPageView',
+  components: { BaseTabs },
   setup() {
     const isFetching = ref(false)
     const tabs = [
@@ -71,21 +67,20 @@ export default {
       }
     }
 
-    const selectTab = (name) => {
-      selectedTab.value = name
-      const tab = tabs.find((t) => t.name === name)
-      if (tab) loadContent(tab.file)
-    }
-
-    onMounted(() => {
-      loadContent(tabs[0].file)
-    })
+    watch(
+      selectedTab,
+      (name) => {
+        const tab = tabs.find((t) => t.name === name)
+        if (tab) loadContent(tab.file)
+      },
+      { immediate: true },
+    )
 
     const handleContentClick = (e) => {
       handleMarkdownClick(e)
     }
 
-    return { tabs, selectedTab, content, renderMarkdown, selectTab, isFetching, handleContentClick }
+    return { tabs, selectedTab, content, renderMarkdown, isFetching, handleContentClick }
   },
 }
 </script>
@@ -100,23 +95,9 @@ export default {
 .about-tabs {
   top: calc(var(--header-height) + 1px);
   background-color: var(--background-color-blur);
-  display: flex;
-  flex-direction: row;
-  border-bottom: 1px solid var(--normal-border-color);
   margin-bottom: 20px;
   overflow-x: auto;
   scrollbar-width: none;
-}
-
-.about-tabs-item {
-  padding: 10px 20px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.about-tabs-item.selected {
-  color: var(--primary-color);
-  border-bottom: 2px solid var(--primary-color);
 }
 
 .about-content {
