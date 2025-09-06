@@ -19,6 +19,14 @@
                     class="option-icon"
                     :alt="label.name"
                   />
+                  <component
+                    v-else-if="isIconComponent(label.icon)"
+                    :is="label.icon"
+                    class="option-icon"
+                    theme="outline"
+                    size="16"
+                    fill="currentColor"
+                  />
                   <i v-else :class="['option-icon', label.icon]"></i>
                 </template>
                 <span>{{ label.name }}</span>
@@ -38,6 +46,14 @@
                   class="option-icon"
                   :alt="selectedLabels[0].name"
                 />
+                <component
+                  v-else-if="isIconComponent(selectedLabels[0].icon)"
+                  :is="selectedLabels[0].icon"
+                  class="option-icon"
+                  theme="outline"
+                  size="16"
+                  fill="currentColor"
+                />
                 <i v-else :class="['option-icon', selectedLabels[0].icon]"></i>
               </template>
               <span>{{ selectedLabels[0].name }}</span>
@@ -45,7 +61,7 @@
           </span>
           <span v-else class="placeholder">{{ placeholder }}</span>
         </template>
-        <i class="fas fa-caret-down dropdown-caret"></i>
+        <Down class="dropdown-caret" theme="outline" size="16" fill="currentColor" />
       </slot>
     </div>
     <div
@@ -54,7 +70,7 @@
       v-click-outside="close"
     >
       <div v-if="showSearch" class="dropdown-search">
-        <i class="fas fa-search search-icon"></i>
+        <SearchIcon class="search-icon" theme="outline" size="16" fill="currentColor" />
         <input type="text" v-model="search" placeholder="搜索" />
       </div>
       <div v-if="loading" class="dropdown-loading">
@@ -75,6 +91,14 @@
                 class="option-icon"
                 :alt="o.name"
               />
+              <component
+                v-else-if="isIconComponent(o.icon)"
+                :is="o.icon"
+                class="option-icon"
+                theme="outline"
+                size="16"
+                fill="currentColor"
+              />
               <i v-else :class="['option-icon', o.icon]"></i>
             </template>
             <span>{{ o.name }}</span>
@@ -85,12 +109,12 @@
     <Teleport to="body">
       <div v-if="open && isMobile" class="dropdown-mobile-page">
         <div class="dropdown-mobile-header">
-          <i class="fas fa-arrow-left" @click="close"></i>
+          <ArrowLeft @click="close" theme="outline" size="16" fill="currentColor" />
           <span class="mobile-title">{{ placeholder }}</span>
         </div>
         <div class="dropdown-mobile-menu">
           <div v-if="showSearch" class="dropdown-search">
-            <i class="fas fa-search search-icon"></i>
+            <SearchIcon class="search-icon" theme="outline" size="16" fill="currentColor" />
             <input type="text" v-model="search" placeholder="搜索" />
           </div>
           <div v-if="loading" class="dropdown-loading">
@@ -110,6 +134,14 @@
                     :src="o.icon"
                     class="option-icon"
                     :alt="o.name"
+                  />
+                  <component
+                    v-else-if="isIconComponent(o.icon)"
+                    :is="o.icon"
+                    class="option-icon"
+                    theme="outline"
+                    size="16"
+                    fill="currentColor"
                   />
                   <i v-else :class="['option-icon', o.icon]"></i>
                 </template>
@@ -249,6 +281,11 @@ export default {
       return /^https?:\/\//.test(icon) || icon.startsWith('/')
     }
 
+    const isIconComponent = (icon) => {
+      if (!icon) return false
+      return !icon.includes(' ')
+    }
+
     expose({ toggle, close })
 
     return {
@@ -263,6 +300,7 @@ export default {
       isSelected,
       loading,
       isImageIcon,
+      isIconComponent,
       setSearch,
       isMobile,
     }
