@@ -62,7 +62,14 @@
       </template>
     </div>
 
-    <div class="message-input-area">
+    <NewMessageContainer
+      v-if="showNewMessageContainer"
+      :count="newMessagesCount"
+      :bottom="inputAreaHeight + 20"
+      @click="handleNewMessagesClick"
+    />
+
+    <div class="message-input-area" ref="messageInputAreaEl">
       <div v-if="replyTo" class="active-reply">
         正在回复 {{ replyTo.sender.username }}:
         {{ stripMarkdownLength(replyTo.content, 50) }}
@@ -96,6 +103,7 @@ import { useChannelsUnreadCount } from '~/composables/useChannelsUnreadCount'
 import TimeManager from '~/utils/time'
 import BaseTimeline from '~/components/BaseTimeline.vue'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
+import NewMessageContainer from '~/components/NewMessageContainer.vue'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -112,6 +120,7 @@ const error = ref(null)
 const conversationId = route.params.id
 const currentUser = ref(null)
 const messagesListEl = ref(null)
+const messageInputAreaEl = ref(null)
 const currentPage = ref(0)
 const totalPages = ref(0)
 const loadingMore = ref(false)
@@ -120,6 +129,21 @@ const isChannel = ref(false)
 const isFloatMode = computed(() => route.query.float !== undefined)
 const floatRoute = useState('messageFloatRoute')
 const replyTo = ref(null)
+const newMessagesCount = ref(0)
+const inputAreaHeight = ref(0)
+const showNewMessageContainer = computed(
+  () => newMessagesCount.value > 0 && !isUserNearBottom.value,
+)
+
+function updateInputAreaHeight() {
+  if (!messageInputAreaEl.value) return
+  inputAreaHeight.value = messageInputAreaEl.value.offsetHeight
+}
+
+function handleNewMessagesClick() {
+  scrollToBottomSmooth()
+  newMessagesCount.value = 0
+}
 
 const isUserNearBottom = ref(true)
 function updateNearBottom() {
@@ -329,6 +353,10 @@ onMounted(async () => {
     messagesListEl.value.addEventListener('scroll', updateNearBottom, { passive: true })
   }
 
+  window.addEventListener('resize', updateInputAreaHeight)
+  await nextTick()
+  updateInputAreaHeight()
+
   currentUser.value = await fetchCurrentUser()
   if (currentUser.value) {
     await fetchMessages(0)
@@ -370,9 +398,10 @@ const subscribeToConversation = () => {
 
       await markConversationAsRead()
       await nextTick()
-
       if (isUserNearBottom.value) {
         scrollToBottomSmooth()
+      } else {
+        newMessagesCount.value += 1
       }
     } catch (e) {
       console.error('Failed to parse websocket message', e)
@@ -384,6 +413,14 @@ watch(isConnected, (newValue) => {
   if (newValue) {
     subscribeToConversation()
   }
+})
+
+watch(isUserNearBottom, (val) => {
+  if (val) newMessagesCount.value = 0
+})
+
+watch(replyTo, () => {
+  nextTick(updateInputAreaHeight)
 })
 
 onActivated(async () => {
@@ -418,6 +455,7 @@ onUnmounted(() => {
   if (messagesListEl.value) {
     messagesListEl.value.removeEventListener('scroll', updateNearBottom)
   }
+  window.removeEventListener('resize', updateInputAreaHeight)
 })
 
 function minimize() {
