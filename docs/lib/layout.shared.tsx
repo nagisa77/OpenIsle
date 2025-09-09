@@ -8,7 +8,7 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: 'https://github.com/nagisa77/OpenIsle',
     nav: {
       title: 'OpenIsle Docs',
-      url: '/docs',
+      url: '/',
     },
     searchToggle: {
       enabled: false,

@@ -16,6 +16,6 @@ bun dev
 
 使用以下路由：
 
-- `docs/frontend/` 前端技术文档
-- `docs/backend/` 后端技术文档
-- `docs/openapi/` 后端 API 文档
+- `frontend/` 前端技术文档
+- `backend/` 后端技术文档
+- `openapi/` 后端 API 文档
