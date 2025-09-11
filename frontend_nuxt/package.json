@@ -13,8 +13,6 @@
   },
   "dependencies": {
     "@icon-park/vue-next": "^1.4.2",
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2",
     "@nuxt/image": "^1.11.0",
     "@stomp/stompjs": "^7.0.0",
     "cropperjs": "^1.6.2",
@@ -27,6 +25,7 @@
     "ldrs": "^1.0.0",
     "markdown-it": "^14.1.0",
     "mermaid": "^10.9.4",
+    "mp4box": "^2.1.1",
     "nanoid": "^5.1.5",
     "nprogress": "^0.2.0",
     "nuxt": "latest",

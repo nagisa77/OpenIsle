@@ -1,11 +1,10 @@
 /**
- * 基于 FFmpeg.wasm 的视频压缩工具
+ * 基于 WebCodecs + MP4Box.js 的视频压缩工具
  * 专为现代浏览器 (Chrome/Safari) 优化
  */
 
 import { UPLOAD_CONFIG } from '../config/uploadConfig.js'
-import { compressVideoWithFFmpeg, isFFmpegSupported } from './ffmpegVideoCompressor.js'
-import { useNuxtApp } from '#app'
+import { compressVideoWithWebCodecs, isWebCodecSupported } from './webcodecVideoCompressor.js'
 
 // 导出配置供外部使用
 export const VIDEO_CONFIG = UPLOAD_CONFIG.VIDEO
@@ -34,7 +33,7 @@ export function formatFileSize(bytes) {
 }
 
 /**
- * 压缩视频文件 - 使用 FFmpeg.wasm
+ * 压缩视频文件 - 使用 WebCodecs
  */
 export async function compressVideo(file, onProgress = () => {}) {
   // 检查是否需要压缩
@@ -44,36 +43,30 @@ export async function compressVideo(file, onProgress = () => {}) {
     return file
   }
 
-  // 检查 FFmpeg 支持
-  if (!isFFmpegSupported()) {
-    throw new Error('当前浏览器不支持视频压缩功能，请使用 Chrome 或 Safari 浏览器')
+  // 检查 WebCodecs 支持
+  if (!isWebCodecSupported()) {
+    throw new Error('当前浏览器不支持视频压缩功能，请使用支持 WebCodecs 的浏览器')
   }
 
   try {
-    const { $ffmpeg } = useNuxtApp()
-    const ff = await $ffmpeg()
-    return await compressVideoWithFFmpeg(ff, file, { onProgress })
+    return await compressVideoWithWebCodecs(file, { onProgress })
   } catch (error) {
-    console.error('FFmpeg 压缩失败:', error)
+    console.error('WebCodecs 压缩失败:', error)
     throw new Error(`视频压缩失败: ${error.message}`)
   }
 }
 
 /**
- * 预加载 FFmpeg（可选的性能优化）
+ * 预加载 WebCodecs（可选的性能优化）
  */
 export async function preloadVideoCompressor() {
   try {
-    // FFmpeg 初始化现在通过 Nuxt 插件处理
-    // 这里只需要检查支持性
-    if (!isFFmpegSupported()) {
-      throw new Error('当前浏览器不支持 FFmpeg')
+    if (!isWebCodecSupported()) {
+      throw new Error('当前浏览器不支持 WebCodecs')
     }
-    const { $ffmpeg } = useNuxtApp()
-    await $ffmpeg()
-    return { success: true, message: 'FFmpeg 预加载成功' }
+    return { success: true, message: 'WebCodecs 已就绪' }
   } catch (error) {
-    console.warn('FFmpeg 预加载失败:', error)
+    console.warn('WebCodecs 检测失败:', error)
     return { success: false, error: error.message }
   }
 }
