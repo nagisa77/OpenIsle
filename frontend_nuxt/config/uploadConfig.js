@@ -6,50 +6,10 @@
 // 声明全局变量以避免 TypeScript 错误
 /* global useRuntimeConfig */
 
-// 简化的环境变量读取功能
-function getEnvNumber(key, defaultValue) {
-  if (typeof window !== 'undefined') {
-    // 客户端：尝试从 Nuxt 环境获取
-    try {
-      // 使用 globalThis 避免直接引用未定义的变量
-      const nuxtApp = globalThis.$nuxt || globalThis.nuxtApp
-      if (nuxtApp && nuxtApp.$config) {
-        const value = nuxtApp.$config.public?.[key.replace('NUXT_PUBLIC_', '').toLowerCase()]
-        return value ? Number(value) : defaultValue
-      }
-      return defaultValue
-    } catch {
-      return defaultValue
-    }
-  }
-  // 服务端：从 process.env 获取
-  return process.env[key] ? Number(process.env[key]) : defaultValue
-}
-
-function getEnvBoolean(key, defaultValue) {
-  if (typeof window !== 'undefined') {
-    try {
-      // 使用 globalThis 避免直接引用未定义的变量
-      const nuxtApp = globalThis.$nuxt || globalThis.nuxtApp
-      if (nuxtApp && nuxtApp.$config) {
-        const value = nuxtApp.$config.public?.[key.replace('NUXT_PUBLIC_', '').toLowerCase()]
-        return value === 'true' || value === true
-      }
-      return defaultValue
-    } catch {
-      return defaultValue
-    }
-  }
-  const envValue = process.env[key]
-  return envValue ? envValue === 'true' : defaultValue
-}
-
 export const UPLOAD_CONFIG = {
-  // 视频文件配置
   VIDEO: {
-    // 文件大小限制 (字节)
-    MAX_SIZE: getEnvNumber('NUXT_PUBLIC_VIDEO_MAX_SIZE', 20 * 1024 * 1024), // 5MB
-    TARGET_SIZE: getEnvNumber('NUXT_PUBLIC_VIDEO_TARGET_SIZE', 5 * 1024 * 1024), // 5MB
+    MAX_SIZE: 20 * 1024 * 1024, // 20mb
+    TARGET_SIZE: 5 * 1024 * 1024, // 5mb
 
     // 支持的输入格式
     SUPPORTED_FORMATS: ['mp4', 'webm', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'm4v', 'ogv'],
