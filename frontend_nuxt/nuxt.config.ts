@@ -6,12 +6,7 @@ const appPkg = require('./package.json') as {
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
 }
-const ffmpegVersion = (
-  process.env.NUXT_PUBLIC_FFMPEG_VERSION ||
-  appPkg.dependencies?.['@ffmpeg/ffmpeg'] ||
-  appPkg.devDependencies?.['@ffmpeg/ffmpeg'] ||
-  '0.12.15'
-).replace(/^[^\d]*/, '')
+
 export default defineNuxtConfig({
   devServer: {
     host: '0.0.0.0',
@@ -29,7 +24,6 @@ export default defineNuxtConfig({
       discordClientId: process.env.NUXT_PUBLIC_DISCORD_CLIENT_ID || '',
       twitterClientId: process.env.NUXT_PUBLIC_TWITTER_CLIENT_ID || '',
       telegramBotId: process.env.NUXT_PUBLIC_TELEGRAM_BOT_ID || '',
-      ffmpegVersion,
     },
   },
   css: [
