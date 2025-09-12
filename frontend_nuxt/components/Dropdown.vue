@@ -80,6 +80,12 @@
             <span>{{ o.name }}</span>
           </slot>
         </div>
+        <InfiniteLoadMore
+          v-if="hasMore"
+          :on-load="loadMore"
+          :pause="loading"
+          root-margin="100px 0px"
+        />
       </template>
     </div>
     <Teleport to="body">
@@ -116,6 +122,12 @@
                 <span>{{ o.name }}</span>
               </slot>
             </div>
+            <InfiniteLoadMore
+              v-if="hasMore"
+              :on-load="loadMore"
+              :pause="loading"
+              root-margin="100px 0px"
+            />
           </template>
         </div>
       </div>
@@ -125,10 +137,12 @@
 
 <script>
 import { computed, onMounted, ref, watch } from 'vue'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 import { useIsMobile } from '~/utils/screen'
 
 export default {
   name: 'BaseDropdown',
+  components: { InfiniteLoadMore },
   props: {
     modelValue: { type: [Array, String, Number], default: () => [] },
     placeholder: { type: String, default: '返回' },
@@ -150,6 +164,8 @@ export default {
     const options = ref(Array.isArray(props.initialOptions) ? [...props.initialOptions] : [])
     const loaded = ref(false)
     const loading = ref(false)
+    const hasMore = ref(true)
+    const page = ref(0)
     const wrapper = ref(null)
     const isMobile = useIsMobile()
 
@@ -186,18 +202,41 @@ export default {
       return options.value.filter((o) => o.name.toLowerCase().includes(search.value.toLowerCase()))
     })
 
-    const loadOptions = async (kw = '') => {
-      if (!props.remote && loaded.value) return
+    const loadOptions = async (kw = '', reset = false) => {
+      if (loading.value || (!hasMore.value && !reset)) return
       try {
         loading.value = true
-        const res = await props.fetchOptions(props.remote ? kw : undefined)
-        options.value = Array.isArray(res) ? res : []
+        if (reset) {
+          page.value = 0
+          hasMore.value = true
+          options.value = []
+        }
+        const res = await props.fetchOptions(props.remote ? kw : undefined, page.value)
+        let data = []
+        let done = false
+        if (Array.isArray(res)) {
+          data = res
+          done = true
+        } else if (res) {
+          data = Array.isArray(res.data) ? res.data : []
+          done = !!res.done
+        }
+        options.value = options.value.concat(data)
+        if (done || data.length === 0) {
+          hasMore.value = false
+        } else {
+          page.value += 1
+        }
         if (!props.remote) loaded.value = true
       } catch {
-        options.value = []
+        if (reset) options.value = []
       } finally {
         loading.value = false
       }
+    }
+
+    const loadMore = async () => {
+      await loadOptions(search.value)
     }
 
     watch(
@@ -212,9 +251,9 @@ export default {
     watch(open, async (val) => {
       if (val) {
         if (props.remote) {
-          await loadOptions(search.value)
+          await loadOptions(search.value, true)
         } else if (!loaded.value) {
-          await loadOptions()
+          await loadOptions('', true)
         }
       }
     })
@@ -222,13 +261,13 @@ export default {
     watch(search, async (val) => {
       emit('update:search', val)
       if (props.remote && open.value) {
-        await loadOptions(val)
+        await loadOptions(val, true)
       }
     })
 
     onMounted(async () => {
       if (!props.remote) {
-        loadOptions()
+        loadOptions('', true)
       }
     })
 
@@ -265,6 +304,8 @@ export default {
       isImageIcon,
       setSearch,
       isMobile,
+      loadMore,
+      hasMore,
     }
   },
 }

@@ -115,22 +115,30 @@
             <div v-if="isLoadingTag" class="menu-loading-container">
               <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
             </div>
-            <div v-else v-for="t in tagData" :key="t.id" class="section-item" @click="gotoTag(t)">
-              <BaseImage
-                v-if="isImageIcon(t.smallIcon || t.icon)"
-                :src="t.smallIcon || t.icon"
-                class="section-item-icon"
-                :alt="t.name"
+            <div v-else>
+              <div v-for="t in tagData" :key="t.id" class="section-item" @click="gotoTag(t)">
+                <BaseImage
+                  v-if="isImageIcon(t.smallIcon || t.icon)"
+                  :src="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                  :alt="t.name"
+                />
+                <component
+                  v-else-if="t.smallIcon || t.icon"
+                  :is="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                />
+                <tag-one v-else class="section-item-icon" />
+                <span class="section-item-text"
+                  >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
+                >
+              </div>
+              <InfiniteLoadMore
+                v-if="hasMoreTags"
+                :on-load="fetchMoreTags"
+                :pause="loadingMoreTags"
+                root-margin="200px 0px"
               />
-              <component
-                v-else-if="t.smallIcon || t.icon"
-                :is="t.smallIcon || t.icon"
-                class="section-item-icon"
-              />
-              <tag-one v-else class="section-item-icon" />
-              <span class="section-item-text"
-                >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
-              >
             </div>
           </div>
         </div>
@@ -154,6 +162,7 @@ import { authState, fetchCurrentUser } from '~/utils/auth'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import { useIsMobile } from '~/utils/screen'
 import { cycleTheme, ThemeMode, themeState } from '~/utils/theme'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 
 const isMobile = useIsMobile()
 
@@ -186,15 +195,47 @@ const {
   },
 )
 
+const tagPageSize = 10
 const {
   data: tagData,
   pending: isLoadingTag,
   error: tagError,
-} = await useAsyncData('menu:tags', () => $fetch(`${API_BASE_URL}/api/tags?limit=10`), {
-  server: true,
-  default: () => [],
-  staleTime: 5 * 60 * 1000,
-})
+} = await useAsyncData(
+  'menu:tags',
+  () => $fetch(`${API_BASE_URL}/api/tags?page=0&pageSize=${tagPageSize}`),
+  {
+    server: true,
+    default: () => [],
+    staleTime: 5 * 60 * 1000,
+  },
+)
+const tagPage = ref(1)
+const hasMoreTags = ref(tagData.value.length === tagPageSize)
+const loadingMoreTags = ref(false)
+
+const fetchMoreTags = async () => {
+  if (loadingMoreTags.value || !hasMoreTags.value) return true
+  loadingMoreTags.value = true
+  try {
+    const data = await $fetch(
+      `${API_BASE_URL}/api/tags?page=${tagPage.value}&pageSize=${tagPageSize}`,
+    )
+    if (Array.isArray(data) && data.length > 0) {
+      tagData.value.push(...data)
+      tagPage.value++
+      if (data.length < tagPageSize) {
+        hasMoreTags.value = false
+        return true
+      }
+      return false
+    } else {
+      hasMoreTags.value = false
+      return true
+    }
+  } finally {
+    loadingMoreTags.value = false
+  }
+}
 
 /** 其余逻辑保持不变 */
 const iconClass = computed(() => {

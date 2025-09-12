@@ -80,7 +80,8 @@ public class TagController {
     @ApiResponse(responseCode = "200", description = "List of tags",
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = TagDto.class))))
     public List<TagDto> list(@RequestParam(value = "keyword", required = false) String keyword,
-                             @RequestParam(value = "limit", required = false) Integer limit) {
+                             @RequestParam(value = "page", required = false) Integer page,
+                             @RequestParam(value = "pageSize", required = false) Integer pageSize) {
         List<Tag> tags = tagService.searchTags(keyword);
         List<Long> tagIds = tags.stream().map(Tag::getId).toList();
         Map<Long, Long> postCntByTagIds = postService.countPostsByTagIds(tagIds);
@@ -88,10 +89,11 @@ public class TagController {
                 .map(t -> tagMapper.toDto(t, postCntByTagIds.getOrDefault(t.getId(), 0L)))
                 .sorted((a, b) -> Long.compare(b.getCount(), a.getCount()))
                 .collect(Collectors.toList());
-        if (limit != null && limit > 0 && dtos.size() > limit) {
-            return dtos.subList(0, limit);
-        }
-        return dtos;
+        int p = page != null && page >= 0 ? page : 0;
+        int ps = pageSize != null && pageSize > 0 ? pageSize : dtos.size();
+        int from = Math.min(p * ps, dtos.size());
+        int to = Math.min(from + ps, dtos.size());
+        return dtos.subList(from, to);
     }
 
     @GetMapping("/{id}")

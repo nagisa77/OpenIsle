@@ -62,21 +62,22 @@ const isImageIcon = (icon) => {
   return /^https?:\/\//.test(icon) || icon.startsWith('/')
 }
 
-const buildTagsUrl = (kw = '') => {
+const buildTagsUrl = (kw = '', page = 0) => {
   const base = API_BASE_URL || (import.meta.client ? window.location.origin : '')
   const url = new URL('/api/tags', base)
 
   if (kw) url.searchParams.set('keyword', kw)
-  url.searchParams.set('limit', '10')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', '10')
 
   return url.toString()
 }
 
-const fetchTags = async (kw = '') => {
+const fetchTags = async (kw = '', page = 0) => {
   const defaultOption = { id: 0, name: '无标签' }
 
   // 1) 先拼 URL（自动兜底到 window.location.origin）
-  const url = buildTagsUrl(kw)
+  const url = buildTagsUrl(kw, page)
 
   // 2) 拉数据
   let data = []
@@ -96,8 +97,12 @@ const fetchTags = async (kw = '') => {
 
   options = Array.from(new Map(options.map((t) => [t.id, t])).values())
 
-  // 4) 最终结果
-  return [defaultOption, ...options]
+  const done = data.length < 10
+  if (page === 0) {
+    options = [defaultOption, ...options]
+  }
+
+  return { data: options, done }
 }
 
 const selected = computed({
