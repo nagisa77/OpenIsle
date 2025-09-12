@@ -55,6 +55,10 @@ class PostControllerTest {
     private UserVisitService userVisitService;
     @MockBean
     private PostReadService postReadService;
+    @MockBean
+    private MedalService medalService;
+    @MockBean
+    private com.openisle.repository.PollVoteRepository pollVoteRepository;
 
     @Test
     void createAndGetPost() throws Exception {
@@ -63,9 +67,13 @@ class PostControllerTest {
         Category cat = new Category();
         cat.setId(1L);
         cat.setName("tech");
+        cat.setDescription("Technology category");
+        cat.setIcon("tech-icon");
         Tag tag = new Tag();
         tag.setId(1L);
         tag.setName("java");
+        tag.setDescription("Java programming language");
+        tag.setIcon("java-icon");
         Post post = new Post();
         post.setId(1L);
         post.setTitle("t");
@@ -111,9 +119,13 @@ class PostControllerTest {
         Category cat = new Category();
         cat.setId(1L);
         cat.setName("tech");
+        cat.setDescription("Technology category");
+        cat.setIcon("tech-icon");
         Tag tag = new Tag();
         tag.setId(1L);
         tag.setName("java");
+        tag.setDescription("Java programming language");
+        tag.setIcon("java-icon");
         Post post = new Post();
         post.setId(1L);
         post.setTitle("t2");
@@ -147,9 +159,13 @@ class PostControllerTest {
         Category cat = new Category();
         cat.setId(1L);
         cat.setName("tech");
+        cat.setDescription("Technology category");
+        cat.setIcon("tech-icon");
         Tag tag = new Tag();
         tag.setId(1L);
         tag.setName("java");
+        tag.setDescription("Java programming language");
+        tag.setIcon("java-icon");
         Post post = new Post();
         post.setId(2L);
         post.setTitle("hello");
@@ -197,9 +213,13 @@ class PostControllerTest {
         Category cat = new Category();
         cat.setId(1L);
         cat.setName("tech");
+        cat.setDescription("Technology category");
+        cat.setIcon("tech-icon");
         Tag tag = new Tag();
         tag.setId(1L);
         tag.setName("java");
+        tag.setDescription("Java programming language");
+        tag.setIcon("java-icon");
         Post post = new Post();
         post.setId(1L);
         post.setTitle("t");
@@ -262,6 +282,8 @@ class PostControllerTest {
         Category cat = new Category();
         cat.setId(1L);
         cat.setName("tech");
+        cat.setDescription("Technology category");
+        cat.setIcon("tech-icon");
         Post post = new Post();
         post.setId(1L);
         post.setTitle("t");

@@ -72,4 +72,10 @@ public class Post {
 
     @Column(nullable = true)
     private Boolean rssExcluded = true;
+
+    @Column(nullable = false)
+    private long commentCount = 0;
+
+    @Column(nullable = true)
+    private LocalDateTime lastReplyAt;
 }
