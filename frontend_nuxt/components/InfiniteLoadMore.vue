@@ -25,6 +25,8 @@ const props = defineProps({
   rootMargin: { type: String, default: '200px 0px' },
   /** 触发阈值 */
   threshold: { type: Number, default: 0 },
+  /** 自定义 IntersectionObserver 根元素（默认为视口） */
+  root: { type: Object, default: null },
 })
 
 const isLoading = ref(false)
@@ -58,7 +60,11 @@ const startObserver = () => {
         isLoading.value = false
       }
     },
-    { root: null, rootMargin: props.rootMargin, threshold: props.threshold },
+    {
+      root: props.root || null,
+      rootMargin: props.rootMargin,
+      threshold: props.threshold,
+    },
   )
   if (sentinel.value) io.observe(sentinel.value)
 }
@@ -73,6 +79,13 @@ watch(
   (p) => {
     if (p) stopObserver()
     else nextTick(startObserver)
+  },
+)
+
+watch(
+  () => props.root,
+  () => {
+    nextTick(startObserver)
   },
 )
 

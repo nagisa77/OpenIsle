@@ -132,6 +132,11 @@
                 >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
               >
             </div>
+            <InfiniteLoadMore
+              v-if="tagData.length > 0 && !tagDone"
+              :on-load="loadMoreTags"
+              :pause="isLoadingTag"
+            />
           </div>
         </div>
       </div>
@@ -154,6 +159,7 @@ import { authState, fetchCurrentUser } from '~/utils/auth'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import { useIsMobile } from '~/utils/screen'
 import { cycleTheme, ThemeMode, themeState } from '~/utils/theme'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 
 const isMobile = useIsMobile()
 
@@ -186,15 +192,41 @@ const {
   },
 )
 
+const TAG_PAGE_SIZE = 10
+const tagPage = ref(1)
+const tagDone = ref(false)
 const {
   data: tagData,
   pending: isLoadingTag,
   error: tagError,
-} = await useAsyncData('menu:tags', () => $fetch(`${API_BASE_URL}/api/tags?limit=10`), {
-  server: true,
-  default: () => [],
-  staleTime: 5 * 60 * 1000,
-})
+} = await useAsyncData(
+  'menu:tags',
+  async () => {
+    const res = await $fetch(`${API_BASE_URL}/api/tags?page=0&pageSize=${TAG_PAGE_SIZE}`)
+    if (res.length < TAG_PAGE_SIZE) tagDone.value = true
+    return res
+  },
+  {
+    server: true,
+    default: () => [],
+    staleTime: 5 * 60 * 1000,
+  },
+)
+
+const loadMoreTags = async () => {
+  if (tagDone.value) return true
+  const res = await $fetch(
+    `${API_BASE_URL}/api/tags?page=${tagPage.value}&pageSize=${TAG_PAGE_SIZE}`,
+  )
+  if (Array.isArray(res) && res.length > 0) {
+    tagData.value.push(...res)
+    if (res.length < TAG_PAGE_SIZE) tagDone.value = true
+    tagPage.value++
+  } else {
+    tagDone.value = true
+  }
+  return tagDone.value
+}
 
 /** 其余逻辑保持不变 */
 const iconClass = computed(() => {

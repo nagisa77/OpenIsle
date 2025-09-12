@@ -6,6 +6,8 @@
     placeholder="选择标签"
     remote
     :initial-options="mergedOptions"
+    infinite
+    :page-size="10"
   >
     <template #option="{ option }">
       <div class="option-container">
@@ -42,6 +44,7 @@ const props = defineProps({
   options: { type: Array, default: () => [] },
 })
 
+const defaultOption = { id: 0, name: '无标签' }
 const localTags = ref([])
 const providedTags = ref(Array.isArray(props.options) ? [...props.options] : [])
 
@@ -53,7 +56,7 @@ watch(
 )
 
 const mergedOptions = computed(() => {
-  const arr = [...providedTags.value, ...localTags.value]
+  const arr = [defaultOption, ...providedTags.value, ...localTags.value]
   return arr.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
 })
 
@@ -62,21 +65,20 @@ const isImageIcon = (icon) => {
   return /^https?:\/\//.test(icon) || icon.startsWith('/')
 }
 
-const buildTagsUrl = (kw = '') => {
+const buildTagsUrl = (kw = '', page = 0) => {
   const base = API_BASE_URL || (import.meta.client ? window.location.origin : '')
   const url = new URL('/api/tags', base)
 
   if (kw) url.searchParams.set('keyword', kw)
-  url.searchParams.set('limit', '10')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', '10')
 
   return url.toString()
 }
 
-const fetchTags = async (kw = '') => {
-  const defaultOption = { id: 0, name: '无标签' }
-
+const fetchTags = async (kw = '', page = 0) => {
   // 1) 先拼 URL（自动兜底到 window.location.origin）
-  const url = buildTagsUrl(kw)
+  const url = buildTagsUrl(kw, page)
 
   // 2) 拉数据
   let data = []
@@ -87,17 +89,18 @@ const fetchTags = async (kw = '') => {
     toast.error('获取标签失败')
   }
 
-  // 3) 合并、去重、可创建
-  let options = [...data, ...localTags.value]
-
-  if (props.creatable && kw && !options.some((t) => t.name.toLowerCase() === kw.toLowerCase())) {
-    options.push({ id: `__create__:${kw}`, name: `创建"${kw}"` })
+  // 3) 可创建
+  if (
+    props.creatable &&
+    kw &&
+    ![...data, ...localTags.value, ...providedTags.value].some(
+      (t) => t.name.toLowerCase() === kw.toLowerCase(),
+    )
+  ) {
+    data.push({ id: `__create__:${kw}`, name: `创建"${kw}"` })
   }
 
-  options = Array.from(new Map(options.map((t) => [t.id, t])).values())
-
-  // 4) 最终结果
-  return [defaultOption, ...options]
+  return data
 }
 
 const selected = computed({

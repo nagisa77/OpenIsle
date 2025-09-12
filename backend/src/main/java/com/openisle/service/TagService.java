@@ -108,6 +108,17 @@ public class TagService {
         return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword);
     }
 
+    public List<Tag> searchTags(String keyword, Integer page, Integer pageSize) {
+        if (page == null || pageSize == null) {
+            return searchTags(keyword);
+        }
+        Pageable pageable = PageRequest.of(page, pageSize);
+        if (keyword == null || keyword.isBlank()) {
+            return tagRepository.findByApprovedTrue(pageable).getContent();
+        }
+        return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword, pageable).getContent();
+    }
+
     public List<Tag> getRecentTagsByUser(String username, int limit) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));

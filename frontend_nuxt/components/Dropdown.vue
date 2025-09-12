@@ -52,6 +52,7 @@
       v-if="open && !isMobile && (loading || filteredOptions.length > 0 || showSearch)"
       :class="['dropdown-menu', menuClass]"
       v-click-outside="close"
+      ref="menuRef"
     >
       <div v-if="showSearch" class="dropdown-search">
         <search-icon class="search-icon" />
@@ -80,6 +81,13 @@
             <span>{{ o.name }}</span>
           </slot>
         </div>
+        <InfiniteLoadMore
+          v-if="infinite && !done"
+          :on-load="fetchNextPage"
+          :pause="loading"
+          :root="menuRef"
+          root-margin="0px 0px"
+        />
       </template>
     </div>
     <Teleport to="body">
@@ -88,7 +96,7 @@
           <next class="back-icon" @click="close" />
           <span class="mobile-title">{{ placeholder }}</span>
         </div>
-        <div class="dropdown-mobile-menu">
+        <div class="dropdown-mobile-menu" ref="mobileMenuRef">
           <div v-if="showSearch" class="dropdown-search">
             <search-icon class="search-icon" />
             <input type="text" v-model="search" placeholder="搜索" />
@@ -116,6 +124,13 @@
                 <span>{{ o.name }}</span>
               </slot>
             </div>
+            <InfiniteLoadMore
+              v-if="infinite && !done"
+              :on-load="fetchNextPage"
+              :pause="loading"
+              :root="mobileMenuRef"
+              root-margin="0px 0px"
+            />
           </template>
         </div>
       </div>
@@ -126,6 +141,7 @@
 <script>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useIsMobile } from '~/utils/screen'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 
 export default {
   name: 'BaseDropdown',
@@ -139,6 +155,8 @@ export default {
     optionClass: { type: String, default: '' },
     showSearch: { type: Boolean, default: true },
     initialOptions: { type: Array, default: () => [] },
+    infinite: { type: Boolean, default: false },
+    pageSize: { type: Number, default: 20 },
   },
   emits: ['update:modelValue', 'update:search', 'close'],
   setup(props, { emit, expose }) {
@@ -152,6 +170,10 @@ export default {
     const loading = ref(false)
     const wrapper = ref(null)
     const isMobile = useIsMobile()
+    const menuRef = ref(null)
+    const mobileMenuRef = ref(null)
+    const page = ref(0)
+    const done = ref(false)
 
     const toggle = () => {
       open.value = !open.value
@@ -188,16 +210,34 @@ export default {
 
     const loadOptions = async (kw = '') => {
       if (!props.remote && loaded.value) return
+      if (done.value) return
       try {
         loading.value = true
-        const res = await props.fetchOptions(props.remote ? kw : undefined)
-        options.value = Array.isArray(res) ? res : []
+        const res = await props.fetchOptions(props.remote ? kw : undefined, page.value)
+        const arr = Array.isArray(res) ? res : []
+        arr.forEach((o) => {
+          if (!options.value.some((e) => e.id === o.id)) {
+            options.value.push(o)
+          }
+        })
+        if (arr.length < props.pageSize) done.value = true
         if (!props.remote) loaded.value = true
-      } catch {
-        options.value = []
+        page.value += 1
       } finally {
         loading.value = false
       }
+    }
+
+    const resetAndLoad = async (kw = '') => {
+      options.value = Array.isArray(props.initialOptions) ? [...props.initialOptions] : []
+      page.value = 0
+      done.value = false
+      await loadOptions(kw)
+    }
+
+    const fetchNextPage = async () => {
+      await loadOptions(search.value)
+      return done.value
     }
 
     watch(
@@ -212,7 +252,7 @@ export default {
     watch(open, async (val) => {
       if (val) {
         if (props.remote) {
-          await loadOptions(search.value)
+          await resetAndLoad(search.value)
         } else if (!loaded.value) {
           await loadOptions()
         }
@@ -222,13 +262,13 @@ export default {
     watch(search, async (val) => {
       emit('update:search', val)
       if (props.remote && open.value) {
-        await loadOptions(val)
+        await resetAndLoad(val)
       }
     })
 
     onMounted(async () => {
       if (!props.remote) {
-        loadOptions()
+        resetAndLoad()
       }
     })
 
@@ -259,14 +299,19 @@ export default {
       search,
       filteredOptions,
       wrapper,
+      menuRef,
+      mobileMenuRef,
       selectedLabels,
       isSelected,
       loading,
       isImageIcon,
+      fetchNextPage,
+      done,
       setSearch,
       isMobile,
     }
   },
+  components: { InfiniteLoadMore },
 }
 </script>
 

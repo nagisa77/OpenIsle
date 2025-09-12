@@ -75,9 +75,9 @@ class TagControllerTest {
         t.setDescription("d2");
         t.setIcon("i2");
         t.setSmallIcon("s2");
-        Mockito.when(tagService.searchTags(null)).thenReturn(List.of(t));
+        Mockito.when(tagService.searchTags(null, 0, 10)).thenReturn(List.of(t));
 
-        mockMvc.perform(get("/api/tags"))
+        mockMvc.perform(get("/api/tags?page=0&pageSize=10"))
                 .andExpect(status().isOk())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("spring"))
