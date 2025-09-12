@@ -108,6 +108,14 @@ public class TagService {
         return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword);
     }
 
+    public org.springframework.data.domain.Page<Tag> searchTags(String keyword, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        if (keyword == null || keyword.isBlank()) {
+            return tagRepository.findByApprovedTrue(pageable);
+        }
+        return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword, pageable);
+    }
+
     public List<Tag> getRecentTagsByUser(String username, int limit) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));

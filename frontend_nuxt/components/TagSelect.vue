@@ -62,23 +62,22 @@ const isImageIcon = (icon) => {
   return /^https?:\/\//.test(icon) || icon.startsWith('/')
 }
 
-const buildTagsUrl = (kw = '') => {
+const buildTagsUrl = (kw = '', page = 0) => {
   const base = API_BASE_URL || (import.meta.client ? window.location.origin : '')
   const url = new URL('/api/tags', base)
 
   if (kw) url.searchParams.set('keyword', kw)
-  url.searchParams.set('limit', '10')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', '20')
 
   return url.toString()
 }
 
-const fetchTags = async (kw = '') => {
+const fetchTags = async (kw = '', page = 0) => {
   const defaultOption = { id: 0, name: '无标签' }
 
-  // 1) 先拼 URL（自动兜底到 window.location.origin）
-  const url = buildTagsUrl(kw)
+  const url = buildTagsUrl(kw, page)
 
-  // 2) 拉数据
   let data = []
   try {
     const res = await fetch(url)
@@ -87,7 +86,6 @@ const fetchTags = async (kw = '') => {
     toast.error('获取标签失败')
   }
 
-  // 3) 合并、去重、可创建
   let options = [...data, ...localTags.value]
 
   if (props.creatable && kw && !options.some((t) => t.name.toLowerCase() === kw.toLowerCase())) {
@@ -96,8 +94,7 @@ const fetchTags = async (kw = '') => {
 
   options = Array.from(new Map(options.map((t) => [t.id, t])).values())
 
-  // 4) 最终结果
-  return [defaultOption, ...options]
+  return page === 0 ? [defaultOption, ...options] : options
 }
 
 const selected = computed({

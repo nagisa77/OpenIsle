@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageImpl;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -84,6 +86,21 @@ class TagControllerTest {
                 .andExpect(jsonPath("$[0].description").value("d2"))
                 .andExpect(jsonPath("$[0].icon").value("i2"))
                 .andExpect(jsonPath("$[0].smallIcon").value("s2"));
+    }
+
+    @Test
+    void listTagsWithPagination() throws Exception {
+        Tag t = new Tag();
+        t.setId(4L);
+        t.setName("tag4");
+        t.setDescription("d4");
+        t.setIcon("i4");
+        t.setSmallIcon("s4");
+        Mockito.when(tagService.searchTags(null, 0, 1)).thenReturn(new PageImpl<>(List.of(t)));
+
+        mockMvc.perform(get("/api/tags?page=0&pageSize=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("tag4"));
     }
 
     @Test
