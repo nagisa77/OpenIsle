@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final CategoryService categoryService;
+    private final TagService tagService;
     private final LevelService levelService;
     private final CaptchaService captchaService;
     private final DraftService draftService;
@@ -147,33 +149,16 @@ public class PostController {
                                    @RequestParam(value = "page", required = false) Integer page,
                                    @RequestParam(value = "pageSize", required = false) Integer pageSize,
                                    Authentication auth) {
-        List<Long> ids = categoryIds;
-        if (categoryId != null) {
-            ids = java.util.List.of(categoryId);
-        }
-        List<Long> tids = tagIds;
-        if (tagId != null) {
-            tids = java.util.List.of(tagId);
-        }
+
+        List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
+        List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
 // 只需要在请求的一开始统计一次
 //        if (auth != null) {
 //            userVisitService.recordVisit(auth.getName());
 //        }
 
-        boolean hasCategories = ids != null && !ids.isEmpty();
-        boolean hasTags = tids != null && !tids.isEmpty();
-
-        if (hasCategories && hasTags) {
-            return postService.listPostsByCategoriesAndTags(ids, tids, page, pageSize)
-                    .stream().map(postMapper::toSummaryDto).collect(Collectors.toList());
-        }
-        if (hasTags) {
-            return postService.listPostsByTags(tids, page, pageSize)
-                .stream().map(postMapper::toSummaryDto).collect(Collectors.toList());
-        }
-
-        return postService.listPostsByCategories(ids, page, pageSize)
-                .stream().map(postMapper::toSummaryDto).collect(Collectors.toList());
+        return postService.defaultListPosts(ids,tids,page, pageSize).stream()
+                .map(postMapper::toSummaryDto).collect(Collectors.toList());
     }
 
     @GetMapping("/ranking")
@@ -187,14 +172,9 @@ public class PostController {
                                       @RequestParam(value = "page", required = false) Integer page,
                                       @RequestParam(value = "pageSize", required = false) Integer pageSize,
                                       Authentication auth) {
-        List<Long> ids = categoryIds;
-        if (categoryId != null) {
-            ids = java.util.List.of(categoryId);
-        }
-        List<Long> tids = tagIds;
-        if (tagId != null) {
-            tids = java.util.List.of(tagId);
-        }
+
+        List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
+        List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
 // 只需要在请求的一开始统计一次
 //        if (auth != null) {
 //            userVisitService.recordVisit(auth.getName());
@@ -215,14 +195,9 @@ public class PostController {
                                           @RequestParam(value = "page", required = false) Integer page,
                                           @RequestParam(value = "pageSize", required = false) Integer pageSize,
                                           Authentication auth) {
-        List<Long> ids = categoryIds;
-        if (categoryId != null) {
-            ids = java.util.List.of(categoryId);
-        }
-        List<Long> tids = tagIds;
-        if (tagId != null) {
-            tids = java.util.List.of(tagId);
-        }
+
+        List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
+        List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
 // 只需要在请求的一开始统计一次
 //        if (auth != null) {
 //            userVisitService.recordVisit(auth.getName());
@@ -243,14 +218,9 @@ public class PostController {
                                        @RequestParam(value = "page", required = false) Integer page,
                                        @RequestParam(value = "pageSize", required = false) Integer pageSize,
                                        Authentication auth) {
-        List<Long> ids = categoryIds;
-        if (categoryId != null) {
-            ids = java.util.List.of(categoryId);
-        }
-        List<Long> tids = tagIds;
-        if (tagId != null) {
-            tids = java.util.List.of(tagId);
-        }
+
+        List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
+        List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
 // 只需要在请求的一开始统计一次
 //        if (auth != null) {
 //            userVisitService.recordVisit(auth.getName());

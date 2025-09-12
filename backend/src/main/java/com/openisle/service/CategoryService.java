@@ -62,4 +62,18 @@ public class CategoryService {
     public List<Category> listCategories() {
         return categoryRepository.findAll();
     }
+
+    /**
+     * 获取检索用的分类Id列表
+     * @param categoryIds
+     * @param categoryId
+     * @return
+     */
+    public List<Long> getSearchCategoryIds(List<Long> categoryIds, Long categoryId){
+        List<Long> ids = categoryIds;
+        if (categoryId != null) {
+            ids = List.of(categoryId);
+        }
+        return ids;
+    }
 }

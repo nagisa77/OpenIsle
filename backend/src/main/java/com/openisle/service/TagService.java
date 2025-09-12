@@ -120,4 +120,18 @@ public class TagService {
                 .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
         return tagRepository.findByCreator(user);
     }
+
+    /**
+     * 获取检索用的标签Id列表
+     * @param tagIds
+     * @param tagId
+     * @return
+     */
+    public List<Long> getSearchTagIds(List<Long> tagIds, Long tagId){
+        List<Long> ids = tagIds;
+        if (tagId != null) {
+            ids = List.of(tagId);
+        }
+        return ids;
+    }
 }

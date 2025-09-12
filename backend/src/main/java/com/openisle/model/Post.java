@@ -39,19 +39,19 @@ public class Post {
             columnDefinition = "DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)")
     private LocalDateTime createdAt;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id")
     private User author;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "post_tags",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
-    private java.util.Set<Tag> tags = new java.util.HashSet<>();
+    private Set<Tag> tags = new HashSet<>();
 
     @Column(nullable = false)
     private long views = 0;

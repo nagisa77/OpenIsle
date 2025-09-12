@@ -46,6 +46,8 @@ public class CachingConfig {
     public static final String LIMIT_CACHE_NAME="openisle_limit";
     // 用户访问统计
     public static final String VISIT_CACHE_NAME="openisle_visit";
+    // 文章缓存
+    public static final String POST_CACHE_NAME="openisle_posts";
 
     /**
      * 自定义Redis的序列化器
@@ -65,7 +67,10 @@ public class CachingConfig {
         // Hibernate6Module 可以自动处理懒加载代理对象。
         // Tag对象的creator是FetchType.LAZY
         objectMapper.registerModule(new Hibernate6Module()
-                .disable(Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION));
+                .disable(Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION)
+                // 将 Hibernate 特有的集合类型转换为标准 Java 集合类型
+                // 避免序列化时出现 org.hibernate.collection.spi.PersistentSet 这样的类型信息
+                .configure(Hibernate6Module.Feature.REPLACE_PERSISTENT_COLLECTIONS, true));
         // service的时候带上类型信息
         // 启用类型信息，避免 LinkedHashMap 问题
         objectMapper.activateDefaultTyping(
