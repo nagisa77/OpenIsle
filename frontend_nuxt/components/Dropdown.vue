@@ -52,6 +52,7 @@
       v-if="open && !isMobile && (loading || filteredOptions.length > 0 || showSearch)"
       :class="['dropdown-menu', menuClass]"
       v-click-outside="close"
+      ref="menu"
     >
       <div v-if="showSearch" class="dropdown-search">
         <search-icon class="search-icon" />
@@ -80,6 +81,13 @@
             <span>{{ o.name }}</span>
           </slot>
         </div>
+        <InfiniteLoadMore
+          v-if="paginate"
+          :on-load="loadMore"
+          :pause="loading"
+          :root="menu"
+          root-margin="0px"
+        />
       </template>
     </div>
     <Teleport to="body">
@@ -88,7 +96,7 @@
           <next class="back-icon" @click="close" />
           <span class="mobile-title">{{ placeholder }}</span>
         </div>
-        <div class="dropdown-mobile-menu">
+        <div class="dropdown-mobile-menu" ref="mobileMenu">
           <div v-if="showSearch" class="dropdown-search">
             <search-icon class="search-icon" />
             <input type="text" v-model="search" placeholder="搜索" />
@@ -116,6 +124,13 @@
                 <span>{{ o.name }}</span>
               </slot>
             </div>
+            <InfiniteLoadMore
+              v-if="paginate"
+              :on-load="loadMore"
+              :pause="loading"
+              :root="mobileMenu"
+              root-margin="0px"
+            />
           </template>
         </div>
       </div>
@@ -126,9 +141,11 @@
 <script>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useIsMobile } from '~/utils/screen'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 
 export default {
   name: 'BaseDropdown',
+  components: { InfiniteLoadMore },
   props: {
     modelValue: { type: [Array, String, Number], default: () => [] },
     placeholder: { type: String, default: '返回' },
@@ -139,6 +156,8 @@ export default {
     optionClass: { type: String, default: '' },
     showSearch: { type: Boolean, default: true },
     initialOptions: { type: Array, default: () => [] },
+    paginate: { type: Boolean, default: false },
+    pageSize: { type: Number, default: 10 },
   },
   emits: ['update:modelValue', 'update:search', 'close'],
   setup(props, { emit, expose }) {
@@ -151,7 +170,11 @@ export default {
     const loaded = ref(false)
     const loading = ref(false)
     const wrapper = ref(null)
+    const menu = ref(null)
+    const mobileMenu = ref(null)
     const isMobile = useIsMobile()
+    const page = ref(0)
+    const done = ref(!props.paginate)
 
     const toggle = () => {
       open.value = !open.value
@@ -186,15 +209,22 @@ export default {
       return options.value.filter((o) => o.name.toLowerCase().includes(search.value.toLowerCase()))
     })
 
-    const loadOptions = async (kw = '') => {
-      if (!props.remote && loaded.value) return
+    const loadOptions = async (pageNo = 0, kw = '') => {
+      if (!props.remote && loaded.value && pageNo > 0) return
+      if (done.value) return
       try {
         loading.value = true
-        const res = await props.fetchOptions(props.remote ? kw : undefined)
-        options.value = Array.isArray(res) ? res : []
+        const param = props.paginate ? { page: pageNo, keyword: kw } : props.remote ? kw : undefined
+        const res = await props.fetchOptions(param)
+        const data = Array.isArray(res) ? res : []
+        if (pageNo === 0) options.value = data
+        else options.value.push(...data)
+        if (props.paginate && data.length < props.pageSize) {
+          done.value = true
+        }
         if (!props.remote) loaded.value = true
       } catch {
-        options.value = []
+        if (pageNo === 0) options.value = []
       } finally {
         loading.value = false
       }
@@ -211,10 +241,12 @@ export default {
 
     watch(open, async (val) => {
       if (val) {
+        page.value = 0
+        done.value = !props.paginate
         if (props.remote) {
-          await loadOptions(search.value)
+          await loadOptions(0, search.value)
         } else if (!loaded.value) {
-          await loadOptions()
+          await loadOptions(0)
         }
       }
     })
@@ -222,15 +254,25 @@ export default {
     watch(search, async (val) => {
       emit('update:search', val)
       if (props.remote && open.value) {
-        await loadOptions(val)
+        page.value = 0
+        done.value = !props.paginate
+        await loadOptions(0, val)
       }
     })
 
     onMounted(async () => {
       if (!props.remote) {
-        loadOptions()
+        loadOptions(0)
       }
     })
+
+    const loadMore = async () => {
+      if (loading.value || done.value) return true
+      const next = page.value + 1
+      await loadOptions(next, search.value)
+      if (!done.value) page.value = next
+      return done.value
+    }
 
     const selectedLabels = computed(() => {
       if (props.multiple) {
@@ -259,12 +301,16 @@ export default {
       search,
       filteredOptions,
       wrapper,
+      menu,
+      mobileMenu,
       selectedLabels,
       isSelected,
       loading,
       isImageIcon,
       setSearch,
       isMobile,
+      paginate: props.paginate,
+      loadMore,
     }
   },
 }

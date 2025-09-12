@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -106,6 +107,14 @@ public class TagService {
         }
 
         return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword);
+    }
+
+    public Page<Tag> searchTags(String keyword, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        if (keyword == null || keyword.isBlank()) {
+            return tagRepository.findByApprovedTrue(pageable);
+        }
+        return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword, pageable);
     }
 
     public List<Tag> getRecentTagsByUser(String username, int limit) {

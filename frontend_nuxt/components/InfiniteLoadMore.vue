@@ -25,6 +25,8 @@ const props = defineProps({
   rootMargin: { type: String, default: '200px 0px' },
   /** 触发阈值 */
   threshold: { type: Number, default: 0 },
+  /** 可选：指定滚动容器 */
+  root: { type: [Object, Function], default: null },
 })
 
 const isLoading = ref(false)
@@ -42,6 +44,13 @@ const stopObserver = () => {
 const startObserver = () => {
   if (!import.meta.client || props.pause || done.value) return
   stopObserver()
+  const getRoot = () => {
+    if (!props.root) return null
+    if (typeof props.root === 'function') return props.root()
+    if (props.root && 'value' in props.root) return props.root.value
+    return props.root
+  }
+
   io = new IntersectionObserver(
     async (entries) => {
       const e = entries[0]
@@ -58,7 +67,7 @@ const startObserver = () => {
         isLoading.value = false
       }
     },
-    { root: null, rootMargin: props.rootMargin, threshold: props.threshold },
+    { root: getRoot(), rootMargin: props.rootMargin, threshold: props.threshold },
   )
   if (sentinel.value) io.observe(sentinel.value)
 }

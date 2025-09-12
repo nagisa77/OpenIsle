@@ -13,6 +13,7 @@ import com.openisle.service.PostService;
 import com.openisle.service.TagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -80,7 +81,18 @@ public class TagController {
     @ApiResponse(responseCode = "200", description = "List of tags",
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = TagDto.class))))
     public List<TagDto> list(@RequestParam(value = "keyword", required = false) String keyword,
-                             @RequestParam(value = "limit", required = false) Integer limit) {
+                             @RequestParam(value = "limit", required = false) Integer limit,
+                             @RequestParam(value = "page", required = false) Integer page,
+                             @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+        if (page != null && pageSize != null) {
+            Page<Tag> tagPage = tagService.searchTags(keyword, page, pageSize);
+            List<Tag> tags = tagPage.getContent();
+            List<Long> tagIds = tags.stream().map(Tag::getId).toList();
+            Map<Long, Long> postCntByTagIds = postService.countPostsByTagIds(tagIds);
+            return tags.stream()
+                    .map(t -> tagMapper.toDto(t, postCntByTagIds.getOrDefault(t.getId(), 0L)))
+                    .collect(Collectors.toList());
+        }
         List<Tag> tags = tagService.searchTags(keyword);
         List<Long> tagIds = tags.stream().map(Tag::getId).toList();
         Map<Long, Long> postCntByTagIds = postService.countPostsByTagIds(tagIds);

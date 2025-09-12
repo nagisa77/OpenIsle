@@ -1,7 +1,7 @@
 <template>
   <transition name="slide">
     <nav v-if="visible" class="menu">
-      <div class="menu-content">
+      <div class="menu-content" ref="menuContent">
         <div class="menu-item-container">
           <NuxtLink class="menu-item" exact-active-class="selected" to="/" @click="handleItemClick">
             <hashtag-key class="menu-item-icon" />
@@ -115,23 +115,32 @@
             <div v-if="isLoadingTag" class="menu-loading-container">
               <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
             </div>
-            <div v-else v-for="t in tagData" :key="t.id" class="section-item" @click="gotoTag(t)">
-              <BaseImage
-                v-if="isImageIcon(t.smallIcon || t.icon)"
-                :src="t.smallIcon || t.icon"
-                class="section-item-icon"
-                :alt="t.name"
+            <template v-else>
+              <div v-for="t in tagData" :key="t.id" class="section-item" @click="gotoTag(t)">
+                <BaseImage
+                  v-if="isImageIcon(t.smallIcon || t.icon)"
+                  :src="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                  :alt="t.name"
+                />
+                <component
+                  v-else-if="t.smallIcon || t.icon"
+                  :is="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                />
+                <tag-one v-else class="section-item-icon" />
+                <span class="section-item-text"
+                  >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
+                >
+              </div>
+              <InfiniteLoadMore
+                v-if="tagData.length > 0"
+                :on-load="loadMoreTags"
+                :pause="isLoadingTag"
+                :root="menuContent"
+                root-margin="0px"
               />
-              <component
-                v-else-if="t.smallIcon || t.icon"
-                :is="t.smallIcon || t.icon"
-                class="section-item-icon"
-              />
-              <tag-one v-else class="section-item-icon" />
-              <span class="section-item-text"
-                >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
-              >
-            </div>
+            </template>
           </div>
         </div>
       </div>
@@ -150,6 +159,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 import { authState, fetchCurrentUser } from '~/utils/auth'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import { useIsMobile } from '~/utils/screen'
@@ -168,6 +178,8 @@ const emit = defineEmits(['item-click'])
 const categoryOpen = ref(true)
 const tagOpen = ref(true)
 const myPoint = ref(null)
+const menuContent = ref(null)
+const tagPage = ref(0)
 
 /** ✅ 用 useAsyncData 替换原生 fetch，避免 SSR+CSR 二次请求 */
 const {
@@ -190,11 +202,21 @@ const {
   data: tagData,
   pending: isLoadingTag,
   error: tagError,
-} = await useAsyncData('menu:tags', () => $fetch(`${API_BASE_URL}/api/tags?limit=10`), {
+} = await useAsyncData('menu:tags', () => $fetch(`${API_BASE_URL}/api/tags?page=0&pageSize=20`), {
   server: true,
   default: () => [],
   staleTime: 5 * 60 * 1000,
 })
+
+const loadMoreTags = async () => {
+  const next = tagPage.value + 1
+  const res = await $fetch(`${API_BASE_URL}/api/tags?page=${next}&pageSize=20`)
+  const data = Array.isArray(res) ? res : []
+  tagData.value.push(...data)
+  if (data.length < 20) return true
+  tagPage.value = next
+  return false
+}
 
 /** 其余逻辑保持不变 */
 const iconClass = computed(() => {

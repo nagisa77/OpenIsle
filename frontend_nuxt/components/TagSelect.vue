@@ -6,6 +6,8 @@
     placeholder="选择标签"
     remote
     :initial-options="mergedOptions"
+    paginate
+    :page-size="10"
   >
     <template #option="{ option }">
       <div class="option-container">
@@ -62,21 +64,22 @@ const isImageIcon = (icon) => {
   return /^https?:\/\//.test(icon) || icon.startsWith('/')
 }
 
-const buildTagsUrl = (kw = '') => {
+const buildTagsUrl = (kw = '', page = 0) => {
   const base = API_BASE_URL || (import.meta.client ? window.location.origin : '')
   const url = new URL('/api/tags', base)
 
   if (kw) url.searchParams.set('keyword', kw)
-  url.searchParams.set('limit', '10')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', '10')
 
   return url.toString()
 }
 
-const fetchTags = async (kw = '') => {
+const fetchTags = async ({ keyword = '', page = 0 } = {}) => {
   const defaultOption = { id: 0, name: '无标签' }
 
   // 1) 先拼 URL（自动兜底到 window.location.origin）
-  const url = buildTagsUrl(kw)
+  const url = buildTagsUrl(keyword, page)
 
   // 2) 拉数据
   let data = []
@@ -90,14 +93,18 @@ const fetchTags = async (kw = '') => {
   // 3) 合并、去重、可创建
   let options = [...data, ...localTags.value]
 
-  if (props.creatable && kw && !options.some((t) => t.name.toLowerCase() === kw.toLowerCase())) {
-    options.push({ id: `__create__:${kw}`, name: `创建"${kw}"` })
+  if (
+    props.creatable &&
+    keyword &&
+    !options.some((t) => t.name.toLowerCase() === keyword.toLowerCase())
+  ) {
+    options.push({ id: `__create__:${keyword}`, name: `创建"${keyword}"` })
   }
 
   options = Array.from(new Map(options.map((t) => [t.id, t])).values())
 
   // 4) 最终结果
-  return [defaultOption, ...options]
+  return page === 0 ? [defaultOption, ...options] : options
 }
 
 const selected = computed({
