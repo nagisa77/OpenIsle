@@ -18,6 +18,7 @@ import com.openisle.service.SubscriptionService;
 import com.openisle.service.PointService;
 import com.openisle.model.Role;
 import com.openisle.exception.RateLimitException;
+import com.openisle.dto.CommentPaginationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -310,5 +312,77 @@ public class CommentService {
         int reactions = reactionRepository.findByComment(comment).size();
         int replies = commentRepository.findByParentOrderByCreatedAtAsc(comment).size();
         return reactions + replies;
+    }
+
+    /**
+     * 分页获取帖子评论，支持置顶评论和排序
+     * 
+     * @param postId 帖子ID
+     * @param sort 排序方式
+     * @param page 页码（从0开始）
+     * @param pageSize 每页大小
+     * @return 分页评论数据
+     */
+    public CommentPaginationDto getCommentsForPostPaginated(Long postId, CommentSort sort, int page, int pageSize) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new com.openisle.exception.NotFoundException("Post not found"));
+        
+        List<Comment> allComments = new java.util.ArrayList<>();
+        long totalElements = 0;
+        int totalPages = 0;
+        boolean hasNext = false;
+        
+        // 第一页需要包含置顶评论
+        if (page == 0) {
+            // 获取置顶评论
+            List<Comment> pinnedComments = commentRepository.findByPostAndParentIsNullAndPinnedAtIsNotNullOrderByPinnedAtDesc(post);
+            allComments.addAll(pinnedComments);
+            log.debug("Found {} pinned comments for post {}", pinnedComments.size(), postId);
+        }
+        
+        // 获取非置顶评论的总数
+        totalElements = commentRepository.countByPostAndParentIsNullAndPinnedAtIsNull(post);
+        totalPages = (int) Math.ceil((double) totalElements / pageSize);
+        
+        // 分页获取普通评论
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<Comment> regularCommentsPage;
+        
+        if (sort == CommentSort.NEWEST) {
+            regularCommentsPage = commentRepository.findByPostAndParentIsNullAndPinnedAtIsNullOrderByCreatedAtDesc(post, pageable);
+        } else {
+            // 默认为OLDEST
+            regularCommentsPage = commentRepository.findByPostAndParentIsNullAndPinnedAtIsNullOrderByCreatedAtAsc(post, pageable);
+        }
+        
+        List<Comment> regularComments = regularCommentsPage.getContent();
+        log.debug("Found {} regular comments for post {} on page {}", regularComments.size(), postId, page);
+        
+        // 处理MOST_INTERACTIONS排序
+        if (sort == CommentSort.MOST_INTERACTIONS) {
+            regularComments.sort((a, b) -> Integer.compare(interactionCount(b), interactionCount(a)));
+        }
+        
+        allComments.addAll(regularComments);
+        hasNext = regularCommentsPage.hasNext();
+        
+        // 构建分页响应
+        CommentPaginationDto result = new CommentPaginationDto();
+        // 这里暂时设置为空列表，在Controller层进行DTO转换
+        result.setComments(new java.util.ArrayList<>());
+        result.setCurrentPage(page);
+        result.setPageSize(pageSize);
+        result.setTotalElements(totalElements);
+        result.setTotalPages(totalPages);
+        result.setHasNext(hasNext);
+        result.setFirst(page == 0);
+        result.setLast(!hasNext);
+        result.setNumberOfElements(allComments.size());
+        
+        result.setCommentEntities(allComments);
+        
+        log.debug("getCommentsForPostPaginated returning {} comments for post {}, hasNext: {}", 
+                  allComments.size(), postId, hasNext);
+        return result;
     }
 }

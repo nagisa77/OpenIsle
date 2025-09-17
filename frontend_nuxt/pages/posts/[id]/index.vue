@@ -137,6 +137,26 @@
             <PostChangeLogItem v-else :log="item" :title="title" />
           </template>
         </BaseTimeline>
+        
+        <!-- 加载更多评论按钮 -->
+        <div v-if="hasMoreComments" class="load-more-container">
+          <button 
+            v-if="!isLoadingMoreComments" 
+            @click="loadMoreComments"
+            class="load-more-button"
+          >
+            加载更多评论
+          </button>
+          <div v-else class="loading-more-container">
+            <l-hatch size="20" stroke="3" speed="3" color="var(--primary-color)"></l-hatch>
+            <span class="loading-more-text">加载中...</span>
+          </div>
+        </div>
+        
+        <!-- 没有更多评论的提示 -->
+        <div v-else-if="comments.length > 0" class="no-more-comments">
+          已显示全部评论
+        </div>
       </div>
     </div>
 
@@ -230,6 +250,11 @@ const commentSort = ref('NEWEST')
 const isFetchingComments = ref(false)
 const isMobile = useIsMobile()
 const timelineItems = ref([])
+
+// 分页状态管理
+const currentCommentsPage = ref(0)
+const hasMoreComments = ref(true)
+const isLoadingMoreComments = ref(false)
 
 const headerHeight = import.meta.client
   ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 0
@@ -557,7 +582,17 @@ const postComment = async (parentUserName, text, clear) => {
     if (res.ok) {
       const data = await res.json()
       console.debug('Post comment response data', data)
-      await fetchTimeline()
+      
+      // 新评论发表后，如果是在第一页，直接刷新第一页 如果不在第一页，提示用户有新评论
+      if (currentCommentsPage.value === 0) {
+        await fetchComments(0, false)
+        await fetchChangeLogs()
+        await updateTimeline()
+      } else {
+        // 显示有新评论的提示，但不自动刷新
+        toast.info('评论发表成功，刷新页面查看最新评论')
+      }
+      
       clear()
       if (data.reward && data.reward > 0) {
         toast.success(`评论成功，获得 ${data.reward} 经验值`)
@@ -788,9 +823,77 @@ const fetchCommentSorts = () => {
   ])
 }
 
-const fetchComments = async () => {
-  isFetchingComments.value = true
-  console.debug('Fetching comments', { postId, sort: commentSort.value })
+const fetchComments = async (page = 0, append = false) => {
+  if (append) {
+    isLoadingMoreComments.value = true
+  } else {
+    isFetchingComments.value = true
+    // 重置分页状态
+    currentCommentsPage.value = 0
+    hasMoreComments.value = true
+  }
+  
+  console.debug('Fetching comments', { postId, sort: commentSort.value, page, append })
+  
+  try {
+    const token = getToken()
+    const res = await fetch(
+      `${API_BASE_URL}/api/posts/${postId}/comments/paginated?sort=${commentSort.value}&page=${page}&pageSize=10`,
+      {
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+      },
+    )
+    console.debug('Fetch comments response status', res.status)
+    
+    if (res.ok) {
+      const data = await res.json()
+      console.debug('Fetched paginated comments', {
+        count: data.comments.length,
+        currentPage: data.currentPage,
+        hasNext: data.hasNext,
+        totalPages: data.totalPages
+      })
+      
+      const newComments = data.comments.map(mapComment)
+      
+      if (append) {
+        // 追加评论到现有列表
+        comments.value = [...comments.value, ...newComments]
+      } else {
+        // 替换评论列表
+        comments.value = newComments
+      }
+      
+      // 更新分页状态
+      currentCommentsPage.value = data.currentPage
+      hasMoreComments.value = data.hasNext
+      
+      // 更新时间线以显示新评论
+      await updateTimeline()
+      await nextTick()
+      gatherPostItems()
+    } else {
+      console.error('Failed to fetch comments:', res.status, res.statusText)
+      if (!append) {
+        // 如果分页API失败，回退到原始API
+        console.debug('Falling back to original API')
+        await fetchCommentsLegacy()
+      }
+    }
+  } catch (e) {
+    console.debug('Fetch comments error', e)
+    if (!append) {
+      // 如果分页API失败，回退到原始API  
+      await fetchCommentsLegacy()
+    }
+  } finally {
+    isFetchingComments.value = false
+    isLoadingMoreComments.value = false
+  }
+}
+
+// 回退的原始API
+const fetchCommentsLegacy = async () => {
   try {
     const token = getToken()
     const res = await fetch(
@@ -799,19 +902,26 @@ const fetchComments = async () => {
         headers: { Authorization: token ? `Bearer ${token}` : '' },
       },
     )
-    console.debug('Fetch comments response status', res.status)
     if (res.ok) {
       const data = await res.json()
-      console.debug('Fetched comments count', data.length)
+      console.debug('Fetched comments (legacy) count', data.length)
       comments.value = data.map(mapComment)
-      isFetchingComments.value = false
+      // 原始API不支持分页
+      hasMoreComments.value = false
+      // 更新时间线以显示评论
+      await updateTimeline()
       await nextTick()
       gatherPostItems()
     }
   } catch (e) {
-    console.debug('Fetch comments error', e)
-  } finally {
-    isFetchingComments.value = false
+    console.debug('Fetch comments legacy error', e)
+  }
+}
+
+// 加载更多评论
+const loadMoreComments = async () => {
+  if (hasMoreComments.value && !isLoadingMoreComments.value) {
+    await fetchComments(currentCommentsPage.value + 1, true)
   }
 }
 
@@ -834,22 +944,46 @@ const fetchChangeLogs = async () => {
 //
 const fetchTimeline = async () => {
   await Promise.all([fetchComments(), fetchChangeLogs()])
+  await updateTimeline()
+}
+
+// 更新时间线，分离排序逻辑
+const updateTimeline = async () => {
   const cs = comments.value.map((c) => ({ ...c, kind: 'comment' }))
   const ls = changeLogs.value.map((l) => ({ ...l, kind: 'log' }))
 
+  // 分离置顶评论和普通评论
+  const pinnedComments = cs.filter(c => c.pinned)
+  const regularComments = cs.filter(c => !c.pinned)
+  
+  // 置顶评论按pinnedAt时间倒序（最新置顶的在最前面）
+  pinnedComments.sort((a, b) => {
+    const aTime = a.pinnedAt || a.createdAt
+    const bTime = b.pinnedAt || b.createdAt
+    return new Date(bTime) - new Date(aTime)
+  })
+  
+  // 普通评论按用户选择的排序方式排序
+  let sortedItems
   if (commentSort.value === 'NEWEST') {
-    timelineItems.value = [...cs, ...ls].sort(
+    sortedItems = [...regularComments, ...ls].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     )
   } else {
-    timelineItems.value = [...cs, ...ls].sort(
+    sortedItems = [...regularComments, ...ls].sort(
       (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     )
   }
+  
+  // 最终顺序：置顶评论 + 排序后的普通评论和日志
+  timelineItems.value = [...pinnedComments, ...sortedItems]
 }
 
 watch(commentSort, async () => {
-  await fetchTimeline()
+  // 重置分页状态并重新获取评论
+  await fetchComments(0, false)
+  await fetchChangeLogs()  
+  await updateTimeline()
 })
 
 const jumpToHashComment = async () => {
@@ -1266,6 +1400,52 @@ onMounted(async () => {
 
 .comment-editor-wrapper {
   position: relative;
+}
+
+/* 分页加载相关样式 */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.load-more-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.load-more-button:hover {
+  background-color: var(--primary-color-hover);
+}
+
+.loading-more-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+}
+
+.loading-more-text {
+  font-size: 14px;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.no-more-comments {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-color);
+  opacity: 0.6;
+  font-size: 14px;
+  border-top: 1px solid var(--normal-border-color);
+  margin-top: 20px;
 }
 
 @media (max-width: 768px) {
