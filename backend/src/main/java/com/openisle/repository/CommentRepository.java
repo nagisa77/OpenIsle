@@ -2,6 +2,7 @@ package com.openisle.repository;
 
 import com.openisle.model.Comment;
 import com.openisle.model.Post;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.openisle.model.User;
@@ -36,4 +37,27 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             "WHERE c.createdAt >= :start AND c.createdAt < :end GROUP BY d ORDER BY d")
     java.util.List<Object[]> countDailyRange(@org.springframework.data.repository.query.Param("start") java.time.LocalDateTime start,
                                              @org.springframework.data.repository.query.Param("end") java.time.LocalDateTime end);
+
+    // 分页查询相关方法
+    
+    /**
+     * 分页查询某个帖子的顶级评论（不包含置顶），按创建时间升序
+     */
+    Page<Comment> findByPostAndParentIsNullAndPinnedAtIsNullOrderByCreatedAtAsc(Post post, Pageable pageable);
+    
+    /**
+     * 分页查询某个帖子的顶级评论（不包含置顶），按创建时间降序
+     */
+    Page<Comment> findByPostAndParentIsNullAndPinnedAtIsNullOrderByCreatedAtDesc(Post post, Pageable pageable);
+    
+    /**
+     * 查询某个帖子的置顶评论，按置顶时间降序
+     */
+    List<Comment> findByPostAndParentIsNullAndPinnedAtIsNotNullOrderByPinnedAtDesc(Post post);
+    
+    /**
+     * 统计某个帖子的非置顶顶级评论数量
+     */
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(c) FROM Comment c WHERE c.post = :post AND c.parent IS NULL AND c.pinnedAt IS NULL")
+    long countByPostAndParentIsNullAndPinnedAtIsNull(@org.springframework.data.repository.query.Param("post") Post post);
 }

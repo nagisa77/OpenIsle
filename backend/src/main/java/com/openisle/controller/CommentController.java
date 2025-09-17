@@ -3,6 +3,7 @@ package com.openisle.controller;
 import com.openisle.model.Comment;
 import com.openisle.dto.CommentDto;
 import com.openisle.dto.CommentRequest;
+import com.openisle.dto.CommentPaginationDto;
 import com.openisle.mapper.CommentMapper;
 import com.openisle.service.CaptchaService;
 import com.openisle.service.CommentService;
@@ -94,6 +95,44 @@ public class CommentController {
                 .collect(Collectors.toList());
         log.debug("listComments returning {} comments", list.size());
         return list;
+    }
+
+    @GetMapping("/posts/{postId}/comments/paginated")
+    @Operation(summary = "List comments with pagination", description = "List comments for a post with pagination support")
+    @ApiResponse(responseCode = "200", description = "Paginated comments",
+            content = @Content(schema = @Schema(implementation = CommentPaginationDto.class)))
+    public CommentPaginationDto listCommentsWithPagination(
+            @PathVariable Long postId,
+            @RequestParam(value = "sort", required = false, defaultValue = "OLDEST") com.openisle.model.CommentSort sort,
+            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize) {
+        
+        log.debug("listCommentsWithPagination called for post {} with sort {}, page {}, pageSize {}", 
+                  postId, sort, page, pageSize);
+        
+        // 参数验证
+        if (page < 0) {
+            page = 0;
+        }
+        if (pageSize <= 0 || pageSize > 100) {
+            // 限制最大页面大小为100，默认为10
+            pageSize = 10;
+        }
+        
+        CommentPaginationDto paginationResult = commentService.getCommentsForPostPaginated(postId, sort, page, pageSize);
+        
+        // 转换为DTO并包含回复
+        List<CommentDto> commentDtos = paginationResult.getCommentEntities().stream()
+                .map(commentMapper::toDtoWithReplies)
+                .collect(Collectors.toList());
+        
+        paginationResult.setComments(commentDtos);
+        // 清除临时存储的实体，避免内存泄漏
+        paginationResult.setCommentEntities(null);
+        
+        log.debug("listCommentsWithPagination returning {} comments, hasNext: {}", 
+                  commentDtos.size(), paginationResult.isHasNext());
+        return paginationResult;
     }
 
     @DeleteMapping("/comments/{id}")
