@@ -107,11 +107,33 @@ const likeCount = computed(() => counts.value['LIKE'] || 0)
 const userReacted = (type) =>
   reactions.value.some((r) => r.type === type && r.user === authState.username)
 
+const defaultOrder = computed(() => {
+  if (reactionTypes.value && reactionTypes.value.length) {
+    return reactionTypes.value
+  }
+  const seen = new Set()
+  const order = []
+  for (const reaction of reactions.value) {
+    if (!seen.has(reaction.type)) {
+      seen.add(reaction.type)
+      order.push(reaction.type)
+    }
+  }
+  return order
+})
+
 const displayedReactions = computed(() => {
+  const orderIndex = new Map(defaultOrder.value.map((type, index) => [type, index]))
   return Object.entries(counts.value)
-    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count
+      const indexA = orderIndex.has(a.type) ? orderIndex.get(a.type) : Number.MAX_SAFE_INTEGER
+      const indexB = orderIndex.has(b.type) ? orderIndex.get(b.type) : Number.MAX_SAFE_INTEGER
+      return indexA - indexB
+    })
     .slice(0, 3)
-    .map(([type]) => ({ type }))
+    .map(({ type }) => ({ type }))
 })
 
 const panelTypes = computed(() => reactionTypes.value.filter((t) => t !== 'LIKE'))
