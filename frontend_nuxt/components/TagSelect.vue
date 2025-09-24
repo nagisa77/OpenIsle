@@ -25,15 +25,31 @@
         <div v-if="option.description" class="option-desc">{{ option.description }}</div>
       </div>
     </template>
+    <template #footer>
+      <div v-if="tagPagination.hasNext" class="dropdown-footer">
+        <button
+          type="button"
+          class="dropdown-more"
+          :disabled="isLoadingMore"
+          @click.stop.prevent="loadMoreTags"
+        >
+          <span v-if="!isLoadingMore">查看更多</span>
+          <span v-else>加载中...</span>
+        </button>
+      </div>
+    </template>
   </Dropdown>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { toast } from '~/main'
 import Dropdown from '~/components/Dropdown.vue'
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
+
+const TAG_PAGE_SIZE = 10
+const defaultOption = { id: 0, name: '无标签' }
 
 const emit = defineEmits(['update:modelValue'])
 const props = defineProps({
@@ -44,6 +60,15 @@ const props = defineProps({
 
 const localTags = ref([])
 const providedTags = ref(Array.isArray(props.options) ? [...props.options] : [])
+const remoteTags = ref([])
+const isLoadingMore = ref(false)
+const tagPagination = reactive({
+  keyword: '',
+  page: 0,
+  pageSize: TAG_PAGE_SIZE,
+  hasNext: false,
+  total: 0,
+})
 
 watch(
   () => props.options,
@@ -52,52 +77,91 @@ watch(
   },
 )
 
-const mergedOptions = computed(() => {
-  const arr = [...providedTags.value, ...localTags.value]
-  return arr.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
-})
-
 const isImageIcon = (icon) => {
   if (!icon) return false
   return /^https?:\/\//.test(icon) || icon.startsWith('/')
 }
 
-const buildTagsUrl = (kw = '') => {
+const buildTagsUrl = (kw = '', page = 0) => {
   const base = API_BASE_URL || (import.meta.client ? window.location.origin : '')
   const url = new URL('/api/tags', base)
 
   if (kw) url.searchParams.set('keyword', kw)
-  url.searchParams.set('limit', '10')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', String(tagPagination.pageSize))
 
   return url.toString()
 }
 
 const fetchTags = async (kw = '') => {
-  const defaultOption = { id: 0, name: '无标签' }
+  if (tagPagination.keyword !== kw) {
+    tagPagination.keyword = kw
+    tagPagination.page = 0
+  }
 
-  // 1) 先拼 URL（自动兜底到 window.location.origin）
-  const url = buildTagsUrl(kw)
+  const url = buildTagsUrl(kw, 0)
 
-  // 2) 拉数据
-  let data = []
+  let pageData
   try {
     const res = await fetch(url)
-    if (res.ok) data = await res.json()
+    if (!res.ok) throw new Error('failed to fetch tags')
+    pageData = await res.json()
   } catch {
     toast.error('获取标签失败')
+    remoteTags.value = []
+    tagPagination.hasNext = false
+    tagPagination.total = 0
+    return buildOptions([])
   }
 
-  // 3) 合并、去重、可创建
-  let options = [...data, ...localTags.value]
+  const items = Array.isArray(pageData?.items) ? pageData.items : []
+  remoteTags.value = items
+  tagPagination.page = pageData?.page ?? 0
+  tagPagination.pageSize = pageData?.pageSize ?? TAG_PAGE_SIZE
+  tagPagination.hasNext = Boolean(pageData?.hasNext)
+  tagPagination.total = pageData?.total ?? items.length
 
-  if (props.creatable && kw && !options.some((t) => t.name.toLowerCase() === kw.toLowerCase())) {
-    options.push({ id: `__create__:${kw}`, name: `创建"${kw}"` })
+  return buildOptions(items)
+}
+
+const buildOptions = (remote = remoteTags.value) => {
+  let options = [...remote, ...localTags.value]
+  if (props.creatable && tagPagination.keyword) {
+    const lowerKw = tagPagination.keyword.toLowerCase()
+    if (!options.some((t) => typeof t.name === 'string' && t.name.toLowerCase() === lowerKw)) {
+      options.push({
+        id: `__create__:${tagPagination.keyword}`,
+        name: `创建"${tagPagination.keyword}"`,
+      })
+    }
   }
-
+  options = [...providedTags.value, ...options]
   options = Array.from(new Map(options.map((t) => [t.id, t])).values())
-
-  // 4) 最终结果
   return [defaultOption, ...options]
+}
+
+const mergedOptions = computed(() => buildOptions(remoteTags.value))
+
+const loadMoreTags = async () => {
+  if (!tagPagination.hasNext || isLoadingMore.value) return
+  isLoadingMore.value = true
+  try {
+    const nextPage = tagPagination.page + 1
+    const url = buildTagsUrl(tagPagination.keyword, nextPage)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('failed to fetch tags')
+    const pageData = await res.json()
+    const items = Array.isArray(pageData?.items) ? pageData.items : []
+    remoteTags.value = [...remoteTags.value, ...items]
+    tagPagination.page = pageData?.page ?? nextPage
+    tagPagination.pageSize = pageData?.pageSize ?? tagPagination.pageSize
+    tagPagination.hasNext = Boolean(pageData?.hasNext)
+    tagPagination.total = pageData?.total ?? tagPagination.total
+  } catch {
+    toast.error('获取标签失败')
+  } finally {
+    isLoadingMore.value = false
+  }
 }
 
 const selected = computed({
@@ -150,5 +214,25 @@ const selected = computed({
 .option-count {
   font-weight: bold;
   opacity: 0.4;
+}
+
+.dropdown-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 12px;
+}
+
+.dropdown-more {
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.dropdown-more[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

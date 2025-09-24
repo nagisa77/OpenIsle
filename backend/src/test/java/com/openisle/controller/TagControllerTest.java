@@ -12,6 +12,7 @@ import com.openisle.repository.UserRepository;
 import com.openisle.service.PostService;
 import com.openisle.service.TagService;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -81,16 +84,26 @@ class TagControllerTest {
     t.setDescription("d2");
     t.setIcon("i2");
     t.setSmallIcon("s2");
-    Mockito.when(tagService.searchTags(null)).thenReturn(List.of(t));
+    Mockito.when(tagService.searchTags(Mockito.isNull(), Mockito.any(Pageable.class))).thenAnswer(
+      invocation -> {
+        Pageable pageable = invocation.getArgument(1, Pageable.class);
+        return new PageImpl<>(List.of(t), pageable, 1);
+      }
+    );
+    Mockito.when(postService.countPostsByTagIds(List.of(2L))).thenReturn(Map.of(2L, 3L));
 
     mockMvc
       .perform(get("/api/tags"))
       .andExpect(status().isOk())
-      .andExpect(status().isOk())
-      .andExpect(jsonPath("$[0].name").value("spring"))
-      .andExpect(jsonPath("$[0].description").value("d2"))
-      .andExpect(jsonPath("$[0].icon").value("i2"))
-      .andExpect(jsonPath("$[0].smallIcon").value("s2"));
+      .andExpect(jsonPath("$.items[0].name").value("spring"))
+      .andExpect(jsonPath("$.items[0].description").value("d2"))
+      .andExpect(jsonPath("$.items[0].icon").value("i2"))
+      .andExpect(jsonPath("$.items[0].smallIcon").value("s2"))
+      .andExpect(jsonPath("$.items[0].count").value(3))
+      .andExpect(jsonPath("$.page").value(0))
+      .andExpect(jsonPath("$.pageSize").value(20))
+      .andExpect(jsonPath("$.hasNext").value(false))
+      .andExpect(jsonPath("$.total").value(1));
   }
 
   @Test

@@ -9,8 +9,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -113,16 +116,37 @@ public class TagService {
    * @param keyword
    * @return
    */
+  public List<Tag> searchTags(String keyword) {
+    return searchTags(keyword, Pageable.unpaged()).getContent();
+  }
+
   @Cacheable(
     value = CachingConfig.TAG_CACHE_NAME,
-    key = "'searchTags:' + (#keyword ?: '')" //keyword为null的场合返回空
+    key = "'searchTags:' + (#keyword ?: '') + ':' + (#pageable != null && #pageable.isPaged() ? #pageable.pageNumber : 0) + ':' + (#pageable != null && #pageable.isPaged() ? #pageable.pageSize : 0)"
   )
-  public List<Tag> searchTags(String keyword) {
-    if (keyword == null || keyword.isBlank()) {
-      return tagRepository.findByApprovedTrue();
+  public Page<Tag> searchTags(String keyword, Pageable pageable) {
+    Pageable effectivePageable = pageable != null ? pageable : Pageable.unpaged();
+    boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+    if (!effectivePageable.isPaged()) {
+      List<Tag> tags = hasKeyword
+        ? tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword)
+        : tagRepository.findByApprovedTrue();
+      return new PageImpl<>(tags, Pageable.unpaged(), tags.size());
     }
 
-    return tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword);
+    Pageable sortedPageable = effectivePageable;
+    if (effectivePageable.getSort().isUnsorted()) {
+      sortedPageable = PageRequest.of(
+        effectivePageable.getPageNumber(),
+        effectivePageable.getPageSize(),
+        Sort.by(Sort.Direction.DESC, "createdAt")
+      );
+    }
+
+    return hasKeyword
+      ? tagRepository.findByNameContainingIgnoreCaseAndApprovedTrue(keyword, sortedPageable)
+      : tagRepository.findByApprovedTrue(sortedPageable);
   }
 
   public List<Tag> getRecentTagsByUser(String username, int limit) {

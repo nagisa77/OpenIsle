@@ -116,30 +116,41 @@
             <div v-if="isLoadingTag" class="menu-loading-container">
               <l-hatch size="28" stroke="4" speed="3.5" color="var(--primary-color)"></l-hatch>
             </div>
-            <div 
-                v-else 
-                v-for="t in tagData" 
-                :key="t.id" 
-                class="section-item" 
-                :class="{ selected: isTagSelected(t.id) }" 
+            <template v-else>
+              <div
+                v-for="t in tagItems"
+                :key="t.id"
+                class="section-item"
+                :class="{ selected: isTagSelected(t.id) }"
                 @click="gotoTag(t)"
               >
-              <BaseImage
-                v-if="isImageIcon(t.smallIcon || t.icon)"
-                :src="t.smallIcon || t.icon"
-                class="section-item-icon"
-                :alt="t.name"
-              />
-              <component
-                v-else-if="t.smallIcon || t.icon"
-                :is="t.smallIcon || t.icon"
-                class="section-item-icon"
-              />
-              <tag-one v-else class="section-item-icon" />
-              <span class="section-item-text"
-                >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
+                <BaseImage
+                  v-if="isImageIcon(t.smallIcon || t.icon)"
+                  :src="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                  :alt="t.name"
+                />
+                <component
+                  v-else-if="t.smallIcon || t.icon"
+                  :is="t.smallIcon || t.icon"
+                  class="section-item-icon"
+                />
+                <tag-one v-else class="section-item-icon" />
+                <span class="section-item-text"
+                  >{{ t.name }} <span class="section-item-text-count">x {{ t.count }}</span></span
+                >
+              </div>
+              <button
+                v-if="tagPagination.hasNext"
+                type="button"
+                class="menu-more"
+                :disabled="isLoadingMoreTags"
+                @click.stop="loadMoreMenuTags"
               >
-            </div>
+                <span v-if="!isLoadingMoreTags">查看更多</span>
+                <span v-else>加载中...</span>
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -157,7 +168,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { authState, fetchCurrentUser } from '~/utils/auth'
 import { fetchUnreadCount, notificationState } from '~/utils/notification'
 import { useIsMobile } from '~/utils/screen'
@@ -180,6 +191,7 @@ const isTagSelected = (id) => {
 
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
+const TAG_PAGE_SIZE = 10
 
 const props = defineProps({
   visible: { type: Boolean, default: true },
@@ -207,15 +219,51 @@ const {
   },
 )
 
+const tagItems = ref([])
+const tagPagination = reactive({
+  page: 0,
+  pageSize: TAG_PAGE_SIZE,
+  hasNext: false,
+  total: 0,
+})
+const isLoadingMoreTags = ref(false)
+
 const {
-  data: tagData,
+  data: tagPage,
   pending: isLoadingTag,
   error: tagError,
-} = await useAsyncData('menu:tags', () => $fetch(`${API_BASE_URL}/api/tags?limit=10`), {
-  server: true,
-  default: () => [],
-  staleTime: 5 * 60 * 1000,
-})
+} = await useAsyncData(
+  'menu:tags',
+  () =>
+    $fetch(`${API_BASE_URL}/api/tags`, {
+      params: { page: 0, pageSize: TAG_PAGE_SIZE },
+    }),
+  {
+    server: true,
+    default: () => ({
+      items: [],
+      page: 0,
+      pageSize: TAG_PAGE_SIZE,
+      hasNext: false,
+      total: 0,
+    }),
+    staleTime: 5 * 60 * 1000,
+  },
+)
+
+watch(
+  () => tagPage.value,
+  (val) => {
+    if (!val) return
+    const items = Array.isArray(val.items) ? val.items : []
+    tagItems.value = items
+    tagPagination.page = val.page ?? 0
+    tagPagination.pageSize = val.pageSize ?? TAG_PAGE_SIZE
+    tagPagination.hasNext = Boolean(val.hasNext)
+    tagPagination.total = val.total ?? items.length
+  },
+  { immediate: true },
+)
 
 /** 其余逻辑保持不变 */
 const iconClass = computed(() => {
@@ -383,6 +431,23 @@ const gotoTag = (t) => {
   font-weight: bold;
 }
 
+.menu-more {
+  margin: 10px auto;
+  width: calc(100% - 20px);
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 6px 0;
+  border-radius: 6px;
+}
+
+.menu-more[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .menu-footer {
   position: relation;
   height: 30px;
@@ -440,7 +505,6 @@ const gotoTag = (t) => {
   font-weight: bold;
   background-color: var(--menu-selected-background-color);
 }
-
 
 .section-item-text-count {
   font-size: 12px;
@@ -508,3 +572,11 @@ const gotoTag = (t) => {
   }
 }
 </style>
+const loadMoreMenuTags = async () => { if (!tagPagination.hasNext || isLoadingMoreTags.value) return
+isLoadingMoreTags.value = true try { const res = await $fetch(`${API_BASE_URL}/api/tags`, { params:
+{ page: tagPagination.page + 1, pageSize: tagPagination.pageSize }, }) const items =
+Array.isArray(res?.items) ? res.items : [] tagItems.value = [...tagItems.value, ...items]
+tagPagination.page = res?.page ?? tagPagination.page + 1 tagPagination.pageSize = res?.pageSize ??
+tagPagination.pageSize tagPagination.hasNext = Boolean(res?.hasNext) tagPagination.total =
+res?.total ?? tagPagination.total } catch (error) { console.error(error) } finally {
+isLoadingMoreTags.value = false } }

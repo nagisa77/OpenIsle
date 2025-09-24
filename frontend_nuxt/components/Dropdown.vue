@@ -80,6 +80,7 @@
             <span>{{ o.name }}</span>
           </slot>
         </div>
+        <slot name="footer" :close="close"></slot>
       </template>
     </div>
     <Teleport to="body">
@@ -116,6 +117,7 @@
                 <span>{{ o.name }}</span>
               </slot>
             </div>
+            <slot name="footer" :close="close"></slot>
           </template>
         </div>
       </div>
