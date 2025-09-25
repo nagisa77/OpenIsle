@@ -34,6 +34,7 @@ export default {
         { id: 'NORMAL', name: '普通帖子', icon: 'file-text' },
         { id: 'LOTTERY', name: '抽奖帖子', icon: 'gift' },
         { id: 'POLL', name: '投票帖子', icon: 'ranking-list' },
+        { id: 'PROPOSAL', name: '分类提案', icon: 'tag-one' },
       ]
     }
 

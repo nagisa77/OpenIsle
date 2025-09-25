@@ -25,6 +25,7 @@ class PostServiceTest {
     TagRepository tagRepo = mock(TagRepository.class);
     LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
     PollPostRepository pollPostRepo = mock(PollPostRepository.class);
+    CategoryProposalPostRepository proposalRepo = mock(CategoryProposalPostRepository.class);
     PollVoteRepository pollVoteRepo = mock(PollVoteRepository.class);
     NotificationService notifService = mock(NotificationService.class);
     SubscriptionService subService = mock(SubscriptionService.class);
@@ -50,6 +51,7 @@ class PostServiceTest {
       tagRepo,
       lotteryRepo,
       pollPostRepo,
+      proposalRepo,
       pollVoteRepo,
       notifService,
       subService,
@@ -101,6 +103,7 @@ class PostServiceTest {
     TagRepository tagRepo = mock(TagRepository.class);
     LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
     PollPostRepository pollPostRepo = mock(PollPostRepository.class);
+    CategoryProposalPostRepository proposalRepo = mock(CategoryProposalPostRepository.class);
     PollVoteRepository pollVoteRepo = mock(PollVoteRepository.class);
     NotificationService notifService = mock(NotificationService.class);
     SubscriptionService subService = mock(SubscriptionService.class);
@@ -126,6 +129,7 @@ class PostServiceTest {
       tagRepo,
       lotteryRepo,
       pollPostRepo,
+      proposalRepo,
       pollVoteRepo,
       notifService,
       subService,
@@ -190,6 +194,7 @@ class PostServiceTest {
     TagRepository tagRepo = mock(TagRepository.class);
     LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
     PollPostRepository pollPostRepo = mock(PollPostRepository.class);
+    CategoryProposalPostRepository proposalRepo = mock(CategoryProposalPostRepository.class);
     PollVoteRepository pollVoteRepo = mock(PollVoteRepository.class);
     NotificationService notifService = mock(NotificationService.class);
     SubscriptionService subService = mock(SubscriptionService.class);
@@ -215,6 +220,7 @@ class PostServiceTest {
       tagRepo,
       lotteryRepo,
       pollPostRepo,
+      proposalRepo,
       pollVoteRepo,
       notifService,
       subService,
@@ -253,6 +259,11 @@ class PostServiceTest {
         null,
         null,
         null,
+        null,
+        null,
+        null,
+        null,
+        null,
         null
       )
     );
@@ -266,6 +277,7 @@ class PostServiceTest {
     TagRepository tagRepo = mock(TagRepository.class);
     LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
     PollPostRepository pollPostRepo = mock(PollPostRepository.class);
+    CategoryProposalPostRepository proposalRepo = mock(CategoryProposalPostRepository.class);
     PollVoteRepository pollVoteRepo = mock(PollVoteRepository.class);
     NotificationService notifService = mock(NotificationService.class);
     SubscriptionService subService = mock(SubscriptionService.class);
@@ -291,6 +303,7 @@ class PostServiceTest {
       tagRepo,
       lotteryRepo,
       pollPostRepo,
+      proposalRepo,
       pollVoteRepo,
       notifService,
       subService,
@@ -358,6 +371,7 @@ class PostServiceTest {
     TagRepository tagRepo = mock(TagRepository.class);
     LotteryPostRepository lotteryRepo = mock(LotteryPostRepository.class);
     PollPostRepository pollPostRepo = mock(PollPostRepository.class);
+    CategoryProposalPostRepository proposalRepo = mock(CategoryProposalPostRepository.class);
     PollVoteRepository pollVoteRepo = mock(PollVoteRepository.class);
     NotificationService notifService = mock(NotificationService.class);
     SubscriptionService subService = mock(SubscriptionService.class);
@@ -383,6 +397,7 @@ class PostServiceTest {
       tagRepo,
       lotteryRepo,
       pollPostRepo,
+      proposalRepo,
       pollVoteRepo,
       notifService,
       subService,

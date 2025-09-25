@@ -2,25 +2,11 @@ package com.openisle.service;
 
 import com.openisle.config.CachingConfig;
 import com.openisle.exception.RateLimitException;
-import com.openisle.mapper.PostMapper;
 import com.openisle.model.*;
-import com.openisle.repository.CategoryRepository;
-import com.openisle.repository.CommentRepository;
-import com.openisle.repository.LotteryPostRepository;
-import com.openisle.repository.NotificationRepository;
-import com.openisle.repository.PointHistoryRepository;
-import com.openisle.repository.PollPostRepository;
-import com.openisle.repository.PollVoteRepository;
-import com.openisle.repository.PostRepository;
-import com.openisle.repository.PostSubscriptionRepository;
-import com.openisle.repository.ReactionRepository;
-import com.openisle.repository.TagRepository;
-import com.openisle.repository.UserRepository;
-import com.openisle.service.EmailSender;
+import com.openisle.repository.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
@@ -53,6 +38,7 @@ public class PostService {
   private final TagRepository tagRepository;
   private final LotteryPostRepository lotteryPostRepository;
   private final PollPostRepository pollPostRepository;
+  private final CategoryProposalPostRepository categoryProposalPostRepository;
   private final PollVoteRepository pollVoteRepository;
   private PublishMode publishMode;
   private final NotificationService notificationService;
@@ -86,6 +72,7 @@ public class PostService {
     TagRepository tagRepository,
     LotteryPostRepository lotteryPostRepository,
     PollPostRepository pollPostRepository,
+    CategoryProposalPostRepository categoryProposalPostRepository,
     PollVoteRepository pollVoteRepository,
     NotificationService notificationService,
     SubscriptionService subscriptionService,
@@ -111,6 +98,7 @@ public class PostService {
     this.tagRepository = tagRepository;
     this.lotteryPostRepository = lotteryPostRepository;
     this.pollPostRepository = pollPostRepository;
+    this.categoryProposalPostRepository = categoryProposalPostRepository;
     this.pollVoteRepository = pollVoteRepository;
     this.notificationService = notificationService;
     this.subscriptionService = subscriptionService;
@@ -154,6 +142,24 @@ public class PostService {
     }
     for (PollPost pp : pollPostRepository.findByEndTimeBeforeAndResultAnnouncedFalse(now)) {
       applicationContext.getBean(PostService.class).finalizePoll(pp.getId());
+    }
+    for (CategoryProposalPost cp : categoryProposalPostRepository.findByEndTimeAfterAndProposalStatus(
+      now,
+      CategoryProposalStatus.PENDING
+    )) {
+      if (cp.getEndTime() != null) {
+        ScheduledFuture<?> future = taskScheduler.schedule(
+          () -> applicationContext.getBean(PostService.class).finalizeProposal(cp.getId()),
+          java.util.Date.from(cp.getEndTime().atZone(ZoneId.systemDefault()).toInstant())
+        );
+        scheduledFinalizations.put(cp.getId(), future);
+      }
+    }
+    for (CategoryProposalPost cp : categoryProposalPostRepository.findByEndTimeBeforeAndProposalStatus(
+      now,
+      CategoryProposalStatus.PENDING
+    )) {
+      applicationContext.getBean(PostService.class).finalizeProposal(cp.getId());
     }
   }
 
@@ -227,7 +233,12 @@ public class PostService {
     LocalDateTime startTime,
     LocalDateTime endTime,
     java.util.List<String> options,
-    Boolean multiple
+    Boolean multiple,
+    String proposedName,
+    String proposedSlug,
+    String proposalDescription,
+    Integer approveThreshold,
+    Integer quorum
   ) {
     // 限制访问次数
     boolean limitResult = postRateLimit(username);
@@ -273,6 +284,42 @@ public class PostService {
       pp.setEndTime(endTime);
       pp.setMultiple(multiple != null && multiple);
       post = pp;
+    } else if (actualType == PostType.PROPOSAL) {
+      CategoryProposalPost cp = new CategoryProposalPost();
+      if (proposedName == null || proposedName.isBlank()) {
+        throw new IllegalArgumentException("Proposed name required");
+      }
+      if (proposedSlug == null || proposedSlug.isBlank()) {
+        throw new IllegalArgumentException("Proposed slug required");
+      }
+      if (categoryProposalPostRepository.existsByProposedSlug(proposedSlug)) {
+        throw new IllegalArgumentException("Proposed slug already exists: " + proposedSlug);
+      }
+      cp.setProposedName(proposedName);
+      cp.setProposedSlug(proposedSlug);
+      cp.setDescription(proposalDescription);
+      if (approveThreshold != null) {
+        if (approveThreshold < 0 || approveThreshold > 100) {
+          throw new IllegalArgumentException("approveThreshold must be between 0 and 100");
+        }
+        cp.setApproveThreshold(approveThreshold);
+      }
+      if (quorum != null) {
+        if (quorum < 0) {
+          throw new IllegalArgumentException("quorum must be >= 0");
+        }
+        cp.setQuorum(quorum);
+      }
+      cp.setStartAt(startTime);
+      cp.setEndTime(endTime);
+      // default yes/no options if not provided
+      if (options == null || options.size() < 2) {
+        cp.setOptions(List.of("同意", "反对"));
+      } else {
+        cp.setOptions(options);
+      }
+      cp.setMultiple(false);
+      post = cp;
     } else {
       post = new Post();
     }
@@ -285,6 +332,8 @@ public class PostService {
     post.setStatus(publishMode == PublishMode.REVIEW ? PostStatus.PENDING : PostStatus.PUBLISHED);
     if (post instanceof LotteryPost) {
       post = lotteryPostRepository.save((LotteryPost) post);
+    } else if (post instanceof CategoryProposalPost categoryProposalPost) {
+      post = categoryProposalPostRepository.save(categoryProposalPost);
     } else if (post instanceof PollPost) {
       post = pollPostRepository.save((PollPost) post);
     } else {
@@ -339,6 +388,12 @@ public class PostService {
         java.util.Date.from(lp.getEndTime().atZone(ZoneId.systemDefault()).toInstant())
       );
       scheduledFinalizations.put(lp.getId(), future);
+    } else if (post instanceof CategoryProposalPost cp && cp.getEndTime() != null) {
+      ScheduledFuture<?> future = taskScheduler.schedule(
+        () -> applicationContext.getBean(PostService.class).finalizeProposal(cp.getId()),
+        java.util.Date.from(cp.getEndTime().atZone(ZoneId.systemDefault()).toInstant())
+      );
+      scheduledFinalizations.put(cp.getId(), future);
     } else if (post instanceof PollPost pp && pp.getEndTime() != null) {
       ScheduledFuture<?> future = taskScheduler.schedule(
         () -> applicationContext.getBean(PostService.class).finalizePoll(pp.getId()),
@@ -347,6 +402,75 @@ public class PostService {
       scheduledFinalizations.put(pp.getId(), future);
     }
     return post;
+  }
+
+  @CacheEvict(value = CachingConfig.POST_CACHE_NAME, allEntries = true)
+  @Transactional
+  public void finalizeProposal(Long postId) {
+    scheduledFinalizations.remove(postId);
+    categoryProposalPostRepository
+      .findById(postId)
+      .ifPresent(cp -> {
+        if (cp.getProposalStatus() != CategoryProposalStatus.PENDING) {
+          return;
+        }
+        int totalParticipants = cp.getParticipants() != null ? cp.getParticipants().size() : 0;
+        int approveVotes = 0;
+        if (cp.getVotes() != null) {
+          approveVotes = cp.getVotes().getOrDefault(0, 0);
+        }
+        boolean quorumMet = totalParticipants >= cp.getQuorum();
+        int approvePercent = totalParticipants > 0 ? (approveVotes * 100) / totalParticipants : 0;
+        boolean thresholdMet = approvePercent >= cp.getApproveThreshold();
+        if (quorumMet && thresholdMet) {
+          cp.setProposalStatus(CategoryProposalStatus.APPROVED);
+        } else {
+          cp.setProposalStatus(CategoryProposalStatus.REJECTED);
+          String reason;
+          if (!quorumMet && !thresholdMet) {
+            reason = "未达到法定人数且赞成率不足";
+          } else if (!quorumMet) {
+            reason = "未达到法定人数";
+          } else {
+            reason = "赞成率不足";
+          }
+          cp.setRejectReason(reason);
+        }
+        cp.setResultSnapshot(
+          "approveVotes=" +
+            approveVotes +
+            ", totalParticipants=" +
+            totalParticipants +
+            ", approvePercent=" +
+            approvePercent
+        );
+        categoryProposalPostRepository.save(cp);
+        if (cp.getAuthor() != null) {
+          notificationService.createNotification(
+            cp.getAuthor(),
+            NotificationType.POLL_RESULT_OWNER,
+            cp,
+            null,
+            null,
+            null,
+            null,
+            null
+          );
+        }
+        for (User participant : cp.getParticipants()) {
+          notificationService.createNotification(
+            participant,
+            NotificationType.POLL_RESULT_PARTICIPANT,
+            cp,
+            null,
+            null,
+            null,
+            null,
+            null
+          );
+        }
+        postChangeLogService.recordVoteResult(cp);
+      });
   }
 
   /**
