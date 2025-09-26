@@ -11,6 +11,7 @@ import com.openisle.repository.PointHistoryRepository;
 import com.openisle.repository.PostRepository;
 import com.openisle.repository.ReactionRepository;
 import com.openisle.repository.UserRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import com.openisle.service.PointService;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,7 @@ class CommentServiceTest {
     PointHistoryRepository pointHistoryRepo = mock(PointHistoryRepository.class);
     PointService pointService = mock(PointService.class);
     ImageUploader imageUploader = mock(ImageUploader.class);
+    SearchIndexEventPublisher searchIndexEventPublisher = mock(SearchIndexEventPublisher.class);
 
     CommentService service = new CommentService(
       commentRepo,
@@ -41,7 +43,8 @@ class CommentServiceTest {
       nRepo,
       pointHistoryRepo,
       pointService,
-      imageUploader
+      imageUploader,
+      searchIndexEventPublisher
     );
 
     when(commentRepo.countByAuthorAfter(eq("alice"), any())).thenReturn(3L);

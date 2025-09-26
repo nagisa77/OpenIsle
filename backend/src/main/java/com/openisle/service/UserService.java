@@ -5,6 +5,7 @@ import com.openisle.exception.FieldException;
 import com.openisle.model.Role;
 import com.openisle.model.User;
 import com.openisle.repository.UserRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import com.openisle.service.AvatarGenerator;
 import com.openisle.service.PasswordValidator;
 import com.openisle.service.UsernameValidator;
@@ -34,6 +35,7 @@ public class UserService {
   private final RedisTemplate redisTemplate;
 
   private final EmailSender emailService;
+  private final SearchIndexEventPublisher searchIndexEventPublisher;
 
   public User register(
     String username,
@@ -58,7 +60,9 @@ public class UserService {
       //            u.setVerificationCode(genCode());
       u.setRegisterReason(reason);
       u.setApproved(mode == com.openisle.model.RegisterMode.DIRECT);
-      return userRepository.save(u);
+      User saved = userRepository.save(u);
+      searchIndexEventPublisher.publishUserSaved(saved);
+      return saved;
     }
 
     // ── 再按邮箱查 ───────────────────────────────────────────
@@ -75,7 +79,9 @@ public class UserService {
       //            u.setVerificationCode(genCode());
       u.setRegisterReason(reason);
       u.setApproved(mode == com.openisle.model.RegisterMode.DIRECT);
-      return userRepository.save(u);
+      User saved = userRepository.save(u);
+      searchIndexEventPublisher.publishUserSaved(saved);
+      return saved;
     }
 
     // ── 完全新用户 ───────────────────────────────────────────
@@ -89,14 +95,18 @@ public class UserService {
     user.setAvatar(avatarGenerator.generate(username));
     user.setRegisterReason(reason);
     user.setApproved(mode == com.openisle.model.RegisterMode.DIRECT);
-    return userRepository.save(user);
+    User saved = userRepository.save(user);
+    searchIndexEventPublisher.publishUserSaved(saved);
+    return saved;
   }
 
   public User registerWithInvite(String username, String email, String password) {
     User user = register(username, email, password, "", com.openisle.model.RegisterMode.DIRECT);
     user.setVerified(true);
     //        user.setVerificationCode(genCode());
-    return userRepository.save(user);
+    User saved = userRepository.save(user);
+    searchIndexEventPublisher.publishUserSaved(saved);
+    return saved;
   }
 
   private String genCode() {
@@ -209,7 +219,9 @@ public class UserService {
       .findByUsername(username)
       .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
     user.setRegisterReason(reason);
-    return userRepository.save(user);
+    User saved = userRepository.save(user);
+    searchIndexEventPublisher.publishUserSaved(saved);
+    return saved;
   }
 
   public User updateProfile(String currentUsername, String newUsername, String introduction) {

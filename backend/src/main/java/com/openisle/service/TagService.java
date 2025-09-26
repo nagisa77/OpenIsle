@@ -5,6 +5,7 @@ import com.openisle.model.Tag;
 import com.openisle.model.User;
 import com.openisle.repository.TagRepository;
 import com.openisle.repository.UserRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,6 +21,7 @@ public class TagService {
   private final TagRepository tagRepository;
   private final TagValidator tagValidator;
   private final UserRepository userRepository;
+  private final SearchIndexEventPublisher searchIndexEventPublisher;
 
   @CacheEvict(value = CachingConfig.TAG_CACHE_NAME, allEntries = true)
   public Tag createTag(
@@ -43,7 +45,9 @@ public class TagService {
         .orElseThrow(() -> new com.openisle.exception.NotFoundException("User not found"));
       tag.setCreator(creator);
     }
-    return tagRepository.save(tag);
+    Tag saved = tagRepository.save(tag);
+    searchIndexEventPublisher.publishTagSaved(saved);
+    return saved;
   }
 
   public Tag createTag(
@@ -78,12 +82,15 @@ public class TagService {
     if (smallIcon != null) {
       tag.setSmallIcon(smallIcon);
     }
-    return tagRepository.save(tag);
+    Tag saved = tagRepository.save(tag);
+    searchIndexEventPublisher.publishTagSaved(saved);
+    return saved;
   }
 
   @CacheEvict(value = CachingConfig.TAG_CACHE_NAME, allEntries = true)
   public void deleteTag(Long id) {
     tagRepository.deleteById(id);
+    searchIndexEventPublisher.publishTagDeleted(id);
   }
 
   public Tag approveTag(Long id) {
@@ -91,7 +98,9 @@ public class TagService {
       .findById(id)
       .orElseThrow(() -> new IllegalArgumentException("Tag not found"));
     tag.setApproved(true);
-    return tagRepository.save(tag);
+    Tag saved = tagRepository.save(tag);
+    searchIndexEventPublisher.publishTagSaved(saved);
+    return saved;
   }
 
   public List<Tag> listPendingTags() {

@@ -132,6 +132,19 @@
       <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
       <version>2.2.0</version>
     </dependency>
+    <!-- 高阶 Java 客户端 -->
+    <dependency>
+      <groupId>org.opensearch.client</groupId>
+      <artifactId>opensearch-java</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+
+    <!-- 低阶 RestClient，提供 org.opensearch.client.RestClient 给你的 RestClientTransport 用 -->
+    <dependency>
+      <groupId>org.opensearch.client</groupId>
+      <artifactId>opensearch-rest-client</artifactId>
+      <version>3.2.0</version>
+    </dependency>
   </dependencies>
 
   <build>

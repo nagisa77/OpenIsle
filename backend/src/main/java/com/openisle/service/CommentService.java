@@ -16,6 +16,7 @@ import com.openisle.repository.PointHistoryRepository;
 import com.openisle.repository.PostRepository;
 import com.openisle.repository.ReactionRepository;
 import com.openisle.repository.UserRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import com.openisle.service.NotificationService;
 import com.openisle.service.PointService;
 import com.openisle.service.SubscriptionService;
@@ -49,6 +50,7 @@ public class CommentService {
   private final PointHistoryRepository pointHistoryRepository;
   private final PointService pointService;
   private final ImageUploader imageUploader;
+  private final SearchIndexEventPublisher searchIndexEventPublisher;
 
   @CacheEvict(value = CachingConfig.POST_CACHE_NAME, allEntries = true)
   @Transactional
@@ -124,6 +126,7 @@ public class CommentService {
     }
     notificationService.notifyMentions(content, author, post, comment);
     log.debug("addComment finished for comment {}", comment.getId());
+    searchIndexEventPublisher.publishCommentSaved(comment);
     return comment;
   }
 
@@ -221,6 +224,7 @@ public class CommentService {
     }
     notificationService.notifyMentions(content, author, parent.getPost(), comment);
     log.debug("addReply finished for comment {}", comment.getId());
+    searchIndexEventPublisher.publishCommentSaved(comment);
     return comment;
   }
 
@@ -360,7 +364,9 @@ public class CommentService {
 
     // 逻辑删除评论
     Post post = comment.getPost();
+    Long commentId = comment.getId();
     commentRepository.delete(comment);
+    searchIndexEventPublisher.publishCommentDeleted(commentId);
     // 删除积分历史
     pointHistoryRepository.deleteAll(pointHistories);
 

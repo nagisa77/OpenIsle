@@ -16,6 +16,7 @@ import com.openisle.repository.PostSubscriptionRepository;
 import com.openisle.repository.ReactionRepository;
 import com.openisle.repository.TagRepository;
 import com.openisle.repository.UserRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import com.openisle.service.EmailSender;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -73,6 +74,8 @@ public class PostService {
   private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledFinalizations =
     new ConcurrentHashMap<>();
 
+  private final SearchIndexEventPublisher searchIndexEventPublisher;
+
   @Value("${app.website-url:https://www.open-isle.com}")
   private String websiteUrl;
 
@@ -103,7 +106,8 @@ public class PostService {
     PostChangeLogService postChangeLogService,
     PointHistoryRepository pointHistoryRepository,
     @Value("${app.post.publish-mode:DIRECT}") PublishMode publishMode,
-    RedisTemplate redisTemplate
+    RedisTemplate redisTemplate,
+    SearchIndexEventPublisher searchIndexEventPublisher
   ) {
     this.postRepository = postRepository;
     this.userRepository = userRepository;
@@ -130,6 +134,7 @@ public class PostService {
     this.publishMode = publishMode;
 
     this.redisTemplate = redisTemplate;
+    this.searchIndexEventPublisher = searchIndexEventPublisher;
   }
 
   @EventListener(ApplicationReadyEvent.class)
@@ -345,6 +350,9 @@ public class PostService {
         java.util.Date.from(pp.getEndTime().atZone(ZoneId.systemDefault()).toInstant())
       );
       scheduledFinalizations.put(pp.getId(), future);
+    }
+    if (post.getStatus() == PostStatus.PUBLISHED) {
+      searchIndexEventPublisher.publishPostSaved(post);
     }
     return post;
   }
@@ -868,10 +876,12 @@ public class PostService {
       if (!tag.isApproved()) {
         tag.setApproved(true);
         tagRepository.save(tag);
+        searchIndexEventPublisher.publishTagSaved(tag);
       }
     }
     post.setStatus(PostStatus.PUBLISHED);
     post = postRepository.save(post);
+    searchIndexEventPublisher.publishPostSaved(post);
     notificationService.createNotification(
       post.getAuthor(),
       NotificationType.POST_REVIEWED,
@@ -895,13 +905,16 @@ public class PostService {
       if (!tag.isApproved()) {
         long count = postRepository.countDistinctByTags_Id(tag.getId());
         if (count <= 1) {
+          Long tagId = tag.getId();
           post.getTags().remove(tag);
           tagRepository.delete(tag);
+          searchIndexEventPublisher.publishTagDeleted(tagId);
         }
       }
     }
     post.setStatus(PostStatus.REJECTED);
     post = postRepository.save(post);
+    searchIndexEventPublisher.publishPostDeleted(post.getId());
     notificationService.createNotification(
       post.getAuthor(),
       NotificationType.POST_REVIEWED,
@@ -1042,6 +1055,9 @@ public class PostService {
     if (!oldTags.equals(newTags)) {
       postChangeLogService.recordTagChange(updated, user, oldTags, newTags);
     }
+    if (updated.getStatus() == PostStatus.PUBLISHED) {
+      searchIndexEventPublisher.publishPostSaved(updated);
+    }
     return updated;
   }
 
@@ -1094,8 +1110,10 @@ public class PostService {
       }
     }
     String title = post.getTitle();
+    Long postId = post.getId();
     postChangeLogService.deleteLogsForPost(post);
     postRepository.delete(post);
+    searchIndexEventPublisher.publishPostDeleted(postId);
     if (adminDeleting) {
       notificationService.createNotification(
         author,

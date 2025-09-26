@@ -3,6 +3,7 @@ package com.openisle.service;
 import com.openisle.config.CachingConfig;
 import com.openisle.model.Category;
 import com.openisle.repository.CategoryRepository;
+import com.openisle.search.SearchIndexEventPublisher;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class CategoryService {
 
   private final CategoryRepository categoryRepository;
+  private final SearchIndexEventPublisher searchIndexEventPublisher;
 
   @CacheEvict(value = CachingConfig.CATEGORY_CACHE_NAME, allEntries = true)
   public Category createCategory(String name, String description, String icon, String smallIcon) {
@@ -22,7 +24,9 @@ public class CategoryService {
     category.setDescription(description);
     category.setIcon(icon);
     category.setSmallIcon(smallIcon);
-    return categoryRepository.save(category);
+    Category saved = categoryRepository.save(category);
+    searchIndexEventPublisher.publishCategorySaved(saved);
+    return saved;
   }
 
   @CacheEvict(value = CachingConfig.CATEGORY_CACHE_NAME, allEntries = true)
@@ -48,12 +52,15 @@ public class CategoryService {
     if (smallIcon != null) {
       category.setSmallIcon(smallIcon);
     }
-    return categoryRepository.save(category);
+    Category saved = categoryRepository.save(category);
+    searchIndexEventPublisher.publishCategorySaved(saved);
+    return saved;
   }
 
   @CacheEvict(value = CachingConfig.CATEGORY_CACHE_NAME, allEntries = true)
   public void deleteCategory(Long id) {
     categoryRepository.deleteById(id);
+    searchIndexEventPublisher.publishCategoryDeleted(id);
   }
 
   public Category getCategory(Long id) {
