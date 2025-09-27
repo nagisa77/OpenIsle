@@ -297,6 +297,7 @@ export default {
   border: 1px solid var(--normal-border-color);
   border-radius: 5px;
   padding: 5px 10px;
+  margin-bottom: 4px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -315,8 +316,9 @@ export default {
   right: 0;
   background: var(--background-color);
   border: 1px solid var(--normal-border-color);
+  border-radius: 5px;
   z-index: 10000;
-  max-height: 200px;
+  max-height: 300px;
   min-width: 350px;
   overflow-y: auto;
 }
