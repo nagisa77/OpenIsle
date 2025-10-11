@@ -29,6 +29,7 @@ import {
   ApplicationMenu,
   Search,
   Copy,
+  CopyLink,
   Loading,
   Rss,
   MessageEmoji,
@@ -111,6 +112,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.component('ApplicationMenu', ApplicationMenu)
   nuxtApp.vueApp.component('SearchIcon', Search)
   nuxtApp.vueApp.component('Copy', Copy)
+  nuxtApp.vueApp.component('CopyLink', CopyLink)
   nuxtApp.vueApp.component('Loading', Loading)
   nuxtApp.vueApp.component('Rss', Rss)
   nuxtApp.vueApp.component('MessageEmoji', MessageEmoji)
