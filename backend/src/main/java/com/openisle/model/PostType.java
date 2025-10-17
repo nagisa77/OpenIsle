@@ -4,4 +4,5 @@ public enum PostType {
   NORMAL,
   LOTTERY,
   POLL,
+  PROPOSAL
 }
