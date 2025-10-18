@@ -4,6 +4,8 @@ import com.openisle.model.PostStatus;
 import com.openisle.model.PostType;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.openisle.model.PostVisibleScopeType;
 import lombok.Data;
 
 /**
@@ -34,4 +36,5 @@ public class PostSummaryDto {
   private PollDto poll;
   private boolean rssExcluded;
   private boolean closed;
+  private PostVisibleScopeType visibleScope;
 }

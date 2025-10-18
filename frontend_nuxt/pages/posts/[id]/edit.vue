@@ -10,6 +10,7 @@
         <div class="post-options-left">
           <CategorySelect v-model="selectedCategory" />
           <TagSelect v-model="selectedTags" creatable />
+          <PostVisibleScopeSelect v-model="selectedVisibleScope"/>
         </div>
         <div class="post-options-right">
           <div class="post-clear" @click="clearPost"><clear-icon /> 清空</div>
@@ -44,6 +45,7 @@ import TagSelect from '~/components/TagSelect.vue'
 import { toast } from '~/main'
 import { getToken, authState } from '~/utils/auth'
 import LoginOverlay from '~/components/LoginOverlay.vue'
+import PostVisibleScopeSelect from '~/components/PostVisibleScopeSelect.vue'
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl
 
@@ -51,6 +53,7 @@ const title = ref('')
 const content = ref('')
 const selectedCategory = ref('')
 const selectedTags = ref([])
+const selectedVisibleScope = ref('ALL')
 const isWaitingPosting = ref(false)
 const isAiLoading = ref(false)
 const isLogin = computed(() => authState.loggedIn)
@@ -70,6 +73,7 @@ const loadPost = async () => {
       content.value = data.content || ''
       selectedCategory.value = data.category.id || ''
       selectedTags.value = (data.tags || []).map((t) => t.id)
+      selectedVisibleScope.value = data.visibleScope
     }
   } catch (e) {
     toast.error('加载失败')
@@ -180,6 +184,7 @@ const submitPost = async () => {
         content: content.value,
         categoryId: selectedCategory.value,
         tagIds: selectedTags.value,
+        postVisibleScopeType:selectedVisibleScope.value
       }),
     })
     const data = await res.json()

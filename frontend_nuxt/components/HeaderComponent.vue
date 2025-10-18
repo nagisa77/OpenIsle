@@ -543,6 +543,7 @@ onMounted(async () => {
 .header-label {
   font-size: 12px;
   line-height: 1;
+  white-space: nowrap;
 }
 
 /* 在线人数的数字文字样式（无背景） */

@@ -3,6 +3,8 @@ package com.openisle.dto;
 import com.openisle.model.PostType;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.openisle.model.PostVisibleScopeType;
 import lombok.Data;
 
 /**
@@ -19,6 +21,7 @@ public class PostRequest {
 
   // optional for lottery posts
   private PostType type;
+  private PostVisibleScopeType postVisibleScopeType;
   private String prizeDescription;
   private String prizeIcon;
   private Integer prizeCount;

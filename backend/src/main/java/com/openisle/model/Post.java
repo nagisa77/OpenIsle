@@ -66,6 +66,10 @@ public class Post {
   @Column(nullable = false)
   private PostType type = PostType.NORMAL;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private PostVisibleScopeType visibleScope = PostVisibleScopeType.ALL;
+
   @Column(nullable = false)
   private boolean closed = false;
 

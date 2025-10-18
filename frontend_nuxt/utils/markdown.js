@@ -268,23 +268,21 @@ export function stripMarkdownLength(text, length) {
 
 // 朴素文本带贴吧表情
 export function stripMarkdownWithTiebaMoji(text, length){
-  console.error(text)
     if (!text) return ''
 
-  // Markdown 转成纯文本
-  const plain = stripMarkdown(text)
- console.error(plain)
-  // 替换 :tieba123: 为 <img>
-  const withEmoji = plain.replace(/:tieba(\d+):/g, (match, num) => {
-    const key = `tieba${num}`
-    const file = tiebaEmoji[key]
-    return file
-      ? `<img loading="lazy" class="emoji" src="${file}" alt="${key}">`
-      : match // 没有匹配到图片则保留原样
-  })
+    // Markdown 转成纯文本
+    const plain = stripMarkdown(text)
+    // 替换 :tieba123: 为 <img>
+    const withEmoji = plain.replace(/:tieba(\d+):/g, (match, num) => {
+      const key = `tieba${num}`
+      const file = tiebaEmoji[key]
+      return file
+        ? `<img loading="lazy" class="emoji" src="${file}" alt="${key}">`
+        : match // 没有匹配到图片则保留原样
+    })
 
-  // 截断纯文本长度（防止撑太长）
-  const truncated = withEmoji.length > length ? withEmoji.slice(0, length) + '...' : withEmoji
-  return truncated
+    // 截断纯文本长度（防止撑太长）
+    const truncated = withEmoji.length > length ? withEmoji.slice(0, length) + '...' : withEmoji
+    return truncated
 
 }
