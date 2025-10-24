@@ -150,6 +150,17 @@ def main() -> None:
         default=_env("OPENISLE_MCP_SSE_MOUNT_PATH", "/mcp"),
         help="Mount path when using the SSE transport",
     )
+    parser.add_argument(
+        "--host",
+        default=_env("OPENISLE_MCP_HOST", "0.0.0.0"),
+        help="Host to bind when using SSE or Streamable HTTP",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(_env("OPENISLE_MCP_PORT", "8000")),
+        help="Port to bind when using SSE or Streamable HTTP",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("OPENISLE_MCP_LOG_LEVEL", "INFO"))
@@ -157,8 +168,21 @@ def main() -> None:
         "Starting OpenIsle MCP server", extra={"transport": args.transport, "backend": _BACKEND_CLIENT.base_url}
     )
 
-    server.run(transport=args.transport, mount_path=args.mount_path)
+    if args.transport == "stdio":
+        # stdio 模式照旧
+        server.run(transport="stdio")
+        return
 
+    # SSE / Streamable HTTP：手动跑 uvicorn，显式控制 host/port
+    import uvicorn
+    if args.transport == "sse":
+        app = server.sse_app(args.mount_path)
+    elif args.transport == "streamable-http":
+        app = server.streamable_http_app()
+    else:
+        raise RuntimeError(f"Unsupported transport: {args.transport}")
+
+    uvicorn.run(app, host=args.host, port=args.port)
 
 if __name__ == "__main__":
     main()
