@@ -221,14 +221,12 @@ services:
     env_file:
       - ${ENV_FILE:-../.env}
     environment:
-      FASTMCP_HOST: 0.0.0.0
-      FASTMCP_PORT: ${MCP_PORT:-8765}
       OPENISLE_BACKEND_URL: ${OPENISLE_BACKEND_URL:-http://springboot:8080}
       OPENISLE_BACKEND_TIMEOUT: ${OPENISLE_BACKEND_TIMEOUT:-10}
       OPENISLE_MCP_TRANSPORT: ${OPENISLE_MCP_TRANSPORT:-sse}
       OPENISLE_MCP_SSE_MOUNT_PATH: ${OPENISLE_MCP_SSE_MOUNT_PATH:-/mcp}
     ports:
-      - "${MCP_PORT:-8765}:${MCP_PORT:-8765}"
+      - "${MCP_PORT:-8765}:8000"
     depends_on:
       springboot:
         condition: service_healthy

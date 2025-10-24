@@ -29,8 +29,6 @@ Environment variables:
 | `OPENISLE_PUBLIC_BASE_URL` | Optional base URL used to build deep links in search results | *(unset)* |
 | `OPENISLE_MCP_TRANSPORT` | MCP transport (`stdio`, `sse`, `streamable-http`) | `stdio` |
 | `OPENISLE_MCP_SSE_MOUNT_PATH` | Mount path when using SSE transport | `/mcp` |
-| `FASTMCP_HOST` | Host for SSE / HTTP transports | `127.0.0.1` |
-| `FASTMCP_PORT` | Port for SSE / HTTP transports | `8000` |
 
 ## Docker
 
