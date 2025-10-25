@@ -39,12 +39,12 @@ echo "👉 Build images (staging)..."
 docker compose -f "$compose_file" --env-file "$env_file" \
   build --pull \
   --build-arg NUXT_ENV=staging \
-  frontend_service
+  frontend_service mcp-service
 
 echo "👉 Recreate & start all target services (no dev profile)..."
 docker compose -f "$compose_file" --env-file "$env_file" \
   up -d --force-recreate --remove-orphans --no-deps \
-  mysql redis rabbitmq websocket-service springboot frontend_service
+  mysql redis rabbitmq websocket-service springboot mcp-service frontend_service
 
 echo "👉 Current status:"
 docker compose -f "$compose_file" --env-file "$env_file" ps
