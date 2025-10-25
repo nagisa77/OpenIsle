@@ -213,6 +213,30 @@ services:
       - dev_local_backend
       - prod
 
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/mcp-service.Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-openisle-mcp
+    env_file:
+      - ${ENV_FILE:-../.env}
+    environment:
+      OPENISLE_API_BASE_URL: ${OPENISLE_API_BASE_URL:-http://springboot:8080}
+      OPENISLE_MCP_HOST: ${OPENISLE_MCP_HOST:-0.0.0.0}
+      OPENISLE_MCP_PORT: ${OPENISLE_MCP_PORT:-8000}
+      OPENISLE_MCP_TRANSPORT: ${OPENISLE_MCP_TRANSPORT:-streamable-http}
+    ports:
+      - "${OPENISLE_MCP_PORT:-8000}:8000"
+    depends_on:
+      springboot:
+        condition: service_healthy
+    networks:
+      - openisle-network
+    profiles:
+      - dev
+      - dev_local_backend
+      - prod
+
   frontend_dev:
     image: node:20
     container_name: ${COMPOSE_PROJECT_NAME}-openisle-frontend-dev

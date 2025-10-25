@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openisle-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server exposing OpenIsle search capabilities."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "OpenIsle" }]
+dependencies = [
+  "mcp>=1.19.0",
+  "httpx>=0.28.1",
+  "pydantic>=2.7.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/openisle/openisle"
+
+[project.scripts]
+openisle-mcp = "openisle_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+openisle_mcp = ["py.typed"]
