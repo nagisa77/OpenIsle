@@ -825,37 +825,39 @@ public class PostService {
   }
 
   public List<Post> listPostsByLatestReply(
-    java.util.List<Long> categoryIds,
-    java.util.List<Long> tagIds,
+    Long categoryId,
+    List<Long> tagIds,
     Integer page,
     Integer pageSize
   ) {
-    boolean hasCategories = categoryIds != null && !categoryIds.isEmpty();
+    boolean hasCategory = categoryId != null;
     boolean hasTags = tagIds != null && !tagIds.isEmpty();
 
-    java.util.List<Post> posts;
+    List<Post> posts;
 
-    if (!hasCategories && !hasTags) {
+    if (!hasCategory && !hasTags) {
       posts = postRepository.findByStatusOrderByCreatedAtDesc(PostStatus.PUBLISHED);
-    } else if (hasCategories) {
-      java.util.List<Category> categories = categoryRepository.findAllById(categoryIds);
-      if (categories.isEmpty()) {
-        return java.util.List.of();
+    } else if (hasCategory) {
+      Optional<Category> category = categoryRepository.findById(categoryId);
+      if (category.isEmpty()) {
+        return List.of();
       }
       if (hasTags) {
-        java.util.List<com.openisle.model.Tag> tags = tagRepository.findAllById(tagIds);
+        List<Tag> tags = tagRepository.findAllById(tagIds);
         if (tags.isEmpty()) {
-          return java.util.List.of();
+          return List.of();
         }
         posts = postRepository.findByCategoriesAndAllTagsOrderByCreatedAtDesc(
-          categories,
+                // TODO 临时写法
+          Collections.singletonList(category.get()),
           tags,
           PostStatus.PUBLISHED,
           tags.size()
         );
       } else {
         posts = postRepository.findByCategoryInAndStatusOrderByCreatedAtDesc(
-          categories,
+                // TODO 临时写法
+          Collections.singletonList(category.get()),
           PostStatus.PUBLISHED
         );
       }

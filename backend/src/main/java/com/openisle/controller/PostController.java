@@ -14,6 +14,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -212,10 +216,6 @@ public class PostController {
   ) {
     List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
     List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
-    // 只需要在请求的一开始统计一次
-    //        if (auth != null) {
-    //            userVisitService.recordVisit(auth.getName());
-    //        }
 
     return postService
       .defaultListPosts(ids, tids, page, pageSize)
@@ -244,10 +244,6 @@ public class PostController {
   ) {
     List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
     List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
-    // 只需要在请求的一开始统计一次
-    //        if (auth != null) {
-    //            userVisitService.recordVisit(auth.getName());
-    //        }
 
     return postService
       .listPostsByViews(ids, tids, page, pageSize)
@@ -266,27 +262,18 @@ public class PostController {
     )
   )
   @Cacheable(
-    value = CachingConfig.POST_CACHE_NAME,
-    key = "new org.springframework.cache.interceptor.SimpleKey('latest_reply', #categoryId, #categoryIds, #tagIds, #page, #pageSize)"
+    value = CachingConfig.POST_CACHE_NAME,keyGenerator = "last_reply_generator"
   )
   public List<PostSummaryDto> latestReplyPosts(
     @RequestParam(value = "categoryId", required = false) Long categoryId,
-    @RequestParam(value = "categoryIds", required = false) List<Long> categoryIds,
-    @RequestParam(value = "tagId", required = false) Long tagId,
     @RequestParam(value = "tagIds", required = false) List<Long> tagIds,
     @RequestParam(value = "page", required = false) Integer page,
     @RequestParam(value = "pageSize", required = false) Integer pageSize,
     Authentication auth
   ) {
-    List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
-    List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
-    // 只需要在请求的一开始统计一次
-    //        if (auth != null) {
-    //            userVisitService.recordVisit(auth.getName());
-    //        }
 
-    List<Post> posts = postService.listPostsByLatestReply(ids, tids, page, pageSize);
-    return posts.stream().map(postMapper::toSummaryDto).collect(Collectors.toList());
+    List<Post> posts = postService.listPostsByLatestReply(categoryId, tagIds, page, pageSize);
+    return posts.stream().map(postMapper::toSimpleDto).collect(Collectors.toList());
   }
 
   @GetMapping("/featured")
@@ -309,10 +296,7 @@ public class PostController {
   ) {
     List<Long> ids = categoryService.getSearchCategoryIds(categoryIds, categoryId);
     List<Long> tids = tagService.getSearchTagIds(tagIds, tagId);
-    // 只需要在请求的一开始统计一次
-    //        if (auth != null) {
-    //            userVisitService.recordVisit(auth.getName());
-    //        }
+
     return postService
       .listFeaturedPosts(ids, tids, page, pageSize)
       .stream()
