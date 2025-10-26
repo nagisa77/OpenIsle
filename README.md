@@ -47,9 +47,18 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 
 本项目以 MIT License 发布，欢迎自由使用与修改。
 
+## 🧑‍💻 贡献者
+
+<a href="https://github.com/nagisa77/OpenIsle/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=nagisa77/OpenIsle&max=24&columns=8&width=600" />
+</a>
+
+## ⭐ Star趋势
+[![Star History Chart](https://starchart.cc/nagisa77/OpenIsle.svg)](https://starchart.cc/nagisa77/OpenIsle)
+
 ## 🙏 鼓赞
 
 - [Spring Boot](https://spring.io/projects/spring-boot)
 - [JJWT](https://github.com/jwtk/jjwt)
 - [Lombok](https://github.com/projectlombok/lombok)
-- 以及所有开源贡献者
+- 所有的贡献者
