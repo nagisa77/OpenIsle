@@ -178,6 +178,32 @@ services:
       - dev
       - prod
 
+  mcp:
+    build:
+      context: ..
+      dockerfile: docker/mcp.Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-openisle-mcp
+    env_file:
+      - ${ENV_FILE:-../.env}
+    environment:
+      OPENISLE_MCP_BACKEND_BASE_URL: ${OPENISLE_MCP_BACKEND_BASE_URL:-http://springboot:8080}
+      OPENISLE_MCP_HOST: 0.0.0.0
+      OPENISLE_MCP_PORT: ${OPENISLE_MCP_PORT:-8085}
+      OPENISLE_MCP_TRANSPORT: ${OPENISLE_MCP_TRANSPORT:-streamable-http}
+      OPENISLE_MCP_REQUEST_TIMEOUT: ${OPENISLE_MCP_REQUEST_TIMEOUT:-10.0}
+    ports:
+      - "${OPENISLE_MCP_PORT:-8085}:${OPENISLE_MCP_PORT:-8085}"
+    depends_on:
+      springboot:
+        condition: service_started
+    networks:
+      - openisle-network
+    profiles:
+      - dev
+      - dev_local_backend
+      - prod
+
+
   websocket-service:
     image: maven:3.9-eclipse-temurin-17
     container_name: ${COMPOSE_PROJECT_NAME}-openisle-websocket

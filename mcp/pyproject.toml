@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openisle-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server exposing OpenIsle search capabilities."
+readme = "README.md"
+authors = [{ name = "OpenIsle", email = "engineering@openisle.example" }]
+requires-python = ">=3.11"
+dependencies = [
+  "mcp>=1.19.0",
+  "httpx>=0.28,<0.29",
+  "pydantic>=2.12,<3",
+  "pydantic-settings>=2.11,<3"
+]
+
+[project.scripts]
+openisle-mcp = "openisle_mcp.server:main"
+
+[tool.hatch.build]
+packages = ["src/openisle_mcp"]
+
+[tool.ruff]
+line-length = 100
+
