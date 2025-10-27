@@ -84,6 +84,18 @@ class SearchClient:
             )
         return [self._ensure_dict(entry) for entry in payload]
 
+    async def get_post(self, post_id: int, token: str | None = None) -> dict[str, Any]:
+        """Retrieve the detailed payload for a single post."""
+
+        client = self._get_client()
+        headers = {"Accept": "application/json"}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        response = await client.get(f"/api/posts/{post_id}", headers=headers)
+        response.raise_for_status()
+        return self._ensure_dict(response.json())
+
     async def aclose(self) -> None:
         """Dispose of the underlying HTTP client."""
 

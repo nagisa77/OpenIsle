@@ -260,3 +260,14 @@ class RecentPostsResponse(BaseModel):
 
 
 CommentData.model_rebuild()
+
+
+class PostDetail(PostSummary):
+    """Detailed information for a single post, including comments."""
+
+    comments: list[CommentData] = Field(
+        default_factory=list,
+        description="Comments that belong to the post.",
+    )
+
+    model_config = ConfigDict(populate_by_name=True, extra="allow")

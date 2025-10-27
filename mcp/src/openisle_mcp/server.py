@@ -14,6 +14,7 @@ from .config import get_settings
 from .schemas import (
     CommentData,
     CommentReplyResult,
+    PostDetail,
     PostSummary,
     RecentPostsResponse,
     SearchResponse,
@@ -41,7 +42,8 @@ app = FastMCP(
     name="openisle-mcp",
     instructions=(
         "Use this server to search OpenIsle content, reply to comments with an authentication "
-        "token, and list posts created within a recent time window."
+        "token, retrieve details for a specific post, and list posts created within a recent time "
+        "window."
     ),
     host=settings.host,
     port=settings.port,
@@ -227,6 +229,69 @@ async def recent_posts(
         )
 
     return RecentPostsResponse(minutes=minutes, total=len(posts), posts=posts)
+
+
+@app.tool(
+    name="get_post",
+    description="Retrieve detailed information for a single post.",
+    structured_output=True,
+)
+async def get_post(
+    post_id: Annotated[
+        int,
+        PydanticField(ge=1, description="Identifier of the post to retrieve."),
+    ],
+    token: Annotated[
+        str | None,
+        PydanticField(
+            default=None,
+            description="Optional JWT bearer token to view the post as an authenticated user.",
+        ),
+    ] = None,
+    ctx: Context | None = None,
+) -> PostDetail:
+    """Fetch post details from the backend and validate the response."""
+
+    sanitized_token = token.strip() if isinstance(token, str) else None
+    if sanitized_token == "":
+        sanitized_token = None
+
+    try:
+        raw_post = await search_client.get_post(post_id, sanitized_token)
+    except httpx.HTTPStatusError as exc:  # pragma: no cover - network errors
+        status_code = exc.response.status_code
+        if status_code == 404:
+            message = f"Post {post_id} was not found."
+        elif status_code == 401:
+            message = "Authentication failed while retrieving the post."
+        elif status_code == 403:
+            message = "The provided token is not authorized to view this post."
+        else:
+            message = (
+                "OpenIsle backend returned HTTP "
+                f"{status_code} while retrieving post {post_id}."
+            )
+        if ctx is not None:
+            await ctx.error(message)
+        raise ValueError(message) from exc
+    except httpx.RequestError as exc:  # pragma: no cover - network errors
+        message = f"Unable to reach OpenIsle backend post service: {exc}."
+        if ctx is not None:
+            await ctx.error(message)
+        raise ValueError(message) from exc
+
+    try:
+        post = PostDetail.model_validate(raw_post)
+    except ValidationError as exc:
+        message = "Received malformed data from the post detail endpoint."
+        if ctx is not None:
+            await ctx.error(message)
+        raise ValueError(message) from exc
+
+    if ctx is not None:
+        await ctx.info(f"Retrieved post {post_id} successfully.")
+
+    return post
 
 
 def main() -> None:
