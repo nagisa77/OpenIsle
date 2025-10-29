@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic.networks import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -35,6 +35,20 @@ class Settings(BaseSettings):
         10.0,
         gt=0,
         description="Timeout (seconds) for backend search requests.",
+    )
+    access_token: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Optional JWT bearer token used for authenticated backend calls. "
+            "When set, tools that support authentication will use this token "
+            "automatically unless an explicit token override is provided."
+        ),
+    )
+    log_level: str = Field(
+        "INFO",
+        description=(
+            "Logging level for the MCP server (e.g. DEBUG, INFO, WARNING)."
+        ),
     )
 
     model_config = SettingsConfigDict(

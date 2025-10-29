@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN is_bot BIT(1) NOT NULL DEFAULT b'0';

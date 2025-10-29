@@ -16,6 +16,7 @@
         <div class="info-content-header-left">
           <span class="user-name">{{ comment.userName }}</span>
           <span v-if="isCommentFromPostAuthor" class="op-badge" title="楼主">OP</span>
+          <span v-if="comment.isBot" class="bot-badge" title="Bot">Bot</span>
           <medal-one class="medal-icon" />
           <NuxtLink
             v-if="comment.medal"
@@ -517,6 +518,21 @@ const handleContentClick = (e) => {
   border-radius: 9px;
   background-color: rgba(242, 100, 25, 0.12);
   color: #f26419;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.bot-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 0 6px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: rgba(76, 175, 80, 0.16);
+  color: #2e7d32;
   font-size: 12px;
   font-weight: 600;
   line-height: 1;

@@ -3,6 +3,7 @@ package com.openisle.repository;
 import com.openisle.model.Comment;
 import com.openisle.model.Post;
 import com.openisle.model.User;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
   List<Comment> findByPostAndParentIsNullOrderByCreatedAtAsc(Post post);
   List<Comment> findByParentOrderByCreatedAtAsc(Comment parent);
+  List<Comment> findByPostAndCreatedAtLessThanOrderByCreatedAtAsc(
+    Post post,
+    LocalDateTime createdAt
+  );
   List<Comment> findByAuthorOrderByCreatedAtDesc(User author, Pageable pageable);
   List<Comment> findByContentContainingIgnoreCase(String keyword);
 

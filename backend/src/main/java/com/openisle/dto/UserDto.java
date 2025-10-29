@@ -28,4 +28,5 @@ public class UserDto {
   private int point;
   private int currentLevel;
   private int nextLevelExp;
+  private boolean bot;
 }

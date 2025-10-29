@@ -186,7 +186,7 @@ services:
     env_file:
       - ${ENV_FILE:-../.env}
     environment:
-      OPENISLE_MCP_BACKEND_BASE_URL: ${OPENISLE_MCP_BACKEND_BASE_URL:-http://springboot:8080}
+      OPENISLE_MCP_BACKEND_BASE_URL: http://springboot:${SERVER_PORT:-8080}
       OPENISLE_MCP_HOST: 0.0.0.0
       OPENISLE_MCP_PORT: ${OPENISLE_MCP_PORT:-8085}
       OPENISLE_MCP_TRANSPORT: ${OPENISLE_MCP_TRANSPORT:-streamable-http}

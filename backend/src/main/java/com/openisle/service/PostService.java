@@ -770,6 +770,18 @@ public class PostService {
     return listPostsByCategories(null, null, null);
   }
 
+  public List<Post> listRecentPosts(int minutes) {
+    if (minutes <= 0) {
+      throw new IllegalArgumentException("Minutes must be positive");
+    }
+    LocalDateTime since = LocalDateTime.now().minusMinutes(minutes);
+    List<Post> posts = postRepository.findByStatusAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+      PostStatus.PUBLISHED,
+      since
+    );
+    return sortByPinnedAndCreated(posts);
+  }
+
   public List<Post> listPostsByViews(Integer page, Integer pageSize) {
     return listPostsByViews(null, null, page, pageSize);
   }

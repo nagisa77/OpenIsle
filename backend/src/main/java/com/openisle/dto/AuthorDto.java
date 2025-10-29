@@ -13,4 +13,5 @@ public class AuthorDto {
   private String username;
   private String avatar;
   private MedalType displayMedal;
+  private boolean bot;
 }

@@ -37,6 +37,7 @@ public class UserMapper {
     dto.setUsername(user.getUsername());
     dto.setAvatar(user.getAvatar());
     dto.setDisplayMedal(user.getDisplayMedal());
+    dto.setBot(user.isBot());
     return dto;
   }
 
@@ -63,6 +64,7 @@ public class UserMapper {
     dto.setPoint(user.getPoint());
     dto.setCurrentLevel(levelService.getLevel(user.getExperience()));
     dto.setNextLevelExp(levelService.nextLevelExp(user.getExperience()));
+    dto.setBot(user.isBot());
     if (viewer != null) {
       dto.setSubscribed(subscriptionService.isSubscribed(viewer.getName(), user.getUsername()));
     } else {

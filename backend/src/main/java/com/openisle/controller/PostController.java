@@ -224,6 +224,26 @@ public class PostController {
       .collect(Collectors.toList());
   }
 
+  @GetMapping("/recent")
+  @Operation(
+    summary = "Recent posts",
+    description = "List posts created within the specified number of minutes"
+  )
+  @ApiResponse(
+    responseCode = "200",
+    description = "Recent posts",
+    content = @Content(
+      array = @ArraySchema(schema = @Schema(implementation = PostSummaryDto.class))
+    )
+  )
+  public List<PostSummaryDto> recentPosts(@RequestParam("minutes") int minutes) {
+    return postService
+      .listRecentPosts(minutes)
+      .stream()
+      .map(postMapper::toSummaryDto)
+      .collect(Collectors.toList());
+  }
+
   @GetMapping("/ranking")
   @Operation(summary = "Ranking posts", description = "List posts by view rankings")
   @ApiResponse(

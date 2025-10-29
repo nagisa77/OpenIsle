@@ -1,11 +1,13 @@
 package com.openisle.controller;
 
+import com.openisle.dto.CommentContextDto;
 import com.openisle.dto.CommentDto;
 import com.openisle.dto.CommentRequest;
 import com.openisle.dto.PostChangeLogDto;
 import com.openisle.dto.TimelineItemDto;
 import com.openisle.mapper.CommentMapper;
 import com.openisle.mapper.PostChangeLogMapper;
+import com.openisle.mapper.PostMapper;
 import com.openisle.model.Comment;
 import com.openisle.model.CommentSort;
 import com.openisle.service.*;
@@ -40,6 +42,7 @@ public class CommentController {
   private final PointService pointService;
   private final PostChangeLogService changeLogService;
   private final PostChangeLogMapper postChangeLogMapper;
+  private final PostMapper postMapper;
 
   @Value("${app.captcha.enabled:false}")
   private boolean captchaEnabled;
@@ -182,6 +185,37 @@ public class CommentController {
     itemDtoList.sort(comparator.thenComparing(createdAtComparator));
     log.debug("listComments returning {} comments", itemDtoList.size());
     return itemDtoList;
+  }
+
+  @GetMapping("/comments/{commentId}/context")
+  @Operation(
+    summary = "Comment context",
+    description = "Get a comment along with its previous comments and related post"
+  )
+  @ApiResponse(
+    responseCode = "200",
+    description = "Comment context",
+    content = @Content(schema = @Schema(implementation = CommentContextDto.class))
+  )
+  public ResponseEntity<CommentContextDto> getCommentContext(@PathVariable Long commentId) {
+    log.debug("getCommentContext called for comment {}", commentId);
+    Comment comment = commentService.getComment(commentId);
+    CommentContextDto dto = new CommentContextDto();
+    dto.setPost(postMapper.toSummaryDto(comment.getPost()));
+    dto.setTargetComment(commentMapper.toDtoWithReplies(comment));
+    dto.setPreviousComments(
+      commentService
+        .getCommentsBefore(comment)
+        .stream()
+        .map(commentMapper::toDtoWithReplies)
+        .collect(Collectors.toList())
+    );
+    log.debug(
+      "getCommentContext returning {} previous comments for comment {}",
+      dto.getPreviousComments().size(),
+      commentId
+    );
+    return ResponseEntity.ok(dto);
   }
 
   @DeleteMapping("/comments/{id}")

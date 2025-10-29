@@ -377,6 +377,7 @@ const mapComment = (
   text: c.content,
   reactions: c.reactions || [],
   pinned: Boolean(c.pinned ?? c.pinnedAt ?? c.pinned_at),
+  isBot: Boolean(c.author?.bot),
   reply: (c.replies || []).map((r) =>
     mapComment(r, c.author.username, c.author.avatar, c.author.id, level + 1),
   ),

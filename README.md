@@ -26,7 +26,7 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 - 集成 OpenAI 提供的 Markdown 格式化功能
 - 通过环境变量可调整密码强度、登录方式、保护码等多种配置
 - 支持图片上传，默认使用腾讯云 COS 扩展
-- 默认头像使用 DiceBear Avatars，可通过 `AVATAR_STYLE` 和 `AVATAR_SIZE` 环境变量自定义主题和大小
+- Bot 集成，可在平台内快速连接自定义机器人，并通过 Telegram 的 BotFather 创建和管理消息机器人，拓展社区互动渠道
 - 浏览器推送通知，离开网站也能及时收到提醒
 
 ## 🌟 项目优势
@@ -41,7 +41,7 @@ OpenIsle 是一个使用 Spring Boot 和 Vue 3 构建的全栈开源社区平台
 
 ## 🏘️ 社区
 
-欢迎彼此交流和使用 OpenIsle，项目以开源方式提供，想了解更多可访问：<https://github.com/nagisa77/OpenIsle>
+- 欢迎彼此交流和使用 OpenIsle，项目以开源方式提供；如果遇到问题请到 GitHub 的 Issues 页面反馈，想发起话题讨论也可以前往源站 <https://www.open-isle.com>，这里提供更完整的社区板块与互动体验。
 
 ## 📋 授权
 

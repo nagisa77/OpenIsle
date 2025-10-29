@@ -1,0 +1,30 @@
+name: Open Source Reply Bot
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-open-source-reply-bot:
+    environment: Bots
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --no-save @openai/agents tsx typescript
+
+      - name: Run open source reply bot
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENISLE_TOKEN: ${{ secrets.OPENISLE_TOKEN_BOT_1 }}
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+        run: npx tsx bots/instance/open_source_reply_bot.ts

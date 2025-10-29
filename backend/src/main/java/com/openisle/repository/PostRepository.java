@@ -19,6 +19,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
   List<Post> findByStatusOrderByCreatedAtDesc(PostStatus status, Pageable pageable);
   List<Post> findByStatusOrderByViewsDesc(PostStatus status);
   List<Post> findByStatusOrderByViewsDesc(PostStatus status, Pageable pageable);
+  List<Post> findByStatusAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+    PostStatus status,
+    LocalDateTime createdAt
+  );
   List<Post> findByAuthorAndStatusOrderByCreatedAtDesc(
     User author,
     PostStatus status,

@@ -211,6 +211,7 @@ public class MessageService {
     userSummaryDto.setId(message.getSender().getId());
     userSummaryDto.setUsername(message.getSender().getUsername());
     userSummaryDto.setAvatar(message.getSender().getAvatar());
+    userSummaryDto.setBot(message.getSender().isBot());
     dto.setSender(userSummaryDto);
 
     if (message.getReplyTo() != null) {
@@ -222,6 +223,7 @@ public class MessageService {
       replySender.setId(reply.getSender().getId());
       replySender.setUsername(reply.getSender().getUsername());
       replySender.setAvatar(reply.getSender().getAvatar());
+      replySender.setBot(reply.getSender().isBot());
       replyDto.setSender(replySender);
       dto.setReplyTo(replyDto);
     }
@@ -316,6 +318,7 @@ public class MessageService {
           userDto.setId(p.getUser().getId());
           userDto.setUsername(p.getUser().getUsername());
           userDto.setAvatar(p.getUser().getAvatar());
+          userDto.setBot(p.getUser().isBot());
           return userDto;
         })
         .collect(Collectors.toList())
@@ -365,6 +368,7 @@ public class MessageService {
         userDto.setId(p.getUser().getId());
         userDto.setUsername(p.getUser().getUsername());
         userDto.setAvatar(p.getUser().getAvatar());
+        userDto.setBot(p.getUser().isBot());
         return userDto;
       })
       .collect(Collectors.toList());

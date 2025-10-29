@@ -62,6 +62,9 @@ public class User {
   @Column(nullable = false)
   private Role role = Role.USER;
 
+  @Column(name = "is_bot", nullable = false)
+  private boolean bot = false;
+
   @Enumerated(EnumType.STRING)
   private MedalType displayMedal;
 

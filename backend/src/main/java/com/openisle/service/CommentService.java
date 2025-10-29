@@ -266,6 +266,27 @@ public class CommentService {
     return replies;
   }
 
+  public Comment getComment(Long commentId) {
+    log.debug("getComment called for id {}", commentId);
+    return commentRepository
+      .findById(commentId)
+      .orElseThrow(() -> new com.openisle.exception.NotFoundException("Comment not found"));
+  }
+
+  public List<Comment> getCommentsBefore(Comment comment) {
+    log.debug("getCommentsBefore called for comment {}", comment.getId());
+    List<Comment> comments = commentRepository.findByPostAndCreatedAtLessThanOrderByCreatedAtAsc(
+      comment.getPost(),
+      comment.getCreatedAt()
+    );
+    log.debug(
+      "getCommentsBefore returning {} comments for comment {}",
+      comments.size(),
+      comment.getId()
+    );
+    return comments;
+  }
+
   public List<Comment> getRecentCommentsByUser(String username, int limit) {
     log.debug("getRecentCommentsByUser called for user {} with limit {}", username, limit);
     User user = userRepository

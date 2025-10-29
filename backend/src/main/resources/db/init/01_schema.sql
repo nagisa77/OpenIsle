@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` varchar(50) NOT NULL,
   `verification_code` varchar(255) DEFAULT NULL,
   `verified` bit(1) DEFAULT NULL,
+  `is_bot` bit(1) NOT NULL DEFAULT b'0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK_users_email` (`email`),
   UNIQUE KEY `UK_users_username` (`username`)

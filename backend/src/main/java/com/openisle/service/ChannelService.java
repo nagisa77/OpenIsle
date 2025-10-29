@@ -105,6 +105,7 @@ public class ChannelService {
     userDto.setId(message.getSender().getId());
     userDto.setUsername(message.getSender().getUsername());
     userDto.setAvatar(message.getSender().getAvatar());
+    userDto.setBot(message.getSender().isBot());
     dto.setSender(userDto);
 
     return dto;
