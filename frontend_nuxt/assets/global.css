@@ -372,8 +372,12 @@ body {
   }
   /* 手机端不换行 */
   .info-content-text code {
-    white-space: pre; /* 禁止自动换行 */
+    white-space: pre-wrap; /*评论里code*/
   }
+  .code-block code {
+    white-space:pre;/* markdown禁止自动换行 */
+  } 
+
   /* .d2h-diff-table {
     font-size: 6px !important;
   }
