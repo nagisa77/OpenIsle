@@ -30,3 +30,8 @@ pnpm-workspace.yaml
 
 # others
 openisle.iml
+
+
+# prompt
+AGENTS.md
+GEMINI.md
