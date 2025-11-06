@@ -93,6 +93,8 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_VHOST: "${RABBITMQ_VHOST:-/}"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-blxze}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-blxze}
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"

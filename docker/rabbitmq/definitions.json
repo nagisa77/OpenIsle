@@ -1,10 +1,10 @@
 {
     "users": [
-      { "name": "nagisa", "password": "nagisa", "tags": "administrator" }
+      { "name": "blxze", "password": "blxze", "tags": "administrator" }
     ],
     "vhosts": [{ "name": "/" }],
     "permissions": [
-      { "user": "nagisa", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+      { "user": "blxze", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
     ],
     "queues": [
       { "name": "notifications-queue", "vhost": "/", "durable": true, "auto_delete": false, "arguments": {} },
