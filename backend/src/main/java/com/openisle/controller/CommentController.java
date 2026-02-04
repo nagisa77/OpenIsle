@@ -112,7 +112,9 @@ public class CommentController {
   )
   public List<TimelineItemDto<?>> listComments(
     @PathVariable Long postId,
-    @RequestParam(value = "sort", required = false, defaultValue = "OLDEST") CommentSort sort
+    @RequestParam(value = "sort", required = false, defaultValue = "OLDEST") CommentSort sort,
+    @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+    @RequestParam(value = "pageSize", required = false, defaultValue = "20") int pageSize
   ) {
     log.debug("listComments called for post {} with sort {}", postId, sort);
     List<CommentDto> commentDtoList = commentService
@@ -183,8 +185,23 @@ public class CommentController {
       createdAtComparator = createdAtComparator.reversed();
     }
     itemDtoList.sort(comparator.thenComparing(createdAtComparator));
-    log.debug("listComments returning {} comments", itemDtoList.size());
-    return itemDtoList;
+
+    int safePage = Math.max(0, page);
+    int safePageSize = Math.max(1, pageSize);
+    int fromIndex = safePage * safePageSize;
+    int toIndex = Math.min(fromIndex + safePageSize, itemDtoList.size());
+    List<TimelineItemDto<?>> pagedItems =
+      fromIndex >= itemDtoList.size() ? List.of() : itemDtoList.subList(fromIndex, toIndex);
+
+    log.debug(
+      "listComments returning {} items for post {} page {} size {} (total {})",
+      pagedItems.size(),
+      postId,
+      safePage,
+      safePageSize,
+      itemDtoList.size()
+    );
+    return pagedItems;
   }
 
   @GetMapping("/comments/{commentId}/context")

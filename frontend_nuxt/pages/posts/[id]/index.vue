@@ -181,6 +181,12 @@
             <PostChangeLogItem v-else :log="item" :title="title" />
           </template>
         </BaseTimeline>
+        <InfiniteLoadMore
+          v-if="timelineItems.length > 0"
+          :key="commentSort"
+          :on-load="loadMoreTimeline"
+          :pause="isLoadingMoreComments || isFetchingComments"
+        />
       </div>
     </div>
 
@@ -211,6 +217,7 @@ import CommentEditor from '~/components/CommentEditor.vue'
 import BaseTimeline from '~/components/BaseTimeline.vue'
 import BasePlaceholder from '~/components/BasePlaceholder.vue'
 import PostChangeLogItem from '~/components/PostChangeLogItem.vue'
+import InfiniteLoadMore from '~/components/InfiniteLoadMore.vue'
 import ArticleTags from '~/components/ArticleTags.vue'
 import ArticleCategory from '~/components/ArticleCategory.vue'
 import ReactionsGroup from '~/components/ReactionsGroup.vue'
@@ -276,6 +283,10 @@ const currentIndex = ref(1)
 const subscribed = ref(false)
 const commentSort = ref('NEWEST')
 const isFetchingComments = ref(false)
+const commentPage = ref(0)
+const commentPageSize = 10
+const hasMoreComments = ref(true)
+const isLoadingMoreComments = ref(false)
 const isMobile = useIsMobile()
 const timelineItems = ref([])
 
@@ -869,17 +880,33 @@ const fetchCommentSorts = () => {
   ])
 }
 
-const fetchCommentsAndChangeLog = async () => {
-  isFetchingComments.value = true
-  console.info('Fetching comments and chang log', { postId, sort: commentSort.value })
+const fetchCommentsAndChangeLog = async ({ pageNo = 0, append = false } = {}) => {
+  if (isLoadingMoreComments.value) return false
+  if (!append) {
+    hasMoreComments.value = true
+    commentPage.value = 0
+  }
+  if (pageNo === 0) {
+    isFetchingComments.value = true
+  } else {
+    isLoadingMoreComments.value = true
+  }
+  console.info('Fetching comments and chang log', {
+    postId,
+    sort: commentSort.value,
+    page: pageNo,
+    pageSize: commentPageSize,
+  })
+  let done = false
   try {
     const token = getToken()
-    const res = await fetch(
-      `${API_BASE_URL}/api/posts/${postId}/comments?sort=${commentSort.value}`,
-      {
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-      },
-    )
+    const url = new URL(`${API_BASE_URL}/api/posts/${postId}/comments`)
+    url.searchParams.set('sort', commentSort.value)
+    url.searchParams.set('page', String(pageNo))
+    url.searchParams.set('pageSize', String(commentPageSize))
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: token ? `Bearer ${token}` : '' },
+    })
     console.info('Fetch comments response status', res.status)
     if (res.ok) {
       const data = await res.json()
@@ -902,23 +929,48 @@ const fetchCommentsAndChangeLog = async () => {
         }
       }
 
-      comments.value = commentList
-      changeLogs.value = changeLogList
-      timelineItems.value = newTimelineItemList
+      if (append) {
+        comments.value.push(...commentList)
+        changeLogs.value.push(...changeLogList)
+        timelineItems.value.push(...newTimelineItemList)
+        commentPage.value = pageNo
+      } else {
+        comments.value = commentList
+        changeLogs.value = changeLogList
+        timelineItems.value = newTimelineItemList
+        commentPage.value = 0
+      }
 
-      isFetchingComments.value = false
+      done = data.length < commentPageSize
+      hasMoreComments.value = !done
       await nextTick()
       gatherPostItems()
+      return done
     }
   } catch (e) {
     console.debug('Fetch comments error', e)
+    hasMoreComments.value = false
+    return true
   } finally {
     isFetchingComments.value = false
+    isLoadingMoreComments.value = false
   }
 }
 
 const fetchTimeline = async () => {
-  await fetchCommentsAndChangeLog()
+  hasMoreComments.value = true
+  commentPage.value = 0
+  comments.value = []
+  changeLogs.value = []
+  timelineItems.value = []
+  await fetchCommentsAndChangeLog({ pageNo: 0, append: false })
+}
+
+const loadMoreTimeline = async () => {
+  if (!hasMoreComments.value || isLoadingMoreComments.value) return true
+  const nextPage = commentPage.value + 1
+  const done = await fetchCommentsAndChangeLog({ pageNo: nextPage, append: true })
+  return done || !hasMoreComments.value
 }
 
 watch(commentSort, async () => {
@@ -929,8 +981,17 @@ const jumpToHashComment = async () => {
   const hash = location.hash
   if (hash.startsWith('#comment-')) {
     const id = hash.substring('#comment-'.length)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const el = document.getElementById('comment-' + id)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    let el = document.getElementById('comment-' + id)
+
+    // 若未加载到目标评论，尝试继续分页加载直到找到或无更多
+    while (!el && hasMoreComments.value) {
+      const done = await loadMoreTimeline()
+      await nextTick()
+      el = document.getElementById('comment-' + id)
+      if (done) break
+    }
+
     if (el) {
       const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 20 // 20 for beauty
       window.scrollTo({ top, behavior: 'smooth' })
