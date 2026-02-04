@@ -57,6 +57,14 @@ cd OpenIsle
      --profile dev up -d --force-recreate
    ```
 
+   仅重启后端容器（不重建镜像、不影响前端）：
+   ```shell
+   docker compose \
+     -f docker/docker-compose.yaml \
+     --env-file .env \
+     --profile dev restart springboot websocket-service 
+   ```
+
    数据初始化sql会创建几个帐户供大家测试使用
    > username:admin/user1/user2 password:123456
 
