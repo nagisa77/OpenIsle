@@ -159,6 +159,12 @@ const selectedTags = ref([])
 const route = useRoute()
 const tagOptions = ref([])
 const categoryOptions = ref([])
+const clearFilters = () => {
+  selectedCategory.value = ''
+  selectedTags.value = []
+  selectedCategoryGlobal.value = ''
+  selectedTagsGlobal.value = []
+}
 
 const topics = ref(['最新回复', '最新', '精选', '排行榜' /*, '热门', '类别'*/])
 const selectedTopicCookie = useCookie('homeTab')
@@ -218,8 +224,18 @@ watch(
   (query) => {
     const category = query.category
     const tags = query.tags
-    category && selectedCategorySet(category)
-    tags && selectedTagsSet(tags)
+    if (category) {
+      selectedCategorySet(category)
+    } else {
+      selectedCategory.value = ''
+      selectedCategoryGlobal.value = ''
+    }
+    if (tags) {
+      selectedTagsSet(tags)
+    } else {
+      selectedTags.value = []
+      selectedTagsGlobal.value = []
+    }
   },
 )
 
@@ -367,12 +383,18 @@ watch(selectedTopic, (val) => {
 if (import.meta.server) {
   await loadOptions()
 }
+
+const handleRefreshHome = () => {
+  clearFilters()
+  refreshFirst()
+}
+
 onMounted(() => {
   if (categoryOptions.value.length === 0 && tagOptions.value.length === 0) loadOptions()
-  window.addEventListener('refresh-home', refreshFirst)
+  window.addEventListener('refresh-home', handleRefreshHome)
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('refresh-home', refreshFirst)
+  window.removeEventListener('refresh-home', handleRefreshHome)
 })
 
 /** 供 InfiniteLoadMore 重建用的 key：筛选/Tab 改变即重建内部状态 */
