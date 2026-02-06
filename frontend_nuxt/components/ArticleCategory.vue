@@ -21,7 +21,7 @@ const props = defineProps({
 const gotoCategory = async () => {
   if (!props.category) return
   const value = encodeURIComponent(props.category.id ?? props.category.name)
-  await navigateTo({ path: '/', query: { category: value } }, { replace: true })
+  await navigateTo({ path: '/', query: { category: value } })
 }
 
 const isImageIcon = (icon) => {

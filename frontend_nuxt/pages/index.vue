@@ -202,6 +202,28 @@ const selectedTagsSet = (tags) => {
     .map((v) => (isNaN(v) ? v : Number(v)))
 }
 
+const normalizeCategoryFromQuery = (category) => {
+  if (category == null || category === '') return ''
+  const raw = Array.isArray(category) ? category[0] : category
+  const decoded = decodeURIComponent(raw)
+  return isNaN(decoded) ? decoded : Number(decoded)
+}
+
+const normalizeTagsFromQuery = (tags) => {
+  if (tags == null || tags === '') return []
+  const raw = Array.isArray(tags) ? tags.join(',') : tags
+  return raw
+    .split(',')
+    .filter((v) => v)
+    .map((v) => decodeURIComponent(v))
+    .map((v) => (isNaN(v) ? v : Number(v)))
+}
+
+const arraysShallowEqual = (a = [], b = []) => {
+  if (a.length !== b.length) return false
+  return a.every((v, idx) => String(v) === String(b[idx]))
+}
+
 /** 初始化：仅在客户端首渲染时根据路由同步一次 **/
 onMounted(() => {
   const { category, tags } = route.query
@@ -238,6 +260,32 @@ watch(
     }
   },
 )
+
+// 从筛选器变更回写到 URL，确保浏览器历史可回退到上一个筛选状态。
+watch([selectedCategory, selectedTags], async ([category, tags]) => {
+  const routeCategory = normalizeCategoryFromQuery(route.query.category)
+  const routeTags = normalizeTagsFromQuery(route.query.tags)
+
+  const categoryChanged = String(category ?? '') !== String(routeCategory ?? '')
+  const tagsChanged = !arraysShallowEqual(tags || [], routeTags)
+  if (!categoryChanged && !tagsChanged) return
+
+  const nextQuery = { ...route.query }
+
+  if (category == null || category === '') {
+    delete nextQuery.category
+  } else {
+    nextQuery.category = encodeURIComponent(String(category))
+  }
+
+  if (!Array.isArray(tags) || tags.length === 0) {
+    delete nextQuery.tags
+  } else {
+    nextQuery.tags = tags.map((v) => encodeURIComponent(String(v))).join(',')
+  }
+
+  await navigateTo({ path: '/', query: nextQuery })
+})
 
 /** 选项加载（分类/标签名称回填） **/
 const loadOptions = async () => {
