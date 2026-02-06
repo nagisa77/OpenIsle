@@ -30,7 +30,7 @@ defineProps({
 
 const gotoTag = async (tag) => {
   const value = encodeURIComponent(tag.id ?? tag.name)
-  await navigateTo({ path: '/', query: { tags: value } }, { replace: true })
+  await navigateTo({ path: '/', query: { tags: value } })
 }
 
 const isImageIcon = (icon) => {

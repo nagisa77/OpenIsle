@@ -357,13 +357,13 @@ const isImageIcon = (icon) => {
 
 const gotoCategory = (c) => {
   const value = encodeURIComponent(c.id ?? c.name)
-  navigateTo({ path: '/', query: { category: value } }, { replace: true })
+  navigateTo({ path: '/', query: { category: value } })
   handleItemClick()
 }
 
 const gotoTag = (t) => {
   const value = encodeURIComponent(t.id ?? t.name)
-  navigateTo({ path: '/', query: { tags: value } }, { replace: true })
+  navigateTo({ path: '/', query: { tags: value } })
   handleItemClick()
 }
 </script>

@@ -643,7 +643,7 @@ const sendMessage = async () => {
 
 const gotoTag = (tag) => {
   const value = encodeURIComponent(tag.id ?? tag.name)
-  navigateTo({ path: '/', query: { tags: value } }, { replace: true })
+  navigateTo({ path: '/', query: { tags: value } })
 }
 
 const init = async () => {

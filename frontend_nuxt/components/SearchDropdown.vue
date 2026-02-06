@@ -170,9 +170,9 @@ watch(selected, (val) => {
       navigateTo(`/posts/${opt.postId}#comment-${opt.id}`, { replace: true })
     }
   } else if (opt.type === 'category') {
-    navigateTo({ path: '/', query: { category: opt.id } }, { replace: true })
+    navigateTo({ path: '/', query: { category: opt.id } })
   } else if (opt.type === 'tag') {
-    navigateTo({ path: '/', query: { tags: opt.id } }, { replace: true })
+    navigateTo({ path: '/', query: { tags: opt.id } })
   }
   selected.value = null
   keyword.value = ''
