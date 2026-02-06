@@ -82,6 +82,56 @@ export async function markNotificationsRead(ids) {
   }
 }
 
+const MARK_ALL_FETCH_SIZE = 100
+const MARK_ALL_CHUNK_SIZE = 200
+const MARK_ALL_MAX_PAGES = 200
+
+async function fetchUnreadNotificationsPage(page, size) {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl
+  const token = getToken()
+  if (!token) throw new Error('NO_TOKEN')
+
+  const res = await fetch(`${API_BASE_URL}/api/notifications/unread?page=${page}&size=${size}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) throw new Error('FETCH_UNREAD_FAILED')
+  const data = await res.json()
+  return Array.isArray(data) ? data : []
+}
+
+async function collectUnreadNotificationIds(excludedTypes = []) {
+  const excludedTypeSet = new Set(excludedTypes)
+  const ids = []
+
+  for (let page = 0; page < MARK_ALL_MAX_PAGES; page++) {
+    const pageData = await fetchUnreadNotificationsPage(page, MARK_ALL_FETCH_SIZE)
+    if (pageData.length === 0) break
+
+    for (const notification of pageData) {
+      if (!notification || excludedTypeSet.has(notification.type)) continue
+      if (typeof notification.id !== 'number') continue
+      ids.push(notification.id)
+    }
+
+    if (pageData.length < MARK_ALL_FETCH_SIZE) break
+  }
+
+  return [...new Set(ids)]
+}
+
+async function markNotificationsReadInChunks(ids) {
+  for (let i = 0; i < ids.length; i += MARK_ALL_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + MARK_ALL_CHUNK_SIZE)
+    const ok = await markNotificationsRead(chunk)
+    if (!ok) return false
+  }
+  return true
+}
+
 export async function fetchNotificationPreferences() {
   try {
     const config = useRuntimeConfig()
@@ -390,28 +440,36 @@ function createFetchNotifications() {
   }
 
   const markAllRead = async () => {
-    // 除了 REGISTER_REQUEST 类型消息
-    const idsToMark = notifications.value
+    // 为了覆盖分页中的全部未读，先从后端分页拉取全部未读 ID（排除 REGISTER_REQUEST）。
+    const localIdsToMark = notifications.value
       .filter((n) => n.type !== 'REGISTER_REQUEST' && !n.read)
       .map((n) => n.id)
-    if (idsToMark.length === 0) return
+
     notifications.value.forEach((n) => {
       if (n.type !== 'REGISTER_REQUEST') n.read = true
     })
     notificationState.unreadCount = notifications.value.filter((n) => !n.read).length
-    const ok = await markNotificationsRead(idsToMark)
-    if (!ok) {
+
+    try {
+      const idsToMark = await collectUnreadNotificationIds(['REGISTER_REQUEST'])
+      if (idsToMark.length > 0) {
+        const ok = await markNotificationsReadInChunks(idsToMark)
+        if (!ok) throw new Error('MARK_READ_FAILED')
+      }
+
+      await fetchUnreadCount()
+      if (authState.role === 'ADMIN') {
+        toast.success('已读所有消息（注册请求除外）')
+      } else {
+        toast.success('已读所有消息')
+      }
+    } catch (e) {
       notifications.value.forEach((n) => {
-        if (idsToMark.includes(n.id)) n.read = false
+        if (localIdsToMark.includes(n.id)) n.read = false
       })
       await fetchUnreadCount()
+      toast.error('已读操作失败，请稍后重试')
       return
-    }
-    fetchUnreadCount()
-    if (authState.role === 'ADMIN') {
-      toast.success('已读所有消息（注册请求除外）')
-    } else {
-      toast.success('已读所有消息')
     }
   }
   return {
