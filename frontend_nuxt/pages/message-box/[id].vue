@@ -447,6 +447,11 @@ const subscribeToConversation = () => {
     try {
       const parsedMessage = JSON.parse(message.body)
 
+      if (parsedMessage?.eventType === 'MESSAGE_REACTION') {
+        applyMessageReactionSync(parsedMessage)
+        return
+      }
+
       if (parsedMessage.sender && parsedMessage.sender.id === currentUser.value.id) {
         return
       }
@@ -470,6 +475,36 @@ const subscribeToConversation = () => {
       console.error('Failed to parse websocket message', e)
     }
   })
+}
+
+function applyMessageReactionSync(event) {
+  const targetMessageId = Number(event?.messageId)
+  if (!Number.isFinite(targetMessageId)) return
+
+  const targetMessage = messages.value.find((msg) => Number(msg.id) === targetMessageId)
+  if (!targetMessage) return
+
+  if (!Array.isArray(targetMessage.reactions)) {
+    targetMessage.reactions = []
+  }
+
+  const reaction = event?.reaction
+  if (!reaction?.type || !reaction?.user) return
+
+  const sameReaction = (current) => current?.type === reaction.type && current?.user === reaction.user
+  if (event.action === 'REMOVED') {
+    targetMessage.reactions = targetMessage.reactions.filter((current) => !sameReaction(current))
+    return
+  }
+
+  if (event.action === 'ADDED') {
+    const existingIndex = targetMessage.reactions.findIndex((current) => sameReaction(current))
+    if (existingIndex > -1) {
+      targetMessage.reactions.splice(existingIndex, 1, reaction)
+    } else {
+      targetMessage.reactions.push(reaction)
+    }
+  }
 }
 
 watch(isConnected, (newValue) => {

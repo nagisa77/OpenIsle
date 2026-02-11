@@ -1,5 +1,8 @@
 package com.openisle.service;
 
+import com.openisle.dto.MessageNotificationPayload;
+import com.openisle.dto.ReactionDto;
+import com.openisle.mapper.ReactionMapper;
 import com.openisle.model.Comment;
 import com.openisle.model.Message;
 import com.openisle.model.NotificationType;
@@ -12,15 +15,17 @@ import com.openisle.repository.MessageRepository;
 import com.openisle.repository.PostRepository;
 import com.openisle.repository.ReactionRepository;
 import com.openisle.repository.UserRepository;
-import com.openisle.service.EmailSender;
-import com.openisle.service.NotificationService;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReactionService {
 
   private final ReactionRepository reactionRepository;
@@ -29,6 +34,8 @@ public class ReactionService {
   private final CommentRepository commentRepository;
   private final MessageRepository messageRepository;
   private final NotificationService notificationService;
+  private final NotificationProducer notificationProducer;
+  private final ReactionMapper reactionMapper;
   private final EmailSender emailSender;
 
   @Value("${app.website-url}")
@@ -124,16 +131,43 @@ public class ReactionService {
       message,
       type
     );
+
+    Map<String, Object> syncPayload = new HashMap<>();
+    syncPayload.put("eventType", "MESSAGE_REACTION");
+    syncPayload.put("conversationId", message.getConversation().getId());
+    syncPayload.put("messageId", message.getId());
+
     if (existing.isPresent()) {
-      reactionRepository.delete(existing.get());
+      Reaction removed = existing.get();
+      ReactionDto removedDto = reactionMapper.toDto(removed);
+      reactionRepository.delete(removed);
+
+      syncPayload.put("action", "REMOVED");
+      syncPayload.put("reaction", removedDto);
+      sendMessageReactionSync(user.getUsername(), syncPayload);
+
       return null;
     }
+
     Reaction reaction = new Reaction();
     reaction.setUser(user);
     reaction.setMessage(message);
     reaction.setType(type);
     reaction = reactionRepository.save(reaction);
+
+    syncPayload.put("action", "ADDED");
+    syncPayload.put("reaction", reactionMapper.toDto(reaction));
+    sendMessageReactionSync(user.getUsername(), syncPayload);
+
     return reaction;
+  }
+
+  private void sendMessageReactionSync(String shardUsername, Map<String, Object> payload) {
+    try {
+      notificationProducer.sendNotification(new MessageNotificationPayload(shardUsername, payload));
+    } catch (Exception e) {
+      log.error("Failed to broadcast message reaction sync via RabbitMQ", e);
+    }
   }
 
   public java.util.List<Reaction> getReactionsForPost(Long postId) {

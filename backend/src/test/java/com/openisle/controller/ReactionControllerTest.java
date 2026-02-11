@@ -14,6 +14,7 @@ import com.openisle.model.Reaction;
 import com.openisle.model.ReactionType;
 import com.openisle.model.User;
 import com.openisle.service.LevelService;
+import com.openisle.service.PointService;
 import com.openisle.service.ReactionService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -38,6 +39,9 @@ class ReactionControllerTest {
 
   @MockBean
   private LevelService levelService;
+
+  @MockBean
+  private PointService pointService;
 
   @Test
   void reactToPost() throws Exception {

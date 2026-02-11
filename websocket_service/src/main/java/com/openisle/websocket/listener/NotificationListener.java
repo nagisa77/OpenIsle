@@ -55,8 +55,19 @@ public class NotificationListener {
             if (payloadObject instanceof Map) {
                 Map<String, Object> payloadMap = (Map<String, Object>) payloadObject;
 
+                if ("MESSAGE_REACTION".equals(payloadMap.get("eventType"))) {
+                    Object conversationIdObj = payloadMap.get("conversationId");
+                    if (conversationIdObj instanceof Number) {
+                        Long conversationId = ((Number) conversationIdObj).longValue();
+                        String conversationDestination = "/topic/conversation/" + conversationId;
+                        messagingTemplate.convertAndSend(conversationDestination, payloadMap);
+                        log.info("Message reaction broadcasted to destination: {}", conversationDestination);
+                    } else {
+                        log.warn("Missing or invalid conversationId for reaction payload: {}", payloadMap);
+                    }
+                }
                 // 处理包含完整对话信息的消息 - 完全复制之前的WebSocket发送逻辑
-                if (payloadMap.containsKey("message") && payloadMap.containsKey("conversation") && payloadMap.containsKey("senderId")) {
+                else if (payloadMap.containsKey("message") && payloadMap.containsKey("conversation") && payloadMap.containsKey("senderId")) {
                     Object messageObj = payloadMap.get("message");
                     Map<String, Object> conversationInfo = (Map<String, Object>) payloadMap.get("conversation");
                     Long conversationId = ((Number) conversationInfo.get("id")).longValue();
