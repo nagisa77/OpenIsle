@@ -19,4 +19,5 @@ bun dev
 
 - `frontend/` 前端技术文档
 - `backend/` 后端技术文档
+- `deployment/` 预发/生产部署文档
 - `openapi/` 后端 API 文档
