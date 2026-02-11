@@ -1,0 +1,147 @@
+---
+title: 部署指南
+description: OpenIsle 预发与生产环境部署说明
+---
+
+# 部署指南
+
+本页覆盖 OpenIsle 当前仓库内已有的部署链路：`deploy/` 脚本 + GitHub Actions 工作流 + Docker Compose。
+
+## 部署总览
+
+| 环境 | 触发方式 | 脚本 |
+| --- | --- | --- |
+| 预发 (staging) | `main` 分支 push / 手动触发 | `deploy/deploy_staging.sh` |
+| 生产 (prod) | 每日定时 / 手动触发 | `deploy/deploy.sh` |
+
+说明：
+
+- 两套工作流共用并发锁 `openisle-server`，避免同一台服务器并发部署冲突。
+- 两个脚本都会执行 `git checkout -B <branch> origin/<branch>` + `git reset --hard origin/<branch>`，确保服务器代码与远端分支对齐。
+
+## 前置条件
+
+1. 服务器已安装：`git`、`docker`、`docker compose`（插件版本）。
+2. 服务器目录与脚本保持一致：
+   - 生产仓库路径：`/opt/openisle/OpenIsle`
+   - 预发仓库路径：`/opt/openisle/OpenIsle-staging`
+3. 两个仓库目录下都已创建 `.env`（基于根目录 `.env.example`）。
+4. 已配置反向代理（参考 `nginx/openisle` 与 `nginx/openisle-staging`）。
+
+## 环境变量准备
+
+先复制模板：
+
+```bash
+cp .env.example .env
+```
+
+至少确认这些变量：
+
+- 安全相关：`JWT_SECRET`、`JWT_REASON_SECRET`、`JWT_RESET_SECRET`、`JWT_INVITE_SECRET`
+- 存储与队列：`MYSQL_*`、`REDIS_*`、`RABBITMQ_*`
+- 站点与前端：`WEBSITE_URL`、`NUXT_PUBLIC_API_BASE_URL`、`NUXT_PUBLIC_WEBSOCKET_URL`、`NUXT_PUBLIC_WEBSITE_BASE_URL`
+
+如果同机同时跑“生产 + 预发”，预发端口必须改开，避免冲突。根据当前 Nginx 示例，预发可使用：
+
+```dotenv
+SERVER_PORT=8081
+FRONTEND_PORT=3001
+WEBSOCKET_PORT=8083
+OPENISLE_MCP_PORT=8086
+WEBSITE_URL=https://staging.open-isle.com
+NUXT_PUBLIC_API_BASE_URL=https://staging.open-isle.com
+NUXT_PUBLIC_WEBSOCKET_URL=https://staging.open-isle.com/websocket
+NUXT_PUBLIC_WEBSITE_BASE_URL=https://staging.open-isle.com
+```
+
+## 手动部署
+
+在服务器执行：
+
+```bash
+# 生产（默认 main）
+bash /opt/openisle/OpenIsle/deploy/deploy.sh
+
+# 预发（默认 main）
+bash /opt/openisle/OpenIsle/deploy/deploy_staging.sh
+```
+
+部署指定分支：
+
+```bash
+bash /opt/openisle/OpenIsle/deploy/deploy.sh feature/xxx
+bash /opt/openisle/OpenIsle/deploy/deploy_staging.sh feature/xxx
+```
+
+脚本会自动完成：
+
+1. 拉取并重置代码到目标分支最新提交
+2. `docker compose config` 校验
+3. 拉取基础镜像 + 构建 `frontend_service`、`mcp`
+4. 重建并启动关键服务（`mysql`、`redis`、`rabbitmq`、`websocket-service`、`springboot`、`frontend_service`、`mcp`）
+
+## CI/CD 触发规则
+
+- 预发：`.github/workflows/deploy-staging.yml`
+  - `main` 分支 push 自动触发
+  - 支持 `workflow_dispatch` 手动触发
+- 生产：`.github/workflows/deploy.yml`
+  - 每天 `UTC 19:00` 定时触发（北京时间次日 `03:00`）
+  - 支持 `workflow_dispatch` 手动触发
+- 文档站：`.github/workflows/deploy-docs.yml`
+  - 在预发部署成功后触发，发布到 `gh-pages`
+
+## 部署后检查
+
+查看容器状态：
+
+```bash
+docker compose -f /opt/openisle/OpenIsle/docker/docker-compose.yaml --env-file /opt/openisle/OpenIsle/.env ps
+docker compose -f /opt/openisle/OpenIsle-staging/docker/docker-compose.yaml --env-file /opt/openisle/OpenIsle-staging/.env ps
+```
+
+查看核心服务日志：
+
+```bash
+docker compose -f /opt/openisle/OpenIsle/docker/docker-compose.yaml --env-file /opt/openisle/OpenIsle/.env logs -f springboot websocket-service frontend_service
+```
+
+本机健康检查（自动读取 `.env` 端口）：
+
+```bash
+ENV_FILE=/opt/openisle/OpenIsle/.env
+SERVER_PORT=$(grep '^SERVER_PORT=' "$ENV_FILE" | cut -d= -f2)
+WS_PORT=$(grep '^WEBSOCKET_PORT=' "$ENV_FILE" | cut -d= -f2)
+curl -fsS "http://127.0.0.1:${SERVER_PORT}/actuator/health"
+curl -fsS "http://127.0.0.1:${WS_PORT}/actuator/health"
+```
+
+## 回滚建议
+
+由于部署脚本总是对齐远端分支最新提交，回滚建议走“可追溯分支”：
+
+1. 在本地创建回滚分支并推送：
+
+   ```bash
+   git checkout -b rollback/2026-02-11 <稳定提交SHA>
+   git push origin rollback/2026-02-11
+   ```
+
+2. 在服务器按分支重新部署：
+
+   ```bash
+   bash /opt/openisle/OpenIsle/deploy/deploy.sh rollback/2026-02-11
+   ```
+
+同理可用于预发：
+
+```bash
+bash /opt/openisle/OpenIsle/deploy/deploy_staging.sh rollback/2026-02-11
+```
+
+## 风险提示
+
+- 脚本使用 `up -d --force-recreate --remove-orphans`，目标服务会被重建，部署窗口内可能出现短时连接中断。
+- `.env` 缺失时脚本会直接退出，不会继续部署。
+- 生产与预发共机时，务必避免端口冲突并保持 Nginx upstream 端口一致。
