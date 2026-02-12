@@ -803,6 +803,8 @@ const formatType = (t) => {
       return '有人申请兑换奶茶'
     case 'POINT_REDEEM':
       return '有人申请积分兑换'
+    case 'DONATION':
+      return '有人打赏了你'
     case 'LOTTERY_WIN':
       return '抽奖中奖了'
     case 'LOTTERY_DRAW':
